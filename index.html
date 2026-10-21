@@ -798,9 +798,10 @@ body.print-only-current .hoja.cerrada{display:none !important;}
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
-    getFirestore, doc, getDoc, setDoc, serverTimestamp,
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+    doc, getDoc, setDoc, serverTimestamp,
     collection, onSnapshot, query, where, orderBy,
-    addDoc, updateDoc, deleteDoc, arrayUnion, enableIndexedDbPersistence
+    addDoc, updateDoc, deleteDoc, arrayUnion
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -814,13 +815,13 @@ body.print-only-current .hoja.cerrada{display:none !important;}
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  try{
-    enableIndexedDbPersistence(db).catch(function(err){
-      console.warn('Persistencia offline no disponible:', err.code);
-    });
-  }catch(e){}
+  
+  // Nueva forma de inicializar Firestore con persistencia offline
+  const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
 
   window.__fb = {
     auth, db,
@@ -1374,9 +1375,9 @@ function buildHoja(h){
     extraColsHTML = '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja">✕</button>';
   }
   head.innerHTML =
-    '<label>Comercial<select data-meta="comercial">' +
-      buildOptions(COMERCIALES, h.comercial, '— Selecciona —') +
-    '</select></label>' +
+    '<label>Usuario' +
+      '<input type="text" data-meta="comercial" value="' + esc(fbUser ? fbUser.nombre : h.comercial) + '" readonly tabindex="-1" style="background:#f1f5f9;color:var(--muted);font-weight:700;cursor:default;">' +
+    '</label>' +
     '<label class="semana-ro">Semana (auto)' +
       '<input type="text" data-meta="semana" value="' + esc(h.semana) + '" readonly tabindex="-1">' +
     '</label>' +
@@ -1599,11 +1600,10 @@ function addHoja(){
 }
 function newHoja(){
   const semActual = semanaActualTexto();
-  let comercial = '';
+  let comercial = fbUser ? fbUser.nombre : ''; 
   let oficina = OFICINA_POR_DEFECTO;
   if(state.hojas.length){
     const ult = state.hojas[state.hojas.length - 1];
-    if(ult.comercial) comercial = ult.comercial;
     if(ult.oficina)   oficina   = ult.oficina;
   }
   return { id: uid(), comercial: comercial, semana: semActual, oficina: oficina, filas: [] };
@@ -1611,7 +1611,7 @@ function newHoja(){
 function newHojaHeredandoDe(h){
   return {
     id: uid(),
-    comercial: h ? (h.comercial || '') : '',
+    comercial: fbUser ? fbUser.nombre : '',
     semana: semanaActualTexto(),
     oficina: h ? (h.oficina || OFICINA_POR_DEFECTO) : OFICINA_POR_DEFECTO,
     filas: []
@@ -1877,9 +1877,9 @@ function onFieldChange(e){
     if(!sec) return;
     const h = state.hojas.find(x => x.id === sec.dataset.hoja);
     if(!h) return;
-    if(el.dataset.meta === 'semana') return;
+    // Ignoramos semana y comercial porque son de solo lectura
+    if(el.dataset.meta === 'semana' || el.dataset.meta === 'comercial') return;
     if(esHojaCerrada(h)){
-      if(el.dataset.meta === 'comercial') el.value = h.comercial || '';
       if(el.dataset.meta === 'oficina') el.value = h.oficina || OFICINA_POR_DEFECTO;
       showClosedModal(h.id);
       return;
