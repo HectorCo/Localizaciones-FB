@@ -54,6 +54,7 @@ button{font:inherit}
 .btn.ghost{background:rgba(255,255,255,.14);color:#fff}
 .btn.small{padding:8px 12px;font-size:13.5px}
 .btn.danger-ghost{background:#fee2e2;color:var(--danger)}
+.btn.warn{background:#fef3c7;color:#78350f;border:1px solid #fcd34d}
 .icon-btn{
   border:0;background:transparent;cursor:pointer;width:34px;height:34px;
   border-radius:9px;display:grid;place-items:center;font-size:15px;color:var(--muted);
@@ -112,6 +113,71 @@ button{font:inherit}
 }
 .searchbar.has-value .search-info{display:block}
 
+.global-results{
+  display:none;
+  margin:10px 14px 0;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.global-results.visible{display:block}
+.global-results header{
+  padding:10px 14px;
+  background:#f8fafc;
+  border-bottom:1px solid var(--line);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.06em;
+  color:var(--muted);
+  text-transform:uppercase;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.global-results header .count{
+  background:var(--brand);
+  color:#fff;
+  font-size:10.5px;
+  padding:2px 8px;
+  border-radius:999px;
+  font-weight:800;
+}
+.global-results .res-item{
+  padding:11px 14px;
+  border-top:1px solid #edf1f6;
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+}
+.global-results .res-item:first-of-type{border-top:0}
+.global-results .res-body{flex:1;min-width:0}
+.global-results .res-dir{
+  font-weight:700;
+  font-size:14px;
+  color:var(--ink);
+  margin-bottom:3px;
+  word-break:break-word;
+}
+.global-results .res-meta{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+}
+.global-results .res-meta strong{color:var(--ink);font-weight:650}
+.global-results .res-actions{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex:0 0 auto;
+}
+.global-results .res-actions .btn{
+  padding:7px 10px;
+  font-size:12px;
+  font-weight:700;
+}
+
 main{padding:0 0 20px}
 .empty{text-align:center;padding:70px 24px;color:var(--muted)}
 .empty p{margin:0 0 18px;font-size:15px}
@@ -143,7 +209,7 @@ main{padding:0 0 20px}
 .hoja.cerrada .table-wrap{opacity:.92}
 .hoja.cerrada table.grid thead th{background:#e2e8f0}
 .hoja.cerrada table.grid tbody td{background:#f8fafc}
-.hoja.cerrada table.grid tbody tr{cursor:not-allowed}
+.hoja.cerrada table.grid tbody tr{cursor:pointer}
 .hoja.cerrada table.grid tbody tr:active{background:inherit}
 
 .hoja.cerrada.colapsada .table-wrap,
@@ -207,6 +273,9 @@ main{padding:0 0 20px}
   cursor:pointer;white-space:nowrap;
 }
 .banner-cerrada .banner-btn:hover{filter:brightness(1.1)}
+.banner-cerrada .banner-btn.light{
+  background:#fff;color:#78350f;border:1px solid #fcd34d;
+}
 
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table.grid{
@@ -230,6 +299,19 @@ table.grid tbody tr.blank:active td{background:var(--brand-soft)}
 .hoja.cerrada table.grid tbody tr.blank td{background:#f8fafc}
 
 table.grid tbody tr.fila-oculta{display:none}
+table.grid tbody td .badge-nuevo{
+  display:inline-block;
+  font-size:9px;
+  font-weight:800;
+  padding:1px 5px;
+  border-radius:4px;
+  background:#dbeafe;
+  color:#1e40af;
+  margin-left:4px;
+  vertical-align:middle;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
 
 mark.busq{
   background:#fde68a;color:inherit;
@@ -324,6 +406,122 @@ mark.busq{
   color:var(--muted);font-size:16px;line-height:1;
 }
 .input-with-clear .clear-btn:hover{background:#f1f5f9;color:var(--danger)}
+
+.dup-warning{
+  grid-column:1/-1;
+  background:#fef3c7;
+  border:1px solid #fcd34d;
+  border-radius:12px;
+  padding:12px 14px;
+  color:#78350f;
+  font-size:13px;
+  line-height:1.45;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:4px;
+}
+.dup-warning .dup-line{display:flex;align-items:flex-start;gap:8px}
+.dup-warning .dup-line .ic{font-size:18px;line-height:1.1;flex:0 0 auto}
+.dup-warning .dup-txt{flex:1;min-width:0}
+.dup-warning .dup-txt strong{font-weight:800}
+.dup-warning .dup-meta{font-size:12px;color:#92400e;margin-top:3px}
+.dup-warning .dup-btn{
+  align-self:flex-start;
+  border:0;background:#78350f;color:#fff;
+  padding:8px 12px;border-radius:8px;
+  font-size:12.5px;font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.dup-warning .dup-btn:hover{filter:brightness(1.1)}
+.dup-warning .dup-btn.ghost{
+  background:transparent;color:#78350f;border:1px solid #d97706;
+  padding:6px 10px;
+}
+
+.timeline{
+  margin-top:6px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+}
+.timeline header{
+  padding:9px 12px;
+  background:#f8fafc;
+  border-bottom:1px solid var(--line);
+  font-size:10.5px;
+  font-weight:800;
+  letter-spacing:.06em;
+  color:var(--muted);
+  text-transform:uppercase;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.timeline header .count{
+  background:#e2e8f0;
+  color:#475569;
+  font-size:10px;
+  padding:2px 8px;
+  border-radius:999px;
+  font-weight:800;
+}
+.timeline .tl-items{
+  max-height:240px;
+  overflow:auto;
+}
+.timeline .tl-item{
+  padding:10px 12px;
+  border-top:1px solid #edf1f6;
+  display:flex;
+  gap:10px;
+  font-size:12.5px;
+  color:var(--ink);
+}
+.timeline .tl-item:first-child{border-top:0}
+.timeline .tl-item .tl-week{
+  flex:0 0 auto;
+  font-weight:800;
+  font-size:11px;
+  color:#1e40af;
+  background:#dbeafe;
+  padding:2px 8px;
+  border-radius:6px;
+  height:fit-content;
+  white-space:nowrap;
+}
+.timeline .tl-item .tl-body{flex:1;min-width:0}
+.timeline .tl-item .tl-by{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:3px;
+}
+.timeline .tl-item .tl-change{
+  font-size:12.5px;
+  line-height:1.4;
+  word-break:break-word;
+}
+.timeline .tl-item .tl-change .fld{
+  font-weight:700;
+  color:#0f172a;
+}
+.timeline .tl-item .tl-change .old{
+  color:#94a3b8;
+  text-decoration:line-through;
+}
+.timeline .tl-item .tl-change .new{
+  color:#065f46;
+  font-weight:650;
+}
+.timeline .tl-empty{
+  padding:14px 12px;
+  color:var(--muted);
+  font-size:12.5px;
+  text-align:center;
+  font-style:italic;
+}
 
 .share-body{padding:18px 18px 6px;text-align:center}
 .share-icon{font-size:52px;line-height:1;margin:6px 0 14px}
@@ -500,7 +698,7 @@ body.print-only-current .hoja.cerrada{display:none !important;}
 @media print{
   @page{ size: A3 landscape; margin: 8mm; }
   html,body{background:#fff !important;padding:0 !important;margin:0 !important}
-  .topbar,.fab,.fab-top,.menu,.modal,.hoja-head,.hoja-actions,.empty,.toast,.banner-cerrada,.searchbar,.no-results,.login-overlay,.sync-indicator{display:none !important}
+  .topbar,.fab,.fab-top,.menu,.modal,.hoja-head,.hoja-actions,.empty,.toast,.banner-cerrada,.searchbar,.no-results,.login-overlay,.sync-indicator,.global-results{display:none !important}
   main{padding:0 !important;margin:0 !important;display:block !important}
   .hoja{
     box-shadow:none !important;border:0 !important;border-radius:0 !important;
@@ -599,6 +797,8 @@ body.print-only-current .hoja.cerrada{display:none !important;}
   <div class="search-info" id="searchInfo"></div>
 </div>
 
+<div class="global-results" id="globalResults"></div>
+
 <main id="app"></main>
 
 <div class="no-results" id="noResults">No hay registros que coincidan con la búsqueda.</div>
@@ -679,7 +879,7 @@ body.print-only-current .hoja.cerrada{display:none !important;}
       <div class="closed-icon">🔒</div>
       <h3>Esta hoja pertenece a la semana <span id="closedSemana">?</span></h3>
       <p>Ya no se pueden modificar las filas de esta hoja porque pertenece a una semana anterior.</p>
-      <p>Puedes seguir viéndola, exportarla o eliminarla. Para trabajar esta semana, crea una hoja nueva con los mismos datos.</p>
+      <p>Puedes abrir un expediente en modo lectura para consultar su historial, o crear una hoja nueva para esta semana.</p>
     </div>
     <div class="sheet-foot" style="justify-content:center">
       <button class="btn" data-act="close-closed-modal" style="background:#e2e8f0;color:var(--ink)">Entendido</button>
@@ -816,7 +1016,6 @@ body.print-only-current .hoja.cerrada{display:none !important;}
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   
-  // Nueva forma de inicializar Firestore con persistencia offline
   const db = initializeFirestore(app, {
     localCache: persistentLocalCache({
       tabManager: persistentMultipleTabManager()
@@ -862,7 +1061,6 @@ var MUNICIPIO_POR_DEFECTO = 'Hospitalet de Llobregat';
 const EMAIL_DOMAIN = 'localizaciones.local';
 let fbUser = null;
 
-// ── Mapas id-documento ↔ datalist (para pintar las calles desde Firestore)
 var ID_A_DATALIST = {
   'hospitalet': 'dl-calles-lh',
   'esplugues':  'dl-calles-es',
@@ -870,7 +1068,7 @@ var ID_A_DATALIST = {
   'masquefa':   'dl-calles-masquefa',
   'piera':      'dl-calles-piera'
 };
-const callesPorMunicipio = new Map(); // idDoc -> array de calles
+const callesPorMunicipio = new Map();
 let unsubCalles = null;
 
 function usernameToEmail(user){
@@ -972,6 +1170,8 @@ async function hacerLogout(){
   callesPorMunicipio.clear();
   const app = document.getElementById('app');
   if(app) app.innerHTML = '';
+  const gr = document.getElementById('globalResults');
+  if(gr){ gr.innerHTML = ''; gr.classList.remove('visible'); }
   document.body.classList.remove('logueado');
   mostrarLogin(true);
 }
@@ -1067,6 +1267,66 @@ function datalistIdPorMunicipio(m){
   return 'dl-calles-lh';
 }
 
+// ──────────────────────────────────────────────────────────
+//  Normalización de direcciones
+// ──────────────────────────────────────────────────────────
+function normalizaClave(s){
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function limpiarCalle(s){
+  if(s == null) return '';
+  return String(s)
+    .replace(/^\s*(c\/|c\.|calle|callej[oó]n|carrer|av\.?|avinguda|avenida)\s+/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function limpiarNumero(s){
+  if(s == null) return '';
+  return String(s).replace(/\s+/g, '').toUpperCase();
+}
+function limpiarPiso(s){
+  if(s == null) return '';
+  return String(s)
+    .replace(/º/g, '')
+    .replace(/ª/g, '')
+    .replace(/[º°]/g, '')
+    .replace(/\s+/g, '')
+    .replace(/^0+/, '')
+    .toUpperCase();
+}
+function buscarCalleCanonica(municipio, calle){
+  var idDatalist = datalistIdPorMunicipio(municipio);
+  var idDoc = null;
+  Object.keys(ID_A_DATALIST).forEach(function(k){
+    if(ID_A_DATALIST[k] === idDatalist) idDoc = k;
+  });
+  if(!idDoc) return calle;
+  var arr = callesPorMunicipio.get(idDoc) || [];
+  if(!arr.length) return calle;
+  var target = normalizaClave(calle);
+  if(!target) return calle;
+  // 1) coincidencia exacta normalizada
+  var exacta = arr.find(function(c){ return normalizaClave(c) === target; });
+  if(exacta) return exacta;
+  // 2) coincidencia normalizada sin prefijos "c/", "calle", etc.
+  var target2 = normalizaClave(limpiarCalle(calle));
+  var canonica = arr.find(function(c){ return normalizaClave(limpiarCalle(c)) === target2; });
+  if(canonica) return canonica;
+  return calle;
+}
+function claveUnicaDe(datos){
+  const mun = normalizaClave(datos.municipio);
+  const cal = normalizaClave(limpiarCalle(datos.calle));
+  const num = limpiarNumero(datos.numero);
+  const pis = limpiarPiso(datos.piso);
+  return [mun, cal, num, pis].join('|');
+}
+
 const COLS = [
   { key:'fecha',         label:'FECHA',                   w:5.0,  type:'date'     },
   { key:'municipio',     label:'MUNICIPIO',               w:8.0,  type:'text'     },
@@ -1117,6 +1377,9 @@ let filtroActual = '';
 let exportScopeContext = null;
 let addRowEnCurso = false;
 
+// Duplicado detectado dentro del editor (para el aviso amarillo)
+let dupEnEditor = null;
+
 const $  = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, m => (
@@ -1147,22 +1410,6 @@ function buildOptions(options, valor, placeholder){
   return list.map(function(o){
     return '<option value="' + esc(o.v) + '"' + (o.v === valor ? ' selected' : '') + '>' + esc(o.t) + '</option>';
   }).join('');
-}
-function normalizaClave(s){
-  return String(s == null ? '' : s)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-function claveUnicaDe(datos){
-  return [
-    normalizaClave(datos.municipio),
-    normalizaClave(datos.calle),
-    normalizaClave(datos.numero),
-    normalizaClave(datos.piso)
-  ].join('|');
 }
 
 function loadMetadatos(){
@@ -1218,6 +1465,11 @@ function initSyncLocalizaciones(){
     });
     setSyncStatus('ok', 'Sincronizado');
     render();
+    // Si el editor está abierto, refrescar el aviso de duplicado y el timeline
+    if(editing){
+      refrescarAvisoDuplicado();
+      refrescarTimeline();
+    }
   }, function(err){
     console.warn('Error sincronizando localizaciones', err);
     setSyncStatus('error', 'Sin conexión');
@@ -1235,48 +1487,69 @@ function setSyncStatus(kind, text){
   if(txt) txt.textContent = text;
 }
 
+// ──────────────────────────────────────────────────────────
+//  Búsqueda de duplicados por claveUnica (Firestore)
+// ──────────────────────────────────────────────────────────
+async function buscarDuplicadoPorClave(datos, excluirId){
+  const fb = window.__fb;
+  if(!fb) return null;
+  const clave = claveUnicaDe(datos);
+  // Si no hay calle, no tiene sentido buscar
+  if(!datos.calle || !String(datos.calle).trim()) return null;
+  const q = fb.query(
+    fb.collection(fb.db, 'localizaciones'),
+    fb.where('claveUnica', '==', clave)
+  );
+  const snap = await new Promise(function(resolve, reject){
+    const unsub = fb.onSnapshot(q, function(s){
+      unsub();
+      resolve(s);
+    }, reject);
+  });
+  if(snap.size === 0) return null;
+  for(const doc of snap.docs){
+    if(excluirId && doc.id === excluirId) continue;
+    const data = doc.data();
+    data.id = doc.id;
+    return data;
+  }
+  return null;
+}
+
 async function crearLocalizacion(datos){
   const fb = window.__fb;
   if(!fb) throw new Error('Firebase no está listo');
 
-  if(datos.calle && datos.calle.trim() !== ''){
-    const claveUnica = claveUnicaDe(datos);
-    const q = fb.query(
-      fb.collection(fb.db, 'localizaciones'),
-      fb.where('claveUnica', '==', claveUnica)
-    );
-    const snap = await new Promise(function(resolve, reject){
-      const unsub = fb.onSnapshot(q, function(s){
-        unsub();
-        resolve(s);
-      }, reject);
-    });
-    if(snap.size > 0){
-      const existente = snap.docs[0];
-      const data = existente.data();
-      const msg = 'Ya existe una localización con esta dirección' +
-                  (data.calle ? ' (' + data.calle + ' ' + (data.numero||'') + (data.piso ? ', ' + data.piso : '') + ')' : '') +
-                  '.\n\n¿Quieres abrirla para actualizarla?';
-      if(confirm(msg)){
-        return { id: existente.id, existente: true };
-      }
-      throw new Error('cancelado');
-    }
+  // Normalizar calle con la colección de calles (nombre canónico)
+  const datosLimpios = Object.assign({}, datos);
+  if(datosLimpios.calle && datosLimpios.municipio){
+    datosLimpios.calle = buscarCalleCanonica(datosLimpios.municipio, datosLimpios.calle);
+  }
+  datosLimpios.numero = limpiarNumero(datosLimpios.numero);
+  datosLimpios.piso   = limpiarPiso(datosLimpios.piso);
+
+  // ¿Ya existe?
+  const existente = await buscarDuplicadoPorClave(datosLimpios, null);
+  if(existente){
+    return { id: existente.id, existente: true, data: existente };
   }
 
   const ahora = fb.serverTimestamp();
-  const datosFinales = Object.assign({}, datos, {
-    claveUnica: claveUnicaDe(datos),
+  const semana = semanaActualTexto();
+  const datosFinales = Object.assign({}, datosLimpios, {
+    claveUnica: claveUnicaDe(datosLimpios),
     creadoPor: fbUser.nombre,
     creadoPorUid: fbUser.uid,
     creadoEn: ahora,
+    creadoSemana: semana,
     actualizadoPor: fbUser.nombre,
     actualizadoPorUid: fbUser.uid,
     actualizadoEn: ahora,
+    ultimaSemana: semana,
     historial: []
   });
   const ref = await fb.addDoc(fb.collection(fb.db, 'localizaciones'), datosFinales);
-  return { id: ref.id, existente: false };
+  return { id: ref.id, existente: false, data: Object.assign({id: ref.id}, datosFinales) };
 }
 
 async function actualizarLocalizacion(id, cambios){
@@ -1285,18 +1558,29 @@ async function actualizarLocalizacion(id, cambios){
   const actual = localizaciones.get(id);
   if(!actual) throw new Error('Localización no encontrada en caché');
 
+  // Normalizar dirección
+  const cambiosLimpios = Object.assign({}, cambios);
+  if('calle' in cambiosLimpios && cambiosLimpios.calle){
+    const mun = ('municipio' in cambiosLimpios) ? cambiosLimpios.municipio : actual.municipio;
+    cambiosLimpios.calle = buscarCalleCanonica(mun, cambiosLimpios.calle);
+  }
+  if('numero' in cambiosLimpios) cambiosLimpios.numero = limpiarNumero(cambiosLimpios.numero);
+  if('piso' in cambiosLimpios)   cambiosLimpios.piso   = limpiarPiso(cambiosLimpios.piso);
+
   const nuevasEntradas = [];
   const update = {};
   const ahora = new Date();
+  const semana = semanaActualTexto();
 
-  Object.keys(cambios).forEach(function(k){
+  Object.keys(cambiosLimpios).forEach(function(k){
     if(k === 'historial' || k === 'id') return;
     const de = actual[k] == null ? '' : String(actual[k]);
-    const a = cambios[k] == null ? '' : String(cambios[k]);
+    const a = cambiosLimpios[k] == null ? '' : String(cambiosLimpios[k]);
     if(de !== a){
       update[k] = a;
       nuevasEntradas.push({
         campo: k, de: de, a: a,
+        semana: semana,
         por: fbUser.nombre, uid: fbUser.uid, cuando: ahora
       });
     }
@@ -1306,6 +1590,7 @@ async function actualizarLocalizacion(id, cambios){
   update.actualizadoPor = fbUser.nombre;
   update.actualizadoPorUid = fbUser.uid;
   update.actualizadoEn = fb.serverTimestamp();
+  update.ultimaSemana = semana;
 
   const direccionCambiada = ['municipio','calle','numero','piso'].some(function(k){ return k in update; });
   if(direccionCambiada){
@@ -1388,8 +1673,8 @@ function buildHoja(h){
     (cerrada
       ? '<div class="banner-cerrada" data-hoja-id="' + esc(h.id) + '">' +
           '<span class="lock">🔒</span>' +
-          '<span class="txt"><strong>Cerrada</strong> · Semana ' + esc(h.semana) + '. Ya no se pueden modificar ni añadir filas.</span>' +
-          '<button type="button" class="banner-btn" data-act="crear-hoja-desde-banner" data-hoja-id="' + esc(h.id) + '">➕ Nueva hoja</button>' +
+          '<span class="txt"><strong>Cerrada</strong> · Semana ' + esc(h.semana) + '. Consulta el expediente o crea una hoja nueva.</span>' +
+          '<button type="button" class="banner-btn light" data-act="crear-hoja-desde-banner" data-hoja-id="' + esc(h.id) + '">➕ Nueva hoja</button>' +
         '</div>'
       : '');
   sec.appendChild(head);
@@ -1576,8 +1861,9 @@ async function confirmarDuplicar(){
   const datos = {};
   COLS.forEach(function(c){ datos[c.key] = origen[c.key] || ''; });
   delete datos.id; delete datos.claveUnica;
-  delete datos.creadoPor; delete datos.creadoPorUid; delete datos.creadoEn;
+  delete datos.creadoPor; delete datos.creadoPorUid; delete datos.creadoEn; delete datos.creadoSemana;
   delete datos.actualizadoPor; delete datos.actualizadoPorUid; delete datos.actualizadoEn;
+  delete datos.ultimaSemana;
   delete datos.historial;
   try{
     const res = await crearLocalizacion(datos);
@@ -1600,7 +1886,7 @@ function addHoja(){
 }
 function newHoja(){
   const semActual = semanaActualTexto();
-  let comercial = fbUser ? fbUser.nombre : ''; 
+  let comercial = fbUser ? fbUser.nombre : '';
   let oficina = OFICINA_POR_DEFECTO;
   if(state.hojas.length){
     const ult = state.hojas[state.hojas.length - 1];
@@ -1630,6 +1916,9 @@ function delHoja(id){
   saveMetadatos(); render();
 }
 
+// ──────────────────────────────────────────────────────────
+//  Añadir fila
+// ──────────────────────────────────────────────────────────
 async function addRow(hojaId, openIt){
   if(addRowEnCurso) return;
   addRowEnCurso = true;
@@ -1649,55 +1938,41 @@ async function addRow(hojaId, openIt){
   try{
     const res = await crearLocalizacion(datos);
 
+    // Si ya existía, lo añadimos a la hoja y abrimos el editor
     if(res.existente){
       const yaEnHoja = h.filas.some(f => f.idLocalizacion === res.id);
       if(!yaEnHoja){
         h.filas.push({ idLocalizacion: res.id });
         saveMetadatos();
       }
-
-      let intentos = 0;
-      while(!localizaciones.has(res.id) && intentos < 20){
-        await new Promise(r => setTimeout(r, 100));
-        intentos++;
-      }
-
-      if(localizaciones.has(res.id)){
-        openEditor(hojaId, res.id);
-      } else {
-        const fb = window.__fb;
+      if(!localizaciones.has(res.id)){
         try{
+          const fb = window.__fb;
           const snap = await fb.getDoc(fb.doc(fb.db, 'localizaciones', res.id));
           if(snap.exists()){
             const data = snap.data();
             data.id = snap.id;
             localizaciones.set(snap.id, data);
-            openEditor(hojaId, snap.id);
-          } else {
-            toast('La localización existe pero no se puede cargar');
           }
-        }catch(e){
-          toast('⚠️ No se pudo cargar la localización existente');
-        }
+        }catch(e){ /* ignore */ }
       }
+      openEditor(hojaId, res.id, { avisarExistente: true });
       addRowEnCurso = false;
       return;
     }
 
+    // Nueva localización: añadir a la hoja
     h.filas.push({ idLocalizacion: res.id });
     saveMetadatos();
 
-    if(openIt !== false){
-      let intentos = 0;
-      while(!localizaciones.has(res.id) && intentos < 20){
-        await new Promise(r => setTimeout(r, 100));
-        intentos++;
-      }
-      if(localizaciones.has(res.id)) openEditor(hojaId, res.id);
-      else toast('Localización creada. Espera a que se sincronice para editarla.');
-    } else {
-      render();
+    // Esperar a que llegue por onSnapshot
+    let intentos = 0;
+    while(!localizaciones.has(res.id) && intentos < 20){
+      await new Promise(r => setTimeout(r, 100));
+      intentos++;
     }
+    if(localizaciones.has(res.id)) openEditor(hojaId, res.id);
+    else toast('Localización creada. Espera a que se sincronice para editarla.');
   }catch(err){
     if(err.message !== 'cancelado'){
       console.warn(err);
@@ -1707,57 +1982,255 @@ async function addRow(hojaId, openIt){
   addRowEnCurso = false;
 }
 
-function openEditor(hojaId, idLocalizacion){
+// ──────────────────────────────────────────────────────────
+//  Editor
+// ──────────────────────────────────────────────────────────
+function openEditor(hojaId, idLocalizacion, opts){
+  opts = opts || {};
   const h = state.hojas.find(x => x.id === hojaId);
   if(!h) return;
-  if(esHojaCerrada(h)){ showClosedModal(hojaId); return; }
   const loc = localizaciones.get(idLocalizacion);
   if(!loc){ toast('Localización no cargada. Espera a que se sincronice.'); return; }
 
-  editing = { hojaId: hojaId, rowId: idLocalizacion };
+  const cerrada = esHojaCerrada(h);
+  editing = { hojaId: hojaId, rowId: idLocalizacion, soloLectura: cerrada };
+  dupEnEditor = null;
+
   const titulo = [loc.calle, loc.numero, loc.piso].filter(Boolean).join(' ');
   $('#ed-title').textContent = titulo || 'Nueva localización';
 
   const box = $('#ed-fields');
-  box.innerHTML = FIELD_DEFS.map(function(f){
+  const fieldsHtml = FIELD_DEFS.map(function(f){
     const cls = 'field' + (f.full ? ' full' : '') + (f.narrow ? ' narrow' : '');
     let ctrl;
+    const disabled = cerrada ? ' disabled' : '';
     if(f.type === 'textarea'){
-      ctrl = '<textarea data-k="' + f.key + '" rows="3" placeholder="' + (f.ph || '') + '">' + esc(loc[f.key]) + '</textarea>';
+      ctrl = '<textarea data-k="' + f.key + '" rows="3" placeholder="' + (f.ph || '') + '"' + disabled + '>' + esc(loc[f.key]) + '</textarea>';
     } else if(f.type === 'select'){
-      ctrl = '<select data-k="' + f.key + '">' + buildOptions(f.options, loc[f.key], null) + '</select>';
+      ctrl = '<select data-k="' + f.key + '"' + disabled + '>' + buildOptions(f.options, loc[f.key], null) + '</select>';
     } else if(f.type === 'check'){
       const on = normCheck(loc[f.key]) ? ' checked' : '';
-      ctrl = '<label class="check"><input type="checkbox" data-k="' + f.key + '"' + on + '><span>' + esc(f.text || 'Sí') + '</span></label>';
+      ctrl = '<label class="check"><input type="checkbox" data-k="' + f.key + '"' + on + disabled + '><span>' + esc(f.text || 'Sí') + '</span></label>';
     } else if(f.type === 'calle'){
       const dlId = datalistIdPorMunicipio(loc.municipio);
       ctrl = '<div class="input-with-clear">' +
                '<input type="text" data-k="' + f.key + '" value="' + esc(loc[f.key]) +
-                 '" placeholder="' + (f.ph || '') + '" list="' + dlId + '" autocomplete="off" spellcheck="false">' +
-               '<button type="button" class="clear-btn" data-act="clear-calle" title="Limpiar">✕</button>' +
+                 '" placeholder="' + (f.ph || '') + '" list="' + dlId + '" autocomplete="off" spellcheck="false"' + disabled + '>' +
+               (cerrada ? '' : '<button type="button" class="clear-btn" data-act="clear-calle" title="Limpiar">✕</button>') +
              '</div>';
     } else {
       const extra = (f.type === 'tel' ? ' inputmode="tel"' : '') + (f.type === 'date' ? ' inputmode="numeric"' : '');
       ctrl = '<input type="' + f.type + '" data-k="' + f.key + '" value="' + esc(loc[f.key]) +
-             '" placeholder="' + (f.ph || '') + '"' + extra + ' autocomplete="off">';
+             '" placeholder="' + (f.ph || '') + '"' + extra + ' autocomplete="off"' + disabled + '>';
     }
     return '<div class="' + cls + '"><label>' + f.label + '</label>' + ctrl + '</div>';
   }).join('');
 
+  // Contenedor del aviso de duplicado + timeline
+  const extrasHtml =
+    '<div id="ed-dup-slot"></div>' +
+    '<div class="field full" id="ed-timeline-slot"></div>';
+
+  box.innerHTML = fieldsHtml + extrasHtml;
+
+  // Botones: si es hoja cerrada, ocultar eliminar/duplicar y permitir solo cerrar
+  const foot = $('#editor .sheet-foot');
+  if(cerrada){
+    foot.innerHTML = '<span style="font-size:12px;color:var(--muted)">🔒 Solo lectura</span>' +
+                     '<button class="btn primary" data-act="close-editor">Cerrar</button>';
+  } else {
+    foot.innerHTML = '<button class="btn danger-ghost" data-act="del-row">Eliminar</button>' +
+                     '<button class="btn" data-act="dup-row" style="background:#dbeafe;color:#1e40af">📋 Duplicar</button>' +
+                     '<button class="btn primary" data-act="close-editor">Listo</button>';
+  }
+
+  refrescarTimeline();
+  if(opts.avisarExistente) refrescarAvisoDuplicado(true);
+
   $('#editor').classList.add('open');
   document.body.style.overflow = 'hidden';
-  const primero = box.querySelector('[data-k="calle"]');
-  if(primero && !primero.value) setTimeout(() => primero.focus(), 120);
+
+  if(!cerrada){
+    const primero = box.querySelector('[data-k="calle"]');
+    if(primero && !primero.value) setTimeout(() => primero.focus(), 120);
+  }
 }
 
 function closeEditor(){
   $('#editor').classList.remove('open');
   document.body.style.overflow = '';
   editing = null;
+  dupEnEditor = null;
 }
 
+// ──────────────────────────────────────────────────────────
+//  Aviso de duplicado (en el editor)
+// ──────────────────────────────────────────────────────────
+function refrescarAvisoDuplicado(forzar){
+  const slot = $('#ed-dup-slot');
+  if(!slot) return;
+  slot.innerHTML = '';
+
+  if(!editing) return;
+  if(editing.soloLectura) return;
+
+  // Necesitamos calle al menos
+  const calleInput = document.querySelector('#ed-fields [data-k="calle"]');
+  if(!calleInput) return;
+  const calle = (calleInput.value || '').trim();
+  if(!calle) return;
+
+  const munInput = document.querySelector('#ed-fields [data-k="municipio"]');
+  const numInput = document.querySelector('#ed-fields [data-k="numero"]');
+  const pisInput = document.querySelector('#ed-fields [data-k="piso"]');
+  const datos = {
+    municipio: munInput ? munInput.value : '',
+    calle: calle,
+    numero: numInput ? numInput.value : '',
+    piso: pisInput ? pisInput.value : ''
+  };
+  const clave = claveUnicaDe(datos);
+  if(!clave || clave.split('|')[1] === '') return;
+
+  // Buscar en localizaciones (ya sincronizadas)
+  let encontrado = null;
+  localizaciones.forEach(function(loc, id){
+    if(editing && id === editing.rowId) return;
+    if(loc.claveUnica === clave){ encontrado = loc; }
+  });
+
+  if(!encontrado){ dupEnEditor = null; return; }
+  dupEnEditor = encontrado;
+
+  const semanaTxt = encontrado.ultimaSemana || encontrado.actualizadoSemana || encontrado.creadoSemana || '—';
+  const partes = [];
+  if(encontrado.propietario) partes.push('Propietario: ' + encontrado.propietario);
+  if(encontrado.telefono) partes.push('Tel: ' + encontrado.telefono);
+  if(encontrado.estado) partes.push('Estado: ' + encontrado.estado);
+  const metaTxt = partes.length ? partes.join(' · ') : 'Sin datos adicionales todavía.';
+
+  const div = document.createElement('div');
+  div.className = 'dup-warning';
+  div.innerHTML =
+    '<div class="dup-line">' +
+      '<span class="ic">📍</span>' +
+      '<div class="dup-txt">' +
+        '<strong>Ya tienes esta dirección guardada.</strong>' +
+        '<div class="dup-meta">' + esc(encontrado.calle || '') + ' ' + esc(encontrado.numero || '') + (encontrado.piso ? ', ' + esc(encontrado.piso) : '') + ' · ' + esc(encontrado.municipio || '') + '</div>' +
+        '<div class="dup-meta">Última semana: <strong>' + esc(semanaTxt) + '</strong> · ' + esc(metaTxt) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<button type="button" class="dup-btn" data-act="cargar-existente">📥 Cargar datos existentes</button>';
+  slot.appendChild(div);
+}
+
+function cargarDatosExistentes(){
+  if(!dupEnEditor || !editing) return;
+  const loc = dupEnEditor;
+  // Rellenar todos los campos con los datos existentes (salvo la dirección, que ya está)
+  FIELD_DEFS.forEach(function(f){
+    if(f.key === 'municipio' || f.key === 'calle' || f.key === 'numero' || f.key === 'piso') return;
+    const el = document.querySelector('#ed-fields [data-k="' + f.key + '"]');
+    if(!el) return;
+    if(el.type === 'checkbox') el.checked = !!normCheck(loc[f.key]);
+    else el.value = loc[f.key] == null ? '' : loc[f.key];
+    // Disparar el evento de cambio para que se refleje en la tabla de fondo
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  // Ahora lo importante: redirigir la edición al ID existente
+  // La fila actual (recién creada) se elimina de la hoja activa.
+  const h = state.hojas.find(x => x.id === editing.hojaId);
+  if(h){
+    const nuevoId = loc.id;
+    // Quitar la fila vacía de la hoja y añadir la existente (si no está ya)
+    const yaEnHoja = h.filas.some(f => f.idLocalizacion === nuevoId);
+    h.filas = h.filas.filter(f => f.idLocalizacion !== editing.rowId);
+    if(!yaEnHoja) h.filas.push({ idLocalizacion: nuevoId });
+    saveMetadatos();
+  }
+  // Borrar el documento "vacío" que se creó al pulsar + (si es distinto del existente)
+  const idVacio = editing.rowId;
+  if(idVacio && idVacio !== loc.id){
+    try{
+      // Solo si era un registro recién creado y sin datos relevantes
+      const vacio = localizaciones.get(idVacio);
+      if(vacio && !vacio.calle && !vacio.propietario && !vacio.telefono){
+        borrarLocalizacion(idVacio).catch(() => {});
+      }
+    }catch(e){}
+  }
+  // Cambiar el foco del editor al existente
+  editing.rowId = loc.id;
+  dupEnEditor = null;
+  // Refrescar timeline y aviso
+  refrescarTimeline();
+  refrescarAvisoDuplicado();
+  $('#ed-title').textContent = [loc.calle, loc.numero, loc.piso].filter(Boolean).join(' ') || 'Localización';
+  // Rerender de la tabla de fondo
+  render();
+  toast('Datos existentes cargados. Puedes añadir o actualizar la información.');
+}
+
+// ──────────────────────────────────────────────────────────
+//  Timeline del historial
+// ──────────────────────────────────────────────────────────
+function refrescarTimeline(){
+  const slot = $('#ed-timeline-slot');
+  if(!slot) return;
+  slot.innerHTML = '';
+
+  if(!editing) return;
+  const loc = localizaciones.get(editing.rowId);
+  if(!loc) return;
+
+  const hist = Array.isArray(loc.historial) ? loc.historial.slice().reverse() : [];
+  const header = document.createElement('div');
+  header.className = 'timeline';
+
+  const CAMPO_LABEL = {};
+  FIELD_DEFS.forEach(function(f){ CAMPO_LABEL[f.key] = f.label; });
+  COLS.forEach(function(c){ if(!CAMPO_LABEL[c.key]) CAMPO_LABEL[c.key] = c.label; });
+
+  let itemsHtml = '';
+  if(hist.length === 0){
+    itemsHtml = '<div class="tl-empty">Aún no hay cambios registrados. Cuando actualices un campo, aparecerá aquí.</div>';
+  } else {
+    hist.forEach(function(h){
+      const semana = h.semana || '—';
+      const por = h.por || '—';
+      const campo = CAMPO_LABEL[h.campo] || h.campo;
+      const de = h.de ? h.de : '(vacío)';
+      const a = h.a ? h.a : '(vacío)';
+      const cuando = h.cuando && h.cuando.toDate ? h.cuando.toDate() : (h.cuando instanceof Date ? h.cuando : null);
+      const fechaTxt = cuando ? cuando.toLocaleDateString('es-ES') : '';
+      itemsHtml +=
+        '<div class="tl-item">' +
+          '<span class="tl-week">S' + esc(semana) + '</span>' +
+          '<div class="tl-body">' +
+            '<div class="tl-by">' + esc(por) + (fechaTxt ? ' · ' + esc(fechaTxt) : '') + '</div>' +
+            '<div class="tl-change">' +
+              '<span class="fld">' + esc(campo) + '</span>: ' +
+              '<span class="old">' + esc(de) + '</span> → ' +
+              '<span class="new">' + esc(a) + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    });
+  }
+
+  header.innerHTML =
+    '<header><span>Historial de cambios</span><span class="count">' + hist.length + '</span></header>' +
+    '<div class="tl-items">' + itemsHtml + '</div>';
+
+  slot.appendChild(header);
+}
+
+// ──────────────────────────────────────────────────────────
+//  Eliminar fila
+// ──────────────────────────────────────────────────────────
 async function deleteRow(){
   if(!editing) return;
+  if(editing.soloLectura){ closeEditor(); return; }
   const hojaId = editing.hojaId;
   const h = state.hojas.find(x => x.id === hojaId);
   if(!h) return;
@@ -1775,6 +2248,9 @@ async function deleteRow(){
   render();
 }
 
+// ──────────────────────────────────────────────────────────
+//  Acciones
+// ──────────────────────────────────────────────────────────
 function handleAction(act, el){
   const hojaEl = el.closest ? el.closest('.hoja') : null;
   const hojaId = hojaEl ? hojaEl.dataset.hoja : null;
@@ -1828,6 +2304,22 @@ function handleAction(act, el){
       if(input){ input.value = ''; input.focus(); }
       break;
     }
+    case 'cargar-existente':   cargarDatosExistentes(); break;
+
+    // Buscador global
+    case 'gr-abrir': {
+      const id = el.dataset.rowId;
+      if(!id) break;
+      // Abrir el expediente en modo lectura (sin necesidad de hoja)
+      abrirExpedienteGlobal(id);
+      break;
+    }
+    case 'gr-anadir': {
+      const id = el.dataset.rowId;
+      if(!id) break;
+      anadirExpedienteAHojaActual(id);
+      break;
+    }
   }
 }
 
@@ -1842,9 +2334,14 @@ document.addEventListener('click', function(e){
     const hojaId = hojaEl.dataset.hoja;
     const h = state.hojas.find(x => x.id === hojaId);
     if(!h) return;
-    if(esHojaCerrada(h)){ showClosedModal(hojaId); return; }
-    if(tr.dataset.blank) addRow(hojaId, true);
-    else if(tr.dataset.row) openEditor(hojaId, tr.dataset.row);
+    if(tr.dataset.blank){ addRow(hojaId, true); return; }
+    if(tr.dataset.row){
+      if(esHojaCerrada(h)){
+        openEditor(hojaId, tr.dataset.row, { soloLectura: true });
+        return;
+      }
+      openEditor(hojaId, tr.dataset.row);
+    }
     return;
   }
   if(!e.target.closest('#menu') && !e.target.closest('#btnMenu')) closeMenu();
@@ -1877,7 +2374,6 @@ function onFieldChange(e){
     if(!sec) return;
     const h = state.hojas.find(x => x.id === sec.dataset.hoja);
     if(!h) return;
-    // Ignoramos semana y comercial porque son de solo lectura
     if(el.dataset.meta === 'semana' || el.dataset.meta === 'comercial') return;
     if(esHojaCerrada(h)){
       if(el.dataset.meta === 'oficina') el.value = h.oficina || OFICINA_POR_DEFECTO;
@@ -1895,6 +2391,7 @@ function onFieldChange(e){
   }
 
   if(editing && el.dataset && el.dataset.k){
+    if(editing.soloLectura) return;
     const key = el.dataset.k;
     const valor = el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value;
     editsPendientes[key] = valor;
@@ -1906,12 +2403,14 @@ function onFieldChange(e){
       if(el.type === 'checkbox') td.innerHTML = normCheck(valor) ? '<span class="chk-print">Sí</span>' : '';
       else td.textContent = display(valor, key);
     }
-    if(key === 'calle' || key === 'numero' || key === 'piso'){
+    if(key === 'calle' || key === 'numero' || key === 'piso' || key === 'municipio'){
       const calle = editsPendientes.calle != null ? editsPendientes.calle : (localizaciones.get(editing.rowId) || {}).calle;
       const numero = editsPendientes.numero != null ? editsPendientes.numero : (localizaciones.get(editing.rowId) || {}).numero;
       const piso = editsPendientes.piso != null ? editsPendientes.piso : (localizaciones.get(editing.rowId) || {}).piso;
       const t = [calle, numero, piso].filter(Boolean).join(' ');
       $('#ed-title').textContent = t || 'Nueva localización';
+      // Recalcular aviso de duplicado
+      setTimeout(refrescarAvisoDuplicado, 250);
     }
     clearTimeout(editDebounceTimer);
     editDebounceTimer = setTimeout(flushEdiciones, 700);
@@ -1920,6 +2419,7 @@ function onFieldChange(e){
 
 async function flushEdiciones(){
   if(!editing) return;
+  if(editing.soloLectura){ return; }
   const id = editing.rowId;
   const cambios = Object.assign({}, editsPendientes);
   Object.keys(editsPendientes).forEach(k => delete editsPendientes[k]);
@@ -1939,6 +2439,7 @@ document.addEventListener('input', function(e){
   if(e.target && e.target.id === 'searchInput'){
     filtroActual = e.target.value.trim();
     aplicarFiltro();
+    aplicarBusquedaGlobal();
   }
 });
 
@@ -1992,7 +2493,7 @@ function init(){
   });
   saveMetadatos();
   initSyncLocalizaciones();
-  initSyncCalles();          // ← NUEVO
+  initSyncCalles();
   render();
   onScroll();
   registerSW();
@@ -2080,13 +2581,149 @@ function aplicarFiltro(){
     totalCoincidencias += coincidenciasHoja;
   });
   info.textContent = totalCoincidencias + ' registro' + (totalCoincidencias === 1 ? '' : 's') + ' coincide' + (totalCoincidencias === 1 ? '' : 'n');
-  noRes.style.display = (totalCoincidencias === 0) ? 'block' : 'none';
+  noRes.style.display = (totalCoincidencias === 0 && !($('#globalResults') && $('#globalResults').classList.contains('visible'))) ? 'block' : 'none';
 }
 function limpiarBusqueda(){
   $('#searchInput').value = '';
   filtroActual = '';
   aplicarFiltro();
+  aplicarBusquedaGlobal();
 }
+
+// ──────────────────────────────────────────────────────────
+//  Búsqueda global en Firestore
+// ──────────────────────────────────────────────────────────
+function aplicarBusquedaGlobal(){
+  const cont = $('#globalResults');
+  if(!cont) return;
+  const q = normaliza(filtroActual);
+  if(!q){ cont.classList.remove('visible'); cont.innerHTML = ''; return; }
+
+  // Buscar en localizaciones ya sincronizadas (búsqueda local sobre el cache de Firestore)
+  const encontrados = [];
+  localizaciones.forEach(function(loc, id){
+    if(coincideFila(loc, q)) encontrados.push(loc);
+  });
+
+  if(!encontrados.length){ cont.classList.remove('visible'); cont.innerHTML = ''; return; }
+
+  // Ordenar por ultimaSemana descendente y luego por dirección
+  encontrados.sort(function(a, b){
+    const sa = parseInt(a.ultimaSemana || a.actualizadoSemana || a.creadoSemana || 0, 10) || 0;
+    const sb = parseInt(b.ultimaSemana || b.actualizadoSemana || b.creadoSemana || 0, 10) || 0;
+    if(sa !== sb) return sb - sa;
+    return normaliza(a.calle || '').localeCompare(normaliza(b.calle || ''));
+  });
+
+  const MAX = 12;
+  const lista = encontrados.slice(0, MAX);
+
+  const itemsHtml = lista.map(function(loc){
+    const semana = loc.ultimaSemana || loc.actualizadoSemana || loc.creadoSemana || '—';
+    const partes = [];
+    if(loc.propietario) partes.push('👤 ' + esc(loc.propietario));
+    if(loc.telefono) partes.push('📞 ' + esc(loc.telefono));
+    if(loc.estado) partes.push('🏷️ ' + esc(loc.estado));
+    const meta = partes.length ? partes.join(' · ') : 'Sin datos adicionales';
+    const yaEnHojaActual = hojaActualContiene(loc.id);
+    return '<div class="res-item" data-id="' + esc(loc.id) + '">' +
+      '<div class="res-body">' +
+        '<div class="res-dir">📍 ' + esc(loc.calle || '(sin calle)') + ' ' + esc(loc.numero || '') + (loc.piso ? ', ' + esc(loc.piso) : '') + '</div>' +
+        '<div class="res-meta">' + esc(loc.municipio || '') + ' · Última semana: <strong>S' + esc(semana) + '</strong></div>' +
+        '<div class="res-meta" style="margin-top:2px">' + meta + '</div>' +
+      '</div>' +
+      '<div class="res-actions">' +
+        '<button class="btn" data-act="gr-abrir" data-row-id="' + esc(loc.id) + '" style="background:#e2e8f0;color:var(--ink)">Abrir</button>' +
+        (yaEnHojaActual
+          ? '<span style="font-size:11px;color:var(--muted);text-align:center;padding:4px 0">✓ En hoja</span>'
+          : '<button class="btn primary" data-act="gr-anadir" data-row-id="' + esc(loc.id) + '">➕ Añadir</button>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  cont.innerHTML =
+    '<header><span>Resultados en la base de datos</span><span class="count">' + encontrados.length + (encontrados.length > MAX ? '+' : '') + '</span></header>' +
+    itemsHtml;
+  cont.classList.add('visible');
+  // Si hay resultados globales, ocultamos el "no results"
+  const noRes = $('#noResults');
+  if(noRes) noRes.style.display = 'none';
+}
+
+function hojaActualContiene(idLoc){
+  // Devuelve true si alguna hoja no cerrada ya contiene ese idLocalizacion
+  return state.hojas.some(function(h){
+    if(esHojaCerrada(h)) return false;
+    return h.filas.some(function(f){ return f.idLocalizacion === idLoc; });
+  });
+}
+
+function abrirExpedienteGlobal(idLoc){
+  // Busca una hoja no cerrada que lo contenga; si existe, la usamos.
+  // Si no, abrimos en modo "solo lectura" usando la primera hoja disponible
+  // (o creamos una hoja temporal no persistida).
+  const loc = localizaciones.get(idLoc);
+  if(!loc){ toast('Expediente no cargado todavía. Inténtalo de nuevo en unos segundos.'); return; }
+  let hojaId = null;
+  for(const h of state.hojas){
+    if(esHojaCerrada(h)) continue;
+    if(h.filas.some(f => f.idLocalizacion === idLoc)){ hojaId = h.id; break; }
+  }
+  if(hojaId){
+    openEditor(hojaId, idLoc);
+    return;
+  }
+  // No está en ninguna hoja abierta: abrimos en modo lectura con una hoja virtual
+  if(!state.hojas.length){ toast('Crea primero una hoja de zona.'); return; }
+  const h0 = state.hojas[0];
+  // Lo añadimos temporalmente solo para el editor (no a la hoja)
+  editing = { hojaId: h0.id, rowId: idLoc, soloLectura: true };
+  const titulo = [loc.calle, loc.numero, loc.piso].filter(Boolean).join(' ');
+  $('#ed-title').textContent = titulo || 'Expediente';
+  const box = $('#ed-fields');
+  box.innerHTML = FIELD_DEFS.map(function(f){
+    const cls = 'field' + (f.full ? ' full' : '') + (f.narrow ? ' narrow' : '');
+    let ctrl;
+    if(f.type === 'textarea'){
+      ctrl = '<textarea data-k="' + f.key + '" rows="3" disabled>' + esc(loc[f.key]) + '</textarea>';
+    } else if(f.type === 'select'){
+      ctrl = '<select data-k="' + f.key + '" disabled>' + buildOptions(f.options, loc[f.key], null) + '</select>';
+    } else if(f.type === 'check'){
+      const on = normCheck(loc[f.key]) ? ' checked' : '';
+      ctrl = '<label class="check"><input type="checkbox" data-k="' + f.key + '"' + on + ' disabled><span>' + esc(f.text || 'Sí') + '</span></label>';
+    } else {
+      ctrl = '<input type="' + f.type + '" data-k="' + f.key + '" value="' + esc(loc[f.key]) + '" disabled>';
+    }
+    return '<div class="' + cls + '"><label>' + f.label + '</label>' + ctrl + '</div>';
+  }).join('') + '<div class="field full" id="ed-timeline-slot"></div>';
+  const foot = $('#editor .sheet-foot');
+  foot.innerHTML = '<button class="btn primary" data-act="close-editor">Cerrar</button>';
+  refrescarTimeline();
+  $('#editor').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function anadirExpedienteAHojaActual(idLoc){
+  // Añade el expediente existente a la primera hoja NO cerrada
+  let hoja = null;
+  for(const h of state.hojas){
+    if(!esHojaCerrada(h)){ hoja = h; break; }
+  }
+  if(!hoja){
+    toast('No hay ninguna hoja abierta. Crea una hoja nueva primero.');
+    return;
+  }
+  const yaEnHoja = hoja.filas.some(f => f.idLocalizacion === idLoc);
+  if(yaEnHoja){
+    toast('Esta dirección ya está en la hoja actual.');
+    return;
+  }
+  hoja.filas.push({ idLocalizacion: idLoc });
+  saveMetadatos();
+  render();
+  toast('Añadido a la hoja actual');
+}
+
 function openSettings(){
   $('#set-filas').value = state.settings.minFilas || DEFAULTS.minFilas;
   $('#settings').classList.add('open');
