@@ -40,6 +40,18 @@ button{font:inherit}
 .brand .logo{font-size:22px;line-height:1}
 .brand strong{display:block;font-size:16px;letter-spacing:.01em}
 .brand small{display:block;font-size:11.5px;color:#94a3b8;margin-top:1px}
+.brand .badge-master{
+  display:inline-block;
+  font-size:9.5px;
+  font-weight:800;
+  letter-spacing:.06em;
+  background:#fbbf24;
+  color:#78350f;
+  padding:2px 6px;
+  border-radius:4px;
+  margin-left:6px;
+  vertical-align:middle;
+}
 .top-actions{display:flex;gap:6px;align-items:center}
 .btn{
   border:0;border-radius:10px;padding:9px 12px;font-weight:650;font-size:13.5px;
@@ -299,19 +311,6 @@ table.grid tbody tr.blank:active td{background:var(--brand-soft)}
 .hoja.cerrada table.grid tbody tr.blank td{background:#f8fafc}
 
 table.grid tbody tr.fila-oculta{display:none}
-table.grid tbody td .badge-nuevo{
-  display:inline-block;
-  font-size:9px;
-  font-weight:800;
-  padding:1px 5px;
-  border-radius:4px;
-  background:#dbeafe;
-  color:#1e40af;
-  margin-left:4px;
-  vertical-align:middle;
-  text-transform:uppercase;
-  letter-spacing:.05em;
-}
 
 mark.busq{
   background:#fde68a;color:inherit;
@@ -818,11 +817,7 @@ body.print-only-current .hoja.cerrada{display:none !important;}
       <button class="icon-btn" data-act="close-editor" aria-label="Cerrar">✕</button>
     </div>
     <div class="sheet-body"><div class="fields" id="ed-fields"></div></div>
-    <div class="sheet-foot" style="flex-wrap:wrap">
-      <button class="btn danger-ghost" data-act="del-row">Eliminar</button>
-      <button class="btn" data-act="dup-row" style="background:#dbeafe;color:#1e40af">📋 Duplicar</button>
-      <button class="btn primary" data-act="close-editor">Listo</button>
-    </div>
+    <div class="sheet-foot" style="flex-wrap:wrap"></div>
   </div>
 </div>
 
@@ -991,7 +986,6 @@ body.print-only-current .hoja.cerrada{display:none !important;}
 <datalist id="dl-calles-masquefa"></datalist>
 <datalist id="dl-calles-piera"></datalist>
 
-<!-- Firebase SDK (v10, modular) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
@@ -1015,7 +1009,7 @@ body.print-only-current .hoja.cerrada{display:none !important;}
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  
+
   const db = initializeFirestore(app, {
     localCache: persistentLocalCache({
       tabManager: persistentMultipleTabManager()
@@ -1147,6 +1141,21 @@ async function cargarPerfilYArrancar(user){
     nombre: perfil.nombre,
     rol: perfil.rol
   };
+  // Badge MASTER en la topbar
+  const marca = document.querySelector('.brand strong');
+  if(marca){
+    let badge = marca.querySelector('.badge-master');
+    if(fbUser.rol === 'master'){
+      if(!badge){
+        badge = document.createElement('span');
+        badge.className = 'badge-master';
+        badge.textContent = 'MASTER';
+        marca.appendChild(badge);
+      }
+    } else if(badge){
+      badge.remove();
+    }
+  }
   mostrarLogin(false);
   document.body.classList.add('logueado');
   if(!window.__appStarted){
@@ -1172,6 +1181,8 @@ async function hacerLogout(){
   if(app) app.innerHTML = '';
   const gr = document.getElementById('globalResults');
   if(gr){ gr.innerHTML = ''; gr.classList.remove('visible'); }
+  const marca = document.querySelector('.brand strong .badge-master');
+  if(marca) marca.remove();
   document.body.classList.remove('logueado');
   mostrarLogin(true);
 }
@@ -1310,10 +1321,8 @@ function buscarCalleCanonica(municipio, calle){
   if(!arr.length) return calle;
   var target = normalizaClave(calle);
   if(!target) return calle;
-  // 1) coincidencia exacta normalizada
   var exacta = arr.find(function(c){ return normalizaClave(c) === target; });
   if(exacta) return exacta;
-  // 2) coincidencia normalizada sin prefijos "c/", "calle", etc.
   var target2 = normalizaClave(limpiarCalle(calle));
   var canonica = arr.find(function(c){ return normalizaClave(limpiarCalle(c)) === target2; });
   if(canonica) return canonica;
@@ -1376,8 +1385,6 @@ let dupContext = null;
 let filtroActual = '';
 let exportScopeContext = null;
 let addRowEnCurso = false;
-
-// Duplicado detectado dentro del editor (para el aviso amarillo)
 let dupEnEditor = null;
 
 const $  = (s, r) => (r || document).querySelector(s);
@@ -1450,12 +1457,28 @@ function saveMetadatos(){
   }, 250);
 }
 
+// ──────────────────────────────────────────────────────────
+//  Sincronización de localizaciones · solo las mías (o todas si master)
+// ──────────────────────────────────────────────────────────
 function initSyncLocalizaciones(){
   const fb = window.__fb;
   if(!fb) return;
   if(unsubLocalizaciones){ unsubLocalizaciones(); unsubLocalizaciones = null; }
+  if(!fbUser){ return; }
   setSyncStatus('syncing', 'Sincronizando…');
-  const q = fb.collection(fb.db, 'localizaciones');
+
+  let q;
+  if(fbUser.rol === 'master'){
+    // El master ve todo
+    q = fb.collection(fb.db, 'localizaciones');
+  } else {
+    // Cada comercial solo ve las suyas
+    q = fb.query(
+      fb.collection(fb.db, 'localizaciones'),
+      fb.where('creadoPorUid', '==', fbUser.uid)
+    );
+  }
+
   unsubLocalizaciones = fb.onSnapshot(q, function(snap){
     localizaciones.clear();
     snap.forEach(function(d){
@@ -1465,7 +1488,6 @@ function initSyncLocalizaciones(){
     });
     setSyncStatus('ok', 'Sincronizado');
     render();
-    // Si el editor está abierto, refrescar el aviso de duplicado y el timeline
     if(editing){
       refrescarAvisoDuplicado();
       refrescarTimeline();
@@ -1488,18 +1510,27 @@ function setSyncStatus(kind, text){
 }
 
 // ──────────────────────────────────────────────────────────
-//  Búsqueda de duplicados por claveUnica (Firestore)
+//  Buscar duplicado por claveUnica (solo entre los míos)
 // ──────────────────────────────────────────────────────────
 async function buscarDuplicadoPorClave(datos, excluirId){
   const fb = window.__fb;
   if(!fb) return null;
   const clave = claveUnicaDe(datos);
-  // Si no hay calle, no tiene sentido buscar
   if(!datos.calle || !String(datos.calle).trim()) return null;
-  const q = fb.query(
-    fb.collection(fb.db, 'localizaciones'),
-    fb.where('claveUnica', '==', clave)
-  );
+
+  let q;
+  if(fbUser && fbUser.rol === 'master'){
+    q = fb.query(
+      fb.collection(fb.db, 'localizaciones'),
+      fb.where('claveUnica', '==', clave)
+    );
+  } else {
+    q = fb.query(
+      fb.collection(fb.db, 'localizaciones'),
+      fb.where('creadoPorUid', '==', fbUser.uid),
+      fb.where('claveUnica', '==', clave)
+    );
+  }
   const snap = await new Promise(function(resolve, reject){
     const unsub = fb.onSnapshot(q, function(s){
       unsub();
@@ -1520,7 +1551,6 @@ async function crearLocalizacion(datos){
   const fb = window.__fb;
   if(!fb) throw new Error('Firebase no está listo');
 
-  // Normalizar calle con la colección de calles (nombre canónico)
   const datosLimpios = Object.assign({}, datos);
   if(datosLimpios.calle && datosLimpios.municipio){
     datosLimpios.calle = buscarCalleCanonica(datosLimpios.municipio, datosLimpios.calle);
@@ -1528,7 +1558,6 @@ async function crearLocalizacion(datos){
   datosLimpios.numero = limpiarNumero(datosLimpios.numero);
   datosLimpios.piso   = limpiarPiso(datosLimpios.piso);
 
-  // ¿Ya existe?
   const existente = await buscarDuplicadoPorClave(datosLimpios, null);
   if(existente){
     return { id: existente.id, existente: true, data: existente };
@@ -1558,7 +1587,6 @@ async function actualizarLocalizacion(id, cambios){
   const actual = localizaciones.get(id);
   if(!actual) throw new Error('Localización no encontrada en caché');
 
-  // Normalizar dirección
   const cambiosLimpios = Object.assign({}, cambios);
   if('calle' in cambiosLimpios && cambiosLimpios.calle){
     const mun = ('municipio' in cambiosLimpios) ? cambiosLimpios.municipio : actual.municipio;
@@ -1916,9 +1944,6 @@ function delHoja(id){
   saveMetadatos(); render();
 }
 
-// ──────────────────────────────────────────────────────────
-//  Añadir fila
-// ──────────────────────────────────────────────────────────
 async function addRow(hojaId, openIt){
   if(addRowEnCurso) return;
   addRowEnCurso = true;
@@ -1938,7 +1963,6 @@ async function addRow(hojaId, openIt){
   try{
     const res = await crearLocalizacion(datos);
 
-    // Si ya existía, lo añadimos a la hoja y abrimos el editor
     if(res.existente){
       const yaEnHoja = h.filas.some(f => f.idLocalizacion === res.id);
       if(!yaEnHoja){
@@ -1961,11 +1985,9 @@ async function addRow(hojaId, openIt){
       return;
     }
 
-    // Nueva localización: añadir a la hoja
     h.filas.push({ idLocalizacion: res.id });
     saveMetadatos();
 
-    // Esperar a que llegue por onSnapshot
     let intentos = 0;
     while(!localizaciones.has(res.id) && intentos < 20){
       await new Promise(r => setTimeout(r, 100));
@@ -1982,15 +2004,18 @@ async function addRow(hojaId, openIt){
   addRowEnCurso = false;
 }
 
-// ──────────────────────────────────────────────────────────
-//  Editor
-// ──────────────────────────────────────────────────────────
 function openEditor(hojaId, idLocalizacion, opts){
   opts = opts || {};
   const h = state.hojas.find(x => x.id === hojaId);
   if(!h) return;
   const loc = localizaciones.get(idLocalizacion);
   if(!loc){ toast('Localización no cargada. Espera a que se sincronice.'); return; }
+
+  // Comprobación: si no es mía y no soy master, no permitir
+  if(fbUser && fbUser.rol !== 'master' && loc.creadoPorUid && loc.creadoPorUid !== fbUser.uid){
+    toast('No tienes permiso para editar este registro');
+    return;
+  }
 
   const cerrada = esHojaCerrada(h);
   editing = { hojaId: hojaId, rowId: idLocalizacion, soloLectura: cerrada };
@@ -2026,14 +2051,12 @@ function openEditor(hojaId, idLocalizacion, opts){
     return '<div class="' + cls + '"><label>' + f.label + '</label>' + ctrl + '</div>';
   }).join('');
 
-  // Contenedor del aviso de duplicado + timeline
   const extrasHtml =
     '<div id="ed-dup-slot"></div>' +
     '<div class="field full" id="ed-timeline-slot"></div>';
 
   box.innerHTML = fieldsHtml + extrasHtml;
 
-  // Botones: si es hoja cerrada, ocultar eliminar/duplicar y permitir solo cerrar
   const foot = $('#editor .sheet-foot');
   if(cerrada){
     foot.innerHTML = '<span style="font-size:12px;color:var(--muted)">🔒 Solo lectura</span>' +
@@ -2064,7 +2087,7 @@ function closeEditor(){
 }
 
 // ──────────────────────────────────────────────────────────
-//  Aviso de duplicado (en el editor)
+//  Aviso de duplicado
 // ──────────────────────────────────────────────────────────
 function refrescarAvisoDuplicado(forzar){
   const slot = $('#ed-dup-slot');
@@ -2074,7 +2097,6 @@ function refrescarAvisoDuplicado(forzar){
   if(!editing) return;
   if(editing.soloLectura) return;
 
-  // Necesitamos calle al menos
   const calleInput = document.querySelector('#ed-fields [data-k="calle"]');
   if(!calleInput) return;
   const calle = (calleInput.value || '').trim();
@@ -2092,7 +2114,6 @@ function refrescarAvisoDuplicado(forzar){
   const clave = claveUnicaDe(datos);
   if(!clave || clave.split('|')[1] === '') return;
 
-  // Buscar en localizaciones (ya sincronizadas)
   let encontrado = null;
   localizaciones.forEach(function(loc, id){
     if(editing && id === editing.rowId) return;
@@ -2127,58 +2148,44 @@ function refrescarAvisoDuplicado(forzar){
 function cargarDatosExistentes(){
   if(!dupEnEditor || !editing) return;
   const loc = dupEnEditor;
-  // Rellenar todos los campos con los datos existentes (salvo la dirección, que ya está)
   FIELD_DEFS.forEach(function(f){
     if(f.key === 'municipio' || f.key === 'calle' || f.key === 'numero' || f.key === 'piso') return;
     const el = document.querySelector('#ed-fields [data-k="' + f.key + '"]');
     if(!el) return;
     if(el.type === 'checkbox') el.checked = !!normCheck(loc[f.key]);
     else el.value = loc[f.key] == null ? '' : loc[f.key];
-    // Disparar el evento de cambio para que se refleje en la tabla de fondo
     el.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  // Ahora lo importante: redirigir la edición al ID existente
-  // La fila actual (recién creada) se elimina de la hoja activa.
   const h = state.hojas.find(x => x.id === editing.hojaId);
   if(h){
     const nuevoId = loc.id;
-    // Quitar la fila vacía de la hoja y añadir la existente (si no está ya)
     const yaEnHoja = h.filas.some(f => f.idLocalizacion === nuevoId);
     h.filas = h.filas.filter(f => f.idLocalizacion !== editing.rowId);
     if(!yaEnHoja) h.filas.push({ idLocalizacion: nuevoId });
     saveMetadatos();
   }
-  // Borrar el documento "vacío" que se creó al pulsar + (si es distinto del existente)
   const idVacio = editing.rowId;
   if(idVacio && idVacio !== loc.id){
     try{
-      // Solo si era un registro recién creado y sin datos relevantes
       const vacio = localizaciones.get(idVacio);
       if(vacio && !vacio.calle && !vacio.propietario && !vacio.telefono){
         borrarLocalizacion(idVacio).catch(() => {});
       }
     }catch(e){}
   }
-  // Cambiar el foco del editor al existente
   editing.rowId = loc.id;
   dupEnEditor = null;
-  // Refrescar timeline y aviso
   refrescarTimeline();
   refrescarAvisoDuplicado();
   $('#ed-title').textContent = [loc.calle, loc.numero, loc.piso].filter(Boolean).join(' ') || 'Localización';
-  // Rerender de la tabla de fondo
   render();
   toast('Datos existentes cargados. Puedes añadir o actualizar la información.');
 }
 
-// ──────────────────────────────────────────────────────────
-//  Timeline del historial
-// ──────────────────────────────────────────────────────────
 function refrescarTimeline(){
   const slot = $('#ed-timeline-slot');
   if(!slot) return;
   slot.innerHTML = '';
-
   if(!editing) return;
   const loc = localizaciones.get(editing.rowId);
   if(!loc) return;
@@ -2225,9 +2232,6 @@ function refrescarTimeline(){
   slot.appendChild(header);
 }
 
-// ──────────────────────────────────────────────────────────
-//  Eliminar fila
-// ──────────────────────────────────────────────────────────
 async function deleteRow(){
   if(!editing) return;
   if(editing.soloLectura){ closeEditor(); return; }
@@ -2240,7 +2244,9 @@ async function deleteRow(){
   h.filas = h.filas.filter(x => x.idLocalizacion !== idLoc);
   saveMetadatos();
   try{
-    if(fbUser && fbUser.rol === 'master'){
+    const loc = localizaciones.get(idLoc);
+    const puedeBorrar = loc && (fbUser.rol === 'master' || loc.creadoPorUid === fbUser.uid);
+    if(puedeBorrar){
       await borrarLocalizacion(idLoc);
     }
   }catch(err){ console.warn(err); }
@@ -2248,9 +2254,6 @@ async function deleteRow(){
   render();
 }
 
-// ──────────────────────────────────────────────────────────
-//  Acciones
-// ──────────────────────────────────────────────────────────
 function handleAction(act, el){
   const hojaEl = el.closest ? el.closest('.hoja') : null;
   const hojaId = hojaEl ? hojaEl.dataset.hoja : null;
@@ -2306,11 +2309,9 @@ function handleAction(act, el){
     }
     case 'cargar-existente':   cargarDatosExistentes(); break;
 
-    // Buscador global
     case 'gr-abrir': {
       const id = el.dataset.rowId;
       if(!id) break;
-      // Abrir el expediente en modo lectura (sin necesidad de hoja)
       abrirExpedienteGlobal(id);
       break;
     }
@@ -2409,7 +2410,6 @@ function onFieldChange(e){
       const piso = editsPendientes.piso != null ? editsPendientes.piso : (localizaciones.get(editing.rowId) || {}).piso;
       const t = [calle, numero, piso].filter(Boolean).join(' ');
       $('#ed-title').textContent = t || 'Nueva localización';
-      // Recalcular aviso de duplicado
       setTimeout(refrescarAvisoDuplicado, 250);
     }
     clearTimeout(editDebounceTimer);
@@ -2590,16 +2590,12 @@ function limpiarBusqueda(){
   aplicarBusquedaGlobal();
 }
 
-// ──────────────────────────────────────────────────────────
-//  Búsqueda global en Firestore
-// ──────────────────────────────────────────────────────────
 function aplicarBusquedaGlobal(){
   const cont = $('#globalResults');
   if(!cont) return;
   const q = normaliza(filtroActual);
   if(!q){ cont.classList.remove('visible'); cont.innerHTML = ''; return; }
 
-  // Buscar en localizaciones ya sincronizadas (búsqueda local sobre el cache de Firestore)
   const encontrados = [];
   localizaciones.forEach(function(loc, id){
     if(coincideFila(loc, q)) encontrados.push(loc);
@@ -2607,7 +2603,6 @@ function aplicarBusquedaGlobal(){
 
   if(!encontrados.length){ cont.classList.remove('visible'); cont.innerHTML = ''; return; }
 
-  // Ordenar por ultimaSemana descendente y luego por dirección
   encontrados.sort(function(a, b){
     const sa = parseInt(a.ultimaSemana || a.actualizadoSemana || a.creadoSemana || 0, 10) || 0;
     const sb = parseInt(b.ultimaSemana || b.actualizadoSemana || b.creadoSemana || 0, 10) || 0;
@@ -2645,13 +2640,11 @@ function aplicarBusquedaGlobal(){
     '<header><span>Resultados en la base de datos</span><span class="count">' + encontrados.length + (encontrados.length > MAX ? '+' : '') + '</span></header>' +
     itemsHtml;
   cont.classList.add('visible');
-  // Si hay resultados globales, ocultamos el "no results"
   const noRes = $('#noResults');
   if(noRes) noRes.style.display = 'none';
 }
 
 function hojaActualContiene(idLoc){
-  // Devuelve true si alguna hoja no cerrada ya contiene ese idLocalizacion
   return state.hojas.some(function(h){
     if(esHojaCerrada(h)) return false;
     return h.filas.some(function(f){ return f.idLocalizacion === idLoc; });
@@ -2659,9 +2652,6 @@ function hojaActualContiene(idLoc){
 }
 
 function abrirExpedienteGlobal(idLoc){
-  // Busca una hoja no cerrada que lo contenga; si existe, la usamos.
-  // Si no, abrimos en modo "solo lectura" usando la primera hoja disponible
-  // (o creamos una hoja temporal no persistida).
   const loc = localizaciones.get(idLoc);
   if(!loc){ toast('Expediente no cargado todavía. Inténtalo de nuevo en unos segundos.'); return; }
   let hojaId = null;
@@ -2673,10 +2663,8 @@ function abrirExpedienteGlobal(idLoc){
     openEditor(hojaId, idLoc);
     return;
   }
-  // No está en ninguna hoja abierta: abrimos en modo lectura con una hoja virtual
   if(!state.hojas.length){ toast('Crea primero una hoja de zona.'); return; }
   const h0 = state.hojas[0];
-  // Lo añadimos temporalmente solo para el editor (no a la hoja)
   editing = { hojaId: h0.id, rowId: idLoc, soloLectura: true };
   const titulo = [loc.calle, loc.numero, loc.piso].filter(Boolean).join(' ');
   $('#ed-title').textContent = titulo || 'Expediente';
@@ -2704,7 +2692,6 @@ function abrirExpedienteGlobal(idLoc){
 }
 
 function anadirExpedienteAHojaActual(idLoc){
-  // Añade el expediente existente a la primera hoja NO cerrada
   let hoja = null;
   for(const h of state.hojas){
     if(!esHojaCerrada(h)){ hoja = h; break; }
