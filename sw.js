@@ -1,11 +1,15 @@
 /* Service Worker · Localizaciones PWA */
-const CACHE = 'localizaciones-v23';
+const CACHE = 'localizaciones-v24';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icono-fincas.svg',
-  './exceljs.min.js'
+  './exceljs.min.js',
+  // SDKs de Firebase (cacheo para login offline tras la primera carga)
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'
 ];
 
 self.addEventListener('install', function(event){
@@ -41,7 +45,12 @@ self.addEventListener('fetch', function(event){
   const req = event.request;
   if(req.method !== 'GET') return;
   const url = new URL(req.url);
-  if(url.origin !== location.origin) return;
+
+  // Cachear SDKs de Firebase y assets propios
+  const isFirebase = url.hostname === 'www.gstatic.com' && url.pathname.indexOf('/firebasejs/') === 0;
+  const isOwn = url.origin === location.origin;
+
+  if(!isFirebase && !isOwn) return;
 
   if(req.mode === 'navigate'){
     event.respondWith(
@@ -62,7 +71,7 @@ self.addEventListener('fetch', function(event){
     caches.match(req).then(function(cached){
       if(cached) return cached;
       return fetch(req).then(function(res){
-        if(res && res.status === 200 && res.type === 'basic'){
+        if(res && (res.status === 200 || res.type === 'opaque')){
           const copy = res.clone();
           caches.open(CACHE).then(function(c){ c.put(req, copy); });
         }
