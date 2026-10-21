@@ -1,12 +1,11 @@
 /* Service Worker · Localizaciones PWA */
-const CACHE = 'localizaciones-v26';
+const CACHE = 'localizaciones-v27';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icono-fincas.svg',
   './exceljs.min.js',
-  // SDKs de Firebase (cacheo para login offline tras la primera carga)
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'
