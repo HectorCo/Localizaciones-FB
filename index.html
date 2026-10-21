@@ -436,7 +436,6 @@ mark.busq{
 
 body.print-only-current .hoja.cerrada{display:none !important;}
 
-/* ====== LOGIN ====== */
 .login-overlay{
   position:fixed;inset:0;z-index:200;
   background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);
@@ -480,7 +479,6 @@ body.print-only-current .hoja.cerrada{display:none !important;}
   text-align:center;line-height:1.4;
 }
 
-/* ====== SYNC INDICATOR ====== */
 .sync-indicator{
   position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));
   left:16px;z-index:44;
@@ -984,7 +982,6 @@ function bindAuth(){
   });
 }
 
-/* Semana ISO */
 function semanaISO(fecha){
   var d = (fecha instanceof Date) ? new Date(fecha.getTime()) : new Date();
   d.setHours(0,0,0,0);
@@ -999,7 +996,6 @@ function semanaISO(fecha){
 function semanaActualTexto(){ return String(semanaISO(new Date())); }
 function esHojaCerrada(h){ return h.semana !== semanaActualTexto(); }
 
-/* CALLES */
 var CALLES_LH_RAW = "Avinguda d'Albert Bastardas|Avinguda d'Álvarez de Castro|Avinguda d'Amadeu Torner|Avinguda d'Amèrica|Avinguda d'Europa|Avinguda d'Isabel la Catòlica|Avinguda de Can Serra|Avinguda de Carmen Amaya|Avinguda de Catalunya|Avinguda de Joan Carles I|Avinguda de Josep Molins|Avinguda de Josep Tarradellas i Joan|Avinguda de l'Electricitat|Avinguda de la Fabregada|Avinguda de la Granvia de l'Hospitalet|Avinguda de la Mare de Déu de Bellvitge|Avinguda de la Primavera|Avinguda de Manuel Azaña|Avinguda de Miraflors|Avinguda de Pau Casals|Avinguda de Ponent|Avinguda de Ramon Frontera|Avinguda de Severo Ochoa|Avinguda de Tomás Giménez|Avinguda de Ventura Gassol|Avinguda de Vilafranca|Avinguda de Vilanova|Avinguda del Bosc|Avinguda del Carrilet|Avinguda del Doctor Ramon Solanich i Riera|Avinguda del Masnou|Avinguda del Metro|Avinguda del Nord|Avinguda del Torrent Gornal|Camí d'Esplugues|Camí de Cal Joan del Ros|Camí de Cal Pau Redó|Camí de la Cadena|Camí de la Fonteta|Camí de la Ribera|Camí de la Riereta|Camí del Torrent de Can Nyac|Carrer Alt|Carrer d'Alacant|Carrer d'Albareda|Carrer d'Albéniz|Carrer d'Albiol|Carrer d'Almadén|Carrer d'Almeria|Carrer d'Amadeu Vives|Carrer d'Andorra|Carrer d'Àngel Guimerà|Carrer d'Ángeles Santos|Carrer d'Antonio Machado|Carrer d'Arquimedes|Carrer d'El Empecinado|Carrer d'Empúries|Carrer d'Enric Morera|Carrer d'Enric Prat de la Riba|Carrer d'Ernest Lluch|Carrer d'España|Carrer d'Esteve Grau|Carrer d'Estruch|Carrer d'Herrero|Carrer d'Holanda|Carrer d'Ibèria|Carrer d'Isaac Peral|Carrer d'Occident|Carrer d'Orient|Carrer d'Òrrius|Carrer d'Oviedo|Carrer de Bacardí|Carrer de Badajoz|Carrer de Badalona|Carrer de Barcelona|Carrer de Batllori|Carrer de Belchite|Carrer de Bellavista|Carrer de Bernini|Carrer de Besa|Carrer de Blas Fernández Lirola|Carrer de Buenos Aires|Carrer de Ca n'Alòs|Carrer de Calderón de la Barca|Carrer de Campoamor|Carrer de Can Pi|Carrer de Can Pujadas|Carrer de Can Trias|Carrer de Carles Martí Feced|Carrer de Carrasco i Formiguera|Carrer de Casanova|Carrer de Castelao|Carrer de Castellbò|Carrer de Castellvell|Carrer de Caterina Albert|Carrer de Ceravalls|Carrer de Cervantes|Carrer de Churruca|Carrer de Clara Campoamor|Carrer de Claret|Carrer de Clotet|Carrer de Collserola|Carrer de Colom|Carrer de Cornellà|Carrer de Corominas|Carrer de Cortada|Carrer de Cotonat|Carrer de Covadonga|Carrer de Digoine|Carrer de Diògenes|Carrer de Dolors Aleu|Carrer de Farnés|Carrer de Faus|Carrer de Felip Pedrell|Carrer de Femades|Carrer de Ferré|Carrer de Ferrer i Guàrdia|Carrer de Finestrelles|Carrer de Floridablanca|Carrer de Font|Carrer de Fortuny|Carrer de França|Carrer de Francesc Layret|Carrer de Francesc Moragas|Carrer de Frederic Prats|Carrer de Galvani|Carrer de Girona|Carrer de Gonçal Pons|Carrer de Goya|Carrer de Granada|Carrer de Graner|Carrer de Granollers|Carrer de Gravina|Carrer de Hannah Arendt|Carrer de Jacint Verdaguer|Carrer de Jansana|Carrer de Jaume Ventura i Tort|Carrer de Jerusalem|Carrer de Joan de Joanes|Carrer de Joan Maragall|Carrer de Joan N. García-Nieto|Carrer de Joan Pallarès|Carrer de Joan XXIII|Carrer de José Agustín Goytisolo|Carrer de Josep Anselm Clavé|Carrer de Josep Irla i Bosch|Carrer de Josep Maria de Sagarra|Carrer de Josep Muntané i Almirall|Carrer de Josep Pla|Carrer de Josep Prats|Carrer de Josep Suñol|Carrer de Juan de Toledo|Carrer de Juan Ramón Jiménez|Carrer de Justa Goicoechea|Carrer de l'Abedul|Carrer de l'Alegria|Carrer de l'Alhambra|Carrer de l'Alumini|Carrer de l'Ametller|Carrer de l'Amistat|Carrer de l'Antiga Travessera|Carrer de l'Aprestadora|Carrer de l'Arquitectura|Carrer de l'Atlàntida|Carrer de l'Aviació|Carrer de l'Ebre|Carrer de l'El·lipse|Carrer de l'Emigrant|Carrer de l'Empordà|Carrer de l'Enginyer Moncunill|Carrer de l'Ermita de Bellvitge|Carrer de l'Escultura|Carrer de l'Església|Carrer de l'Esmaragda|Carrer de l'Estrella|Carrer de l'Estronci|Carrer de l'Estudi|Carrer de l'Onze de Setembre|Carrer de l'Uva|Carrer de la Bisbal|Carrer de la Botànica|Carrer de la Carpa|Carrer de la Ciutat Comtal|Carrer de la Cooperativa|Carrer de la Creu Roja|Carrer de la Cultura|Carrer de la Feixa Llarga|Carrer de la Física|Carrer de la Florida|Carrer de la Fortuna|Carrer de la Glòria|Carrer de la Hierbabuena|Carrer de la Igualtat|Carrer de la Independència|Carrer de la Joventut|Carrer de la Libèl·lula|Carrer de la Literatura|Carrer de la Maladeta|Carrer de la Mare de Déu de la Llum|Carrer de la Mare de Déu de la Mercè|Carrer de la Mare de Déu de Núria|Carrer de la Mare de Déu de Puigcerver|Carrer de la Mare de Déu del Carme|Carrer de la Mare de Déu dels Desemparats|Carrer de la Metal·lúrgia|Carrer de la Mina|Carrer de la Muntanya|Carrer de la Pubilla Cases|Carrer de la Reforma|Carrer de la Renclusa|Carrer de la Residència|Carrer de la Riera Blanca|Carrer de la Riera de l'Escorxador|Carrer de la Riera de la Creu|Carrer de la Riera del Canyet|Carrer de la Riera dels Frares|Carrer de la Rosa d'Alexandria|Carrer de la Talaia|Carrer de la Terra Alta|Carrer de la Unió|Carrer de la Vinyeta|Carrer de Lavínia|Carrer de Leonardo da Vinci|Carrer de les Aigües del Llobregat|Carrer de les Amapolas|Carrer de les Arts i els Oficis|Carrer de les Bòbiles|Carrer de les Ciències|Carrer de les Esquadres|Carrer de les Illes Canàries|Carrer de les Mimoses|Carrer de les Muses|Carrer de les Planes|Carrer de les Roselles|Carrer de les Roses|Carrer de les Sangoneres|Carrer de Llançà|Carrer de Llavinés|Carrer de Lleida|Carrer de Lleó|Carrer de Llevant|Carrer de Llunàs|Carrer de Los Castillejos|Carrer de Luarca|Carrer de Màlaga|Carrer de Maluquer|Carrer de Marcel·lí Esquius|Carrer de Martí i Blasi|Carrer de Martí-Codolar|Carrer de Martorell|Carrer de Mas|Carrer de Menéndez Pidal|Carrer de Menorca|Carrer de Mercader|Carrer de Miguel Hernández|Carrer de Mileva Maric|Carrer de Miquel Romeu|Carrer de Miralta|Carrer de Mistral|Carrer de Molines|Carrer de Mont-ras|Carrer de Montserrat|Carrer de Montserrat Roig|Carrer de Mossèn Jaume Busquet|Carrer de Mossèn Lluís Pañella|Carrer de Mossèn Santiago Oliveras|Carrer de Muns|Carrer de Narcís Monturiol|Carrer de Natzaret|Carrer de Numància|Carrer de Pablo Iglesias|Carrer de Pareto|Carrer de París|Carrer de Pau Sans|Carrer de Peníscola|Carrer de Pere Pelegrí|Carrer de Pérez Galdós|Carrer de Pi i Margall|Carrer de Piera|Carrer de Plini|Carrer de Ponsich|Carrer de Portugal|Carrer de Provença|Carrer de Pujós|Carrer de Rabarté|Carrer de Rafael Barradas|Carrer de Rafael Campalans|Carrer de Rius i Carrió|Carrer de Roca i Umbert|Carrer de Rodés|Carrer de Rosalía de Castro|Carrer de Rosell|Carrer de Rosich|Carrer de Rossend Arús|Carrer de Sabadell|Carrer de Salamina|Carrer de Salvador|Carrer de Salvador Espriu|Carrer de Salvador Seguí|Carrer de Sanfeliu|Carrer de Sant Antoni|Carrer de Sant Carles|Carrer de Sant Eugeni|Carrer de Sant Francesc Xavier|Carrer de Sant Joan|Carrer de Sant Jordi|Carrer de Sant Josep|Carrer de Sant Pere|Carrer de Sant Pius X|Carrer de Sant Rafael|Carrer de Sant Ramon|Carrer de Sant Roc|Carrer de Santa Anna|Carrer de Santa Bàrbara|Carrer de Santa Eulàlia|Carrer de Santa Rosa|Carrer de Santiago Apòstol|Carrer de Santiago de Compostel·la|Carrer de Santiago Ramón y Cajal|Carrer de Santiago Rusiñol|Carrer de Saurí|Carrer de Segòvia|Carrer de Sevilla|Carrer de Simancas|Carrer de Sort|Carrer de Subur|Carrer de Tarragona|Carrer de Tecla Sala|Carrer de Terra Baixa|Carrer de Terré|Carrer de Toledo|Carrer de Torns|Carrer de Valeta|Carrer de Vallparda|Carrer de Vaquer|Carrer de Vic|Carrer de Victoria Kent|Carrer de Vigo|Carrer de Vilardosa|Carrer de Vilumara|Carrer de Vinaròs|Carrer del Baró de Maldà|Carrer del Bruc|Carrer del Canigó|Carrer del Cavall Bernat|Carrer del Centre|Carrer del Cinca|Carrer del Cobalt|Carrer del Comerç|Carrer del Congost|Carrer del Crom|Carrer del Doctor Fleming|Carrer del Doctor Gregorio Marañón|Carrer del Doctor Jaume Ferran i Clua|Carrer del Doctor Martí i Julià|Carrer del Dos de Maig|Carrer del Garraf|Carrer del Gasòmetre|Carrer del General Manso|Carrer del General Prim|Carrer del Jardí|Carrer del Llobregat|Carrer del Llorer|Carrer del Mercat|Carrer del Mestre Candi|Carrer del Mestre Carbó|Carrer del Mestre Serrano|Carrer del Migdia|Carrer del Molí|Carrer del Mont|Carrer del Montseny|Carrer del Níquel|Carrer del Pare Marchena|Carrer del Parral|Carrer del Patronat|Carrer del Pedraforca|Carrer del Pintor Mestre i Castellví|Carrer del Pintor Sorolla|Carrer del Poeta Llombart|Carrer del Prat|Carrer del Prat de la Manta|Carrer del Primer de Maig|Carrer del Príncep de Bergara|Carrer del Progrés|Carrer del Radi|Carrer del Rei En Jaume|Carrer del Rosselló|Carrer del Rubidi|Carrer del Teide|Carrer del Tel·luri|Carrer del Ter|Carrer del Transformador|Carrer del Treball|Carrer del Xipreret|Carrer dels Clavells|Carrer dels Garrofers|Carrer dels Joncs|Carrer dels Motors|Carrer dels Naranjos|Carrer dels Pins|Carrer Major|Carrer Modern|Carrer Oriental|Carrer Transversal|Carretera Antiga del Prat|Carretera d'Esplugues|Carretera de Collblanc|Carretera de la Feixa Llarga|Carretera de la Vora del Riu|Carretera de Sant Roc|Carretera del Mig|Jardins d'Antonio Machado|Jardins d'Artemisia Gentileschi|Jardins d'Hipàcia d'Alexandria|Jardins de Ca n'Arús|Jardins de Can Sumarro|Jardins de Cosme Toda|Jardins de Francesc Pedra i Lola Peñalver|Jardins de la Granota|Jardins de la Mediterrània|Jardins de la Sénia|Jardins de les Moreres|Jardins de les Nacions Unides|Jardins de Matilde Ucelay|Jardins de Pablo Picasso|Jardins de Pompeu Fabra|Jardins de Rita Fernández|Jardins de Rosa Sensat|Jardins de Salvador Dalí|Jardins de Tecla Sala|Jardins de Teresa Navarrro|Jardins del Bisbe Joan Carrera|Jardins del Canal de la Infanta|Parc de Bellvitge|Parc de Can Buxeres|Parc de Can Cluset|Parc de Can Creixells|Parc de l'Alhambra|Parc de la Cabana|Parc de la Granvia de l'Hospitalet|Parc de la Marquesa|Parc de la Remunta|Parc de la Serp|Parc de la Torrassa|Parc de les Planes|Parc dels Ocellets|Passatge d'Amat|Passatge d'Estadella|Passatge de Bonvehí|Passatge de Ca n'Alòs|Passatge de Can Polític|Passatge de Can Vila|Passatge de Can Xerricó|Passatge de Colom|Passatge de Costa|Passatge de Guilera|Passatge de Jansana|Passatge de Jaume Blanchart|Passatge de l'Escorxador|Passatge de la Concepció|Passatge de la Pau|Passatge de la Rectoria|Passatge de Llopis|Passatge de Llunàs|Passatge de Matas|Passatge de Milans|Passatge de Montserrat Isern|Passatge de Paquita|Passatge de Piera|Passatge de Pons|Passatge de Rius|Passatge de Rovira|Passatge de Salvador|Passatge de Sant Cristòfol|Passatge de Zuloaga|Passatge del Cementiri|Passatge del Patronat|Passatge del Xiprer|Passatge Dos|Passatge Miner|Passatge Oliveras|Passeig de Bellvitge|Passeig del Conveni de 1713|Plaça d'ALPI|Plaça d'Amalvígia|Plaça d'Anna Frank|Plaça d'Eivissa|Plaça d'Ernest Lluch|Plaça d'Europa|Plaça de Blas Infante|Plaça de Camilo José Cela|Plaça de Can Colom|Plaça de Can Trinxet|Plaça de Canalejas|Plaça de Federico García Lorca|Plaça de Francesc Macià i Llussà|Plaça de Frederica Montseny|Plaça de Granada|Plaça de Guernica|Plaça de Joan Brossa|Plaça de Josep Bordonau i Balaguer|Plaça de l'Ajuntament|Plaça de l'Alzina|Plaça de l'Escorsa|Plaça de l'Hortet|Plaça de l'UNICEF|Plaça de la Bòbila|Plaça de la Carpa|Plaça de la Casa de Reconciliació|Plaça de la Constitució|Plaça de la Cultura|Plaça de la Font|Plaça de la Llibertat|Plaça de la Llosa|Plaça de la Mare de Déu de Montserrat|Plaça de la Mare de Déu del Pilar|Plaça de la Pubilla Cases|Plaça de la Remunta|Plaça de la Solidaritat|Plaça de les Comunitats|Plaça de les Germanes Ocaña|Plaça de les Palmeres|Plaça de les Vidrieries Llobregat|Plaça de Lluís Companys i Jover|Plaça de Lola Anglada|Plaça de Maria Artigal|Plaça de Maria Aurèlia Capmany|Plaça de Maria Montessori|Plaça de Maria Soteras|Plaça de Marie Curie|Plaça de Milagros Consarnau i Sabaté|Plaça de Mossèn Homar|Plaça de Pius XII|Plaça de Provençana|Plaça de Puig i Gairalt|Plaça de Quart|Plaça de Sant Isidre|Plaça de Sant Jordi|Plaça de Tuzla|Plaça del Cadí|Plaça del Mercat de Collblanc|Plaça del Mestre Clavé|Plaça del Repartidor|Plaça del Repòs|Plaça del Vidre|Plaça dels Avis|Plaça dels Blocs de la Florida|Plaça dels Cirerers|Plaça dels Pirineus|Plaça dels Veïns|Plaça Espanyola|Plaça Sant Joan|Pont de Matacavalls|Rambla Catalana|Rambla de Just Oliveras|Rambla de la Marina|Ronda de Dalt|Ronda de la Torrassa|Ronda de la Via|Ronda del Litoral|Travessera de Collblanc|Travessera de les Corts|Travessia Industrial|Urbanització del Canyet|Via d'Enllaç";
 var CALLES_ES_RAW = "Avinguda d'Ahrensburg|Avinguda de Cornellà|Avinguda de Jacint Esteva i Fontanet|Avinguda de la Ciutat de l'Hospitalet|Avinguda de la Generalitat de Catalunya|Avinguda de la Mestra Dolors Barceló|Avinguda de la Miranda|Avinguda del Baix Llobregat|Avinguda de l'Electricitat|Avinguda de Lluis Companys|Avinguda dels Països Catalans|Avinguda dels Traginers|Avinguda del Torrent|Avinguda d'Isidre Martí|Avinguda Muntanyenca|Camí de Can Boixeres|Camí de Can Nyac|Carrer d'Alexandre Soler i March|Carrer d'Amadeu Vives|Carrer d'Andreu Amat|Carrer d'Àngel Guimerà|Carrer d'Antoni Gaudí|Carrer d'Antoni Maria Gallissà i Soqué|Carrer d'Apel·les Mestres|Carrer d'August Font i Carreras|Carrer de Bartomeu Bermejo|Carrer de Bonavista|Carrer de Can Dori|Carrer de Clara Campoamor|Carrer de David Carreras i Trias|Carrer de Díaz de la Fuente|Carrer d'Eduard Toldrà|Carrer de Ferrer i Bassa|Carrer de Finestrelles|Carrer de Francesc Layret|Carrer de Francesc Llunell|Carrer de Francesc Moragas|Carrer de Francesc Ribalta|Carrer de Francesc Romeu|Carrer de Fuerteventura|Carrer de Gaspar Fàbregas i Roses|Carrer de Jaume Balmes|Carrer de Jaume Huguet|Carrer de Jaume Marco|Carrer de Jaume Pros|Carrer de Joan Amades|Carrer de Joan Miró|Carrer de Joan XXIII|Carrer de Jordi de Déu|Carrer de José Echegaray|Carrer de Josep Anguera i Sala|Carrer de Josep Anselm Clavé|Carrer de Josep Argemí|Carrer de Josep Campreciós|Carrer de Josep Gras|Carrer de Josep Maria Jujol|Carrer de Josep Maria Ventura|Carrer de Josep Miquel Quintana|Carrer de Josep Puig i Cadafalch|Carrer de Josep Rodoreda|Carrer de Juan de la Cierva|Carrer de Juli Culebras i Barba|Carrer de Juli Garreta|Carrer del 8 de Març|Carrer de la Baronessa de Maldà|Carrer de la Constància|Carrer de la Creu del Raval|Carrer de la Ginesta|Carrer de l'Alcalde Martí Figueras i Castillo|Carrer de l'Alegria|Carrer de la Lleialtat|Carrer de la Maladeta|Carrer de la Menta|Carrer de l'Amistat|Carrer de la Pau|Carrer de la Piscina|Carrer de la Pubilla Cases|Carrer de la Rajoleria|Carrer de la Riba|Carrer de la Riereta|Carrer de la Rosella|Carrer de la Serra del Cadí|Carrer de la Serra del Montsec|Carrer de la Tramuntana|Carrer de Laureà Miró|Carrer de la Vallerona|Carrer de l'Ave Maria|Carrer de la Verge de Guadalupe|Carrer de la Verge de la Mercè|Carrer de la Verge de la Paloma|Carrer de la Via Augusta|Carrer de la Vinya|Carrer del Bruc|Carrer del Carme|Carrer del Casal de Sant Jordi|Carrer del Doctor Alexander Fleming|Carrer del Doctor Ferran|Carrer del Doctor Gimeno|Carrer del Doctor Ramon Turró|Carrer de les Escaletes|Carrer de les Flors|Carrer de l'Església|Carrer de les Glicines|Carrer de les Magnòlies|Carrer de l'Esmaragda|Carrer de les Piles|Carrer de les Planes|Carrer de l'Esport|Carrer de l'Est|Carrer del Frontó|Carrer del Gall|Carrer de l'Hortènsia|Carrer de Llevant|Carrer de Lluís Borrassà|Carrer de Lluís Domenech i Muntaner|Carrer de Lluís Labarta|Carrer de Lluís Millet|Carrer del Mar|Carrer del Marquès d'Espanya|Carrer del Mestre Joan Corrales|Carrer del Mestre Joaquim Rosal|Carrer del Mestre Manuel de Falla|Carrer del Molí|Carrer del Mossèn Esteve Carbonell|Carrer del Nord|Carrer del Pas del Sucre|Carrer del Primer de Maig|Carrer del Priorat|Carrer del Professor Barraquer|Carrer del Racó d'en Muns|Carrer del Raval|Carrer dels Àngels|Carrer dels Caquis|Carrer dels Cedres|Carrer dels Eucaliptus|Carrer dels Germans Serra|Carrer dels Jocs Florals|Carrer dels Lleons|Carrer dels Pins|Carrer dels Sometents|Carrer de Magdalena Amigó|Carrer de Manuel Florentín Pérez|Carrer de Maria Aurèlia Capmany|Carrer de Mercè Rodoreda|Carrer de Milà i Pi|Carrer d'Emili Juncadella|Carrer de Miramar|Carrer de Montesa|Carrer de Montserrat|Carrer de Montserrat Roig|Carrer de Mossèn Jacint Verdaguer|Carrer de Narcís Monturiol|Carrer de Nostra Senyora de Lourdes|Carrer d'Enric Granados|Carrer d'Enric Morera|Carrer d'Enrique Tierno Galván|Carrer de Pau Casals|Carrer de Pau Claris|Carrer de Pau Torres|Carrer de Pau Vergós|Carrer de Pedro Berruguete|Carrer de Pere Galvany|Carrer de Pere Joan|Carrer de Pere Pelegrí|Carrer de Picalques|Carrer de Rafael Casanova i Comes|Carrer de Rafael Sebastià Irla|Carrer de Ramon Llull|Carrer de Ricard Güell|Carrer de Rocabert|Carrer de Roser Artigas|Carrer de Rovellat|Carrer de Sabina Mitjavila|Carrer de Santa Anna|Carrer de Sant Albert Magne|Carrer de Sant Antoni Maria Claret|Carrer de Santa Rosa|Carrer de Sant Francesc Xavier|Carrer de Sant Gabriel|Carrer de Santiago Ramon y Cajal|Carrer de Santiago Rusiñol|Carrer de Sant Jordi|Carrer de Sant Josep|Carrer de Sant Llorenç|Carrer de Sant Mateu|Carrer de Sant Salvador|Carrer de Severo Ochoa|Carrer d'Esperança Martí|Carrer de Tenerife|Carrer de Tomàs Bretón|Carrer de Vic|Carrer de Vicenç Bou|Carrer de Vidal i Ribas|Carrer d'Ignasi Iglésias|Carrer d'Isaac Albéniz|Carrer d'Oriol|Carrer Nou|Passatge d'Alexandre Galí|Passatge de Joan Brillas|Passatge de Josep Cervera|Passatge del Baix Lloc|Passatge del Puig d'Óssa|Passatge dels Ametllers|Passatge del Xaloc|Passatge de Ramon Casas|Passatge de Santa Eulàlia|Passatge de Sant Joaquim|Passeig de Francesc Macià i Llussà|Passeig de Pablo Ruiz Picasso|Passeig de Sant Joan de Déu|Plaça de Blas Infante|Plaça de Catalunya|Plaça de Doña Carolina|Plaça de Jacinto Benavente|Plaça de Joan Tomàs i Parés|Plaça de la Constitució|Plaça de la Dona|Plaça de la Sardana|Plaça de l'Escorxador|Plaça de les Moreres|Plaça d'Elisabeth Eidenbenz|Plaça del Pare Miquel d'Esplugues|Plaça del Secretari Oliva|Plaça del Sol|Plaça del Taxi|Plaça de Macael|Plaça de Mahatma Gandhi|Plaça de Maria Guillén|Plaça de Mireia|Plaça de Pau Vila|Plaça de Pi i Margall|Plaça de Ramon Trias Fargas|Plaça de Santa Magdalena|Plaça de Sant Lluís Gonzaga|Plaça d'Oleguer Junyent|Pont Nou|Ronda de Dalt|Ronda del Canigó|Ronda del Puigmal";
 var CALLES_CAPELLADES_RAW = "Camí Cementiri|Camí Pas de l'Aigua|Carrer Abat Muntadas|Carrer Amador Romaní|Carrer Anselm Ferrer|Carrer Antoni Maria Claret|Carrer Ausias March|Carrer Barcelona|Carrer Benages|Carrer Catalunya|Carrer Costa de les Creus|Carrer d' Oló|Carrer de Josep Costa i Pomés|Carrer de l' Alba|Carrer de la Barquera|Carrer de la Mercè|Carrer de la Miranda|Carrer de Miramar|Carrer de Sant Joan|Carrer del Call|Carrer del Carme|Carrer del Fossar|Carrer del Molí Xic|Carrer del Pilar|Carrer del Portal|Carrer dels Alabrents|Carrer dels Pins|Carrer Divina Pastora|Carrer Doctor Fleming|Carrer Font|Carrer Font Cuitora|Carrer Font de la Reina|Carrer Garbí|Carrer Girat|Carrer J.Maragall|Carrer Joan Castells|Carrer la Canaleta|Carrer Lluis Companys|Carrer Magicarme|Carrer Major|Carrer Muntanya|Carrer Nou|Carrer Onze de Setembre de 1714|Carrer Padre Bernardí|Carrer Paperers|Carrer Pau Casals|Carrer Pep Ventura|Carrer Prolongació Miquel i Mas|Carrer Ramón Godó|Carrer Rec del Corronaire|Carrer Roca del Batista|Carrer Salvador Espriu|Carrer Sant Francesc|Carrer Sant Ramón|Carrer Santa Ana|Carrer Santa Dorotea|Carrer Santa Llúcia|Carrer Sarrià de Ter|Carrer Tarragona|Carrer Torre de Claramunt|Carrer Torrenova|Carrer Torrent de la Bleda|Carrer Torrent Formigosa|Carrer Verge de Montserrat|Carretera Matias Guasch|Passatge de la Curanya|Passatge de la Joventut|Passatge del Rossinyol|Passatge Divina Pastora|Passatge Escales|Passatge Garcia Lorca|Passatge Jardí|Passatge Lliga|Passeig de la Immaculada Concepció|Passeig Miquel Más|Plaça Àngel Guimerà|Plaça de Catalunya|Plaça de Espanya|Plaça de l' U d'Octubre|Plaça Sant Jaume|Plaça Sant Miquel|Plaça Verdaguer|Placeta d'en Pines|Ronda Capelló|Travessera de Benages|Travessera del Portal";
@@ -1087,6 +1083,8 @@ let closedContext = null;
 let dupContext = null;
 let filtroActual = '';
 let exportScopeContext = null;
+// Para el fix de "duplicado"
+let addRowEnCurso = false;
 
 const $  = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -1136,7 +1134,6 @@ function claveUnicaDe(datos){
   ].join('|');
 }
 
-/* Persistencia de metadatos (hojas) en localStorage */
 function loadMetadatos(){
   try{
     const raw = localStorage.getItem('localizaciones.v2');
@@ -1253,7 +1250,7 @@ async function actualizarLocalizacion(id, cambios){
   const fb = window.__fb;
   if(!fb) throw new Error('Firebase no está listo');
   const actual = localizaciones.get(id);
-  if(!actual) throw new Error('Localización no encontrada');
+  if(!actual) throw new Error('Localización no encontrada en caché');
 
   const nuevasEntradas = [];
   const update = {};
@@ -1601,11 +1598,14 @@ function delHoja(id){
   saveMetadatos(); render();
 }
 
-/* --- AQUÍ LA CORRECCIÓN DEL BUG (Opción A) --- */
+/* --- AQUÍ LA CORRECCIÓN: Opción A --- */
 async function addRow(hojaId, openIt){
+  if(addRowEnCurso) return;
+  addRowEnCurso = true;
+
   const h = state.hojas.find(x => x.id === hojaId);
-  if(!h) return;
-  if(esHojaCerrada(h)){ showClosedModal(hojaId); return; }
+  if(!h){ addRowEnCurso = false; return; }
+  if(esHojaCerrada(h)){ addRowEnCurso = false; showClosedModal(hojaId); return; }
 
   const datos = {};
   COLS.forEach(function(c){
@@ -1618,24 +1618,23 @@ async function addRow(hojaId, openIt){
   try{
     const res = await crearLocalizacion(datos);
 
-    // Opción A: si ya existía, la añadimos igualmente a la hoja actual
-    // (para que conste que esta semana se ha visitado) y abrimos su editor.
+    // Opción A: si ya existía, se añade a la hoja actual (para constancia)
     if(res.existente){
       const yaEnHoja = h.filas.some(f => f.idLocalizacion === res.id);
       if(!yaEnHoja){
         h.filas.push({ idLocalizacion: res.id });
         saveMetadatos();
       }
-      // Esperar a que onSnapshot traiga la localización
+
       let intentos = 0;
       while(!localizaciones.has(res.id) && intentos < 20){
         await new Promise(r => setTimeout(r, 100));
         intentos++;
       }
+
       if(localizaciones.has(res.id)){
         openEditor(hojaId, res.id);
       } else {
-        // Fallback: pedir a Firestore directamente
         const fb = window.__fb;
         try{
           const snap = await fb.getDoc(fb.doc(fb.db, 'localizaciones', res.id));
@@ -1651,15 +1650,15 @@ async function addRow(hojaId, openIt){
           toast('⚠️ No se pudo cargar la localización existente');
         }
       }
+      addRowEnCurso = false;
       return;
     }
 
-    // Si era nueva: añadir la fila y abrir el editor
+    // Si era nueva: añadirla a la hoja y abrir el editor
     h.filas.push({ idLocalizacion: res.id });
     saveMetadatos();
 
     if(openIt !== false){
-      // Esperar un instante a que onSnapshot registre la nueva localización
       let intentos = 0;
       while(!localizaciones.has(res.id) && intentos < 20){
         await new Promise(r => setTimeout(r, 100));
@@ -1676,6 +1675,7 @@ async function addRow(hojaId, openIt){
       toast('⚠️ ' + (err.message || 'No se pudo crear la localización'));
     }
   }
+  addRowEnCurso = false;
 }
 
 function openEditor(hojaId, idLocalizacion){
@@ -1898,8 +1898,8 @@ async function flushEdiciones(){
   try{
     await actualizarLocalizacion(id, cambios);
   }catch(err){
-    console.warn('Error guardando localización', err);
-    toast('⚠️ No se pudo guardar. Revisa tu conexión.');
+    console.error('Error guardando localización:', err);
+    toast('⚠️ Error: ' + (err.message || 'No se pudo guardar. Revisa tu conexión.'));
   }
 }
 
