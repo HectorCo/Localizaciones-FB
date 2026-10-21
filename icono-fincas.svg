@@ -1,0 +1,47 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Fondo con degradado sutil -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f0f7f7;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Sombra suave para la tarjeta principal -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Fondo del icono (Forma redondeada tipo App) -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGradient)" />
+
+  <!-- Tarjeta contenedora central -->
+  <rect x="56" y="56" width="400" height="400" rx="70" fill="#ffffff" filter="url(#shadow)" />
+
+  <!-- GRUPO DEL LOGO FINCAS BLANCO + TEXTO PROSPECCIÓN -->
+  <!-- Movemos todo el grupo un poco hacia arriba para dejar espacio abajo -->
+  <g transform="translate(256, 200) scale(1.05)">
+    
+    <!-- Icono del Tejado (Verde) -->
+    <path d="M-70 -20 L0 -70 L70 -20 L70 0 L0 -50 L-70 0 Z" fill="#2E9B8F" />
+    <path d="M40 -55 L60 -40 L60 -20 L40 -35 Z" fill="#2E9B8F" />
+
+    <!-- Texto "FINCAS" -->
+    <text x="0" y="25" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="#2E9B8F" text-anchor="middle" letter-spacing="1">FINCAS</text>
+
+    <!-- Texto "BLANCO" -->
+    <text x="0" y="85" font-family="Arial, sans-serif" font-weight="bold" font-size="58" fill="#1A5C9E" text-anchor="middle" letter-spacing="1">BLANCO</text>
+
+    <!-- NUEVO: Texto "PROSPECCIÓN" -->
+    <!-- Se coloca debajo de BLANCO. Usamos un gris azulado y un tamaño menor -->
+    <text x="0" y="135" font-family="Arial, sans-serif" font-weight="bold" font-size="22" fill="#5A7A9A" text-anchor="middle" letter-spacing="3">PROSPECCIÓN</text>
+
+  </g>
+
+  <!-- Elemento decorativo sutil (Pin de ubicación) -->
+  <g transform="translate(380, 380)">
+    <path d="M0 -30 C-15 -30 -25 -20 -25 -5 C-25 10 0 35 0 35 C0 35 25 10 25 -5 C25 -20 15 -30 0 -30 Z" fill="#1A5C9E" opacity="0.1" />
+    <circle cx="0" cy="-5" r="8" fill="#1A5C9E" opacity="0.2" />
+  </g>
+
+</svg>

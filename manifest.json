@@ -1,0 +1,22 @@
+{
+  "name": "Localizaciones · Prospección de zonas",
+  "short_name": "Localizaciones",
+  "description": "Hoja de zona para prospección inmobiliaria. Funciona sin conexión y se imprime con el formato original.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef2f7",
+  "theme_color": "#0f172a",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "icono-fincas.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

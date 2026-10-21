@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Localizaciones · Prospección de zonas</title>
+<meta name="description" content="Hoja de zona para prospección inmobiliaria. Funciona sin conexión y se comparte en PDF o Excel.">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icono-fincas.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icono-fincas.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Localizaciones">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{
+  --bg:#eef2f7; --card:#ffffff; --ink:#0f172a; --muted:#64748b;
+  --line:#cbd5e1; --brand:#1d4ed8; --brand-soft:#eff6ff; --danger:#dc2626;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(15,23,42,.06), 0 10px 28px -14px rgba(15,23,42,.35);
+  --closed:#94a3b8;
+  --closed-soft:#f1f5f9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--ink);
+  -webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+  padding-bottom:110px;
+}
+button{font:inherit}
+.topbar{
+  position:sticky;top:0;z-index:40;background:var(--ink);color:#fff;
+  padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
+  display:flex;align-items:center;gap:10px;
+  box-shadow:0 2px 14px rgba(15,23,42,.28);
+}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.brand .logo{font-size:22px;line-height:1}
+.brand strong{display:block;font-size:16px;letter-spacing:.01em}
+.brand small{display:block;font-size:11.5px;color:#94a3b8;margin-top:1px}
+.top-actions{display:flex;gap:6px;align-items:center}
+.btn{
+  border:0;border-radius:10px;padding:9px 12px;font-weight:650;font-size:13.5px;
+  cursor:pointer;background:#e2e8f0;color:var(--ink);
+  transition:filter .15s, background .15s;
+  white-space:nowrap;
+}
+.btn:active{filter:brightness(.94)}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.share{background:#1d4ed8;color:#fff;font-weight:750}
+.btn.excel{background:#16a34a;color:#fff;font-weight:750}
+.btn.ghost{background:rgba(255,255,255,.14);color:#fff}
+.btn.small{padding:8px 12px;font-size:13.5px}
+.btn.danger-ghost{background:#fee2e2;color:var(--danger)}
+.icon-btn{
+  border:0;background:transparent;cursor:pointer;width:34px;height:34px;
+  border-radius:9px;display:grid;place-items:center;font-size:15px;color:var(--muted);
+}
+.icon-btn:hover{background:#f1f5f9}
+.icon-btn.danger{color:var(--danger)}
+.icon-btn.danger:hover{background:#fee2e2}
+.menu{
+  position:absolute;top:calc(100% + 6px);right:8px;z-index:50;
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 18px 44px -14px rgba(15,23,42,.5);
+  padding:6px;min-width:290px;display:none;
+}
+.menu.open{display:block}
+.menu button{
+  display:flex;width:100%;gap:10px;align-items:center;text-align:left;
+  background:none;border:0;padding:12px;font-size:14.5px;color:var(--ink);
+  border-radius:9px;cursor:pointer;
+}
+.menu button:hover{background:#f1f5f9}
+.menu button.danger{color:var(--danger)}
+.menu button.danger:hover{background:#fee2e2}
+.menu .sep{height:1px;background:var(--line);margin:6px 4px}
+
+.searchbar{
+  position:sticky;top:0;z-index:30;
+  background:var(--bg);
+  padding:10px 14px 8px;
+}
+.searchbar-inner{position:relative;display:flex;align-items:center}
+.searchbar input{
+  width:100%;border:1px solid var(--line);border-radius:12px;
+  padding:11px 40px 11px 40px;
+  font:inherit;font-size:15px;background:#fff;color:var(--ink);
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+}
+.searchbar input:focus{
+  outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent;
+}
+.searchbar .icon-search{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:15px;pointer-events:none;
+}
+.searchbar .clear-search{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  border:0;background:transparent;cursor:pointer;
+  width:32px;height:32px;border-radius:50%;
+  display:none;align-items:center;justify-content:center;
+  color:var(--muted);font-size:16px;
+}
+.searchbar .clear-search:hover{background:#f1f5f9;color:var(--danger)}
+.searchbar.has-value .clear-search{display:flex}
+.search-info{
+  display:none;font-size:11.5px;color:var(--muted);
+  margin-top:5px;padding-left:4px;
+}
+.searchbar.has-value .search-info{display:block}
+
+main{padding:0 0 20px}
+.empty{text-align:center;padding:70px 24px;color:var(--muted)}
+.empty p{margin:0 0 18px;font-size:15px}
+.no-results{
+  text-align:center;padding:40px 24px;color:var(--muted);font-size:14px;
+  display:none;
+}
+
+.hoja{
+  background:var(--card);border-radius:var(--radius);
+  box-shadow:var(--shadow);margin:14px;overflow:hidden;
+}
+.hoja.cerrada{
+  background:#fafbfc;
+  box-shadow:0 1px 2px rgba(15,23,42,.04), 0 8px 22px -14px rgba(15,23,42,.28);
+}
+.hoja.cerrada .hoja-head{
+  background:#eef2f7;
+  border-bottom-color:#d8dee9;
+}
+.hoja.cerrada .hoja-head input,
+.hoja.cerrada .hoja-head select{
+  background:#e2e8f0;color:#64748b;
+}
+.hoja.cerrada .hoja-head input:focus,
+.hoja.cerrada .hoja-head select:focus{
+  outline:none;border-color:var(--line);
+}
+.hoja.cerrada .table-wrap{opacity:.92}
+.hoja.cerrada table.grid thead th{background:#e2e8f0}
+.hoja.cerrada table.grid tbody td{background:#f8fafc}
+.hoja.cerrada table.grid tbody tr{cursor:not-allowed}
+.hoja.cerrada table.grid tbody tr:active{background:inherit}
+
+.hoja.cerrada.colapsada .table-wrap,
+.hoja.cerrada.colapsada .hoja-actions{
+  display:none;
+}
+.hoja.cerrada.colapsada .hoja-head{
+  border-bottom:0;
+}
+
+/* Grid cabecera: hoja ACTIVA */
+.hoja-head{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr)) 34px;
+  gap:7px;padding:10px;background:#f8fafc;
+  border-bottom:1px solid var(--line);align-items:end;
+}
+/* Grid cabecera: hoja CERRADA (una columna más para el toggle + borrar) */
+.hoja.cerrada .hoja-head{
+  grid-template-columns: repeat(3, minmax(0,1fr)) 34px 34px;
+}
+.hoja-head label{
+  display:flex;flex-direction:column;gap:3px;min-width:0;
+  font-size:9.5px;font-weight:800;letter-spacing:.05em;
+  color:var(--muted);text-transform:uppercase;
+}
+.hoja-head input,.hoja-head select{
+  width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;
+  padding:8px;font:inherit;font-size:13px;background:#fff;color:var(--ink);
+}
+.hoja-head input:focus,.hoja-head select:focus{
+  outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent;
+}
+.hoja-head .semana-ro input{
+  background:#f1f5f9;color:var(--muted);font-weight:700;
+  cursor:default;
+}
+.hoja-head .semana-ro input:focus{outline:none}
+
+/* Toggle plegar/desplegar hojas cerradas */
+.toggle-collapse{
+  border:0;background:#e2e8f0;color:var(--ink);
+  width:34px;height:34px;border-radius:9px;
+  display:grid;place-items:center;cursor:pointer;
+  font-size:16px;font-weight:700;
+  transition:background .15s, transform .15s;
+}
+.toggle-collapse:hover{background:#cbd5e1}
+.toggle-collapse.open{transform:rotate(90deg)}
+
+/* Banner "cerrada" */
+.banner-cerrada{
+  grid-column:1/-1;
+  display:flex;align-items:center;gap:8px;
+  padding:9px 12px;margin-top:6px;
+  background:#fef3c7;color:#78350f;
+  border:1px solid #fcd34d;border-radius:10px;
+  font-size:12.5px;font-weight:600;
+}
+.banner-cerrada .lock{font-size:15px;line-height:1}
+.banner-cerrada .txt{flex:1;line-height:1.35}
+.banner-cerrada .banner-btn{
+  border:0;background:#78350f;color:#fff;
+  padding:7px 10px;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;white-space:nowrap;
+}
+.banner-cerrada .banner-btn:hover{filter:brightness(1.1)}
+
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.grid{
+  border-collapse:collapse;width:100%;min-width:1200px;
+  table-layout:fixed;font-size:12px;
+}
+table.grid th,table.grid td{
+  border:1px solid var(--line);padding:6px 7px;
+  text-align:left;vertical-align:top;word-break:break-word;
+}
+table.grid thead th{
+  background:#e2e8f0;font-size:9.5px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.03em;
+  position:sticky;top:0;z-index:2;
+}
+table.grid tbody tr{cursor:pointer}
+table.grid tbody tr:active{background:var(--brand-soft)}
+table.grid tbody td{height:36px;line-height:1.3}
+table.grid tbody tr.blank td{background:#fcfdff}
+table.grid tbody tr.blank:active td{background:var(--brand-soft)}
+.hoja.cerrada table.grid tbody tr.blank td{background:#f8fafc}
+
+table.grid tbody tr.fila-oculta{display:none}
+
+mark.busq{
+  background:#fde68a;color:inherit;
+  padding:0 1px;border-radius:2px;
+}
+
+.meta-row{display:none}
+.meta-row th{font-size:11px;background:#f1f5f9}
+.hoja-actions{padding:10px;border-top:1px solid var(--line);background:#f8fafc;display:flex;gap:8px;flex-wrap:wrap}
+.fab{
+  position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));
+  z-index:45;width:58px;height:58px;border-radius:50%;
+  background:var(--brand);color:#fff;border:0;font-size:28px;line-height:1;
+  box-shadow:0 10px 26px rgba(29,78,216,.45);cursor:pointer;
+  display:grid;place-items:center;
+}
+.fab:active{transform:scale(.95)}
+
+.fab-top{
+  position:fixed;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));
+  z-index:44;width:46px;height:46px;border-radius:50%;
+  background:#fff;color:var(--ink);
+  border:1px solid var(--line);
+  font-size:18px;line-height:1;cursor:pointer;
+  display:none;place-items:center;
+  box-shadow:0 6px 20px -6px rgba(15,23,42,.35);
+  transition:opacity .2s;
+}
+.fab-top.visible{display:grid}
+.fab-top:active{transform:scale(.94)}
+
+.modal{
+  position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.5);
+  display:none;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(2px);
+}
+.modal.open{display:flex}
+.sheet{
+  background:#fff;width:100%;max-width:660px;max-height:92vh;
+  display:flex;flex-direction:column;border-radius:18px 18px 0 0;
+  animation:up .18s ease-out;
+}
+@keyframes up{from{transform:translateY(14px);opacity:.6}to{transform:none;opacity:1}}
+@media(min-width:700px){
+  .modal.open{align-items:center}
+  .sheet{border-radius:18px;max-height:88vh}
+}
+.sheet-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 14px 12px;border-bottom:1px solid var(--line);
+}
+.sheet-head strong{font-size:16px}
+.sheet-body{padding:14px;overflow:auto;-webkit-overflow-scrolling:touch}
+.sheet-foot{
+  display:flex;justify-content:space-between;gap:10px;
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);background:#f8fafc;
+}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field.full{grid-column:1/-1}
+.field label{
+  font-size:10px;font-weight:800;letter-spacing:.05em;
+  color:var(--muted);text-transform:uppercase;
+}
+.field input,.field textarea,.field select{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:11px;font:inherit;font-size:15px;background:#fff;color:var(--ink);
+}
+.field textarea{min-height:76px;resize:vertical;line-height:1.35}
+.field input:focus,.field textarea:focus,.field select:focus{
+  outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent;
+}
+.field.narrow input{max-width:210px}
+.hint{font-size:12px;color:var(--muted);line-height:1.4;margin-top:2px}
+.check{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+  background:#fff;cursor:pointer;user-select:none;font-size:15px;font-weight:600;
+}
+.check input{
+  width:22px;height:22px;margin:0;accent-color:var(--brand);
+  cursor:pointer;flex:0 0 auto;
+}
+.check span{line-height:1.2}
+.input-with-clear{position:relative;display:flex;align-items:center}
+.input-with-clear input{padding-right:38px}
+.input-with-clear .clear-btn{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  border:0;background:transparent;cursor:pointer;width:28px;height:28px;
+  border-radius:50%;display:grid;place-items:center;
+  color:var(--muted);font-size:16px;line-height:1;
+}
+.input-with-clear .clear-btn:hover{background:#f1f5f9;color:var(--danger)}
+
+.share-body{padding:18px 18px 6px;text-align:center}
+.share-icon{font-size:52px;line-height:1;margin:6px 0 14px}
+.share-body h3{margin:0 0 8px;font-size:19px;color:var(--ink)}
+.share-body p{margin:0 0 16px;font-size:14px;color:var(--muted);line-height:1.5}
+.share-steps{
+  text-align:left;background:#f8fafc;border:1px solid var(--line);
+  border-radius:12px;padding:14px 16px;margin:0 0 8px;
+}
+.share-steps ol{margin:0;padding-left:20px;font-size:14px;color:var(--ink);line-height:1.7}
+.share-steps li strong{color:var(--brand)}
+.platform-hint{font-size:12px;color:var(--muted);margin:12px 0 0;font-style:italic;text-align:center}
+
+.share-options{padding:6px 14px 14px}
+.share-option{
+  display:flex;align-items:center;gap:14px;
+  width:100%;padding:14px;margin-bottom:10px;
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  cursor:pointer;text-align:left;
+  transition:background .15s, border-color .15s, transform .1s;
+}
+.share-option:hover{background:#f8fafc;border-color:var(--brand)}
+.share-option:active{transform:scale(.985)}
+.share-option-icon{
+  font-size:26px;line-height:1;flex:0 0 auto;
+  width:46px;height:46px;border-radius:12px;
+  display:grid;place-items:center;background:#f1f5f9;
+}
+.share-option.pdf .share-option-icon{background:#fee2e2}
+.share-option.excel .share-option-icon{background:#dcfce7}
+.share-option.csv .share-option-icon{background:#dbeafe}
+.share-option-body{flex:1;min-width:0}
+.share-option-body strong{
+  display:block;font-size:15px;font-weight:650;
+  color:var(--ink);margin-bottom:2px;
+}
+.share-option-body small{
+  display:block;font-size:12.5px;color:var(--muted);line-height:1.35;
+}
+.share-option-arrow{
+  font-size:22px;color:var(--muted);flex:0 0 auto;
+  transition:transform .15s, color .15s;
+}
+.share-option:hover .share-option-arrow{transform:translateX(2px);color:var(--brand)}
+
+/* Nuevo modal de alcance de exportación */
+.scope-body{padding:18px 18px 6px;text-align:center}
+.scope-body h3{margin:0 0 8px;font-size:19px;color:var(--ink)}
+.scope-body p{margin:0 0 16px;font-size:14px;color:var(--muted);line-height:1.5}
+.scope-options{padding:6px 14px 14px}
+.scope-option{
+  display:flex;align-items:center;gap:14px;
+  width:100%;padding:14px;margin-bottom:10px;
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  cursor:pointer;text-align:left;
+  transition:background .15s, border-color .15s, transform .1s;
+}
+.scope-option:hover{background:#f8fafc;border-color:var(--brand)}
+.scope-option:active{transform:scale(.985)}
+.scope-option-icon{
+  font-size:26px;line-height:1;flex:0 0 auto;
+  width:46px;height:46px;border-radius:12px;
+  display:grid;place-items:center;background:#dbeafe;
+}
+.scope-option.current .scope-option-icon{background:#dcfce7}
+.scope-option.all .scope-option-icon{background:#fef3c7}
+.scope-option-body{flex:1;min-width:0}
+.scope-option-body strong{
+  display:block;font-size:15px;font-weight:650;
+  color:var(--ink);margin-bottom:2px;
+}
+.scope-option-body small{
+  display:block;font-size:12.5px;color:var(--muted);line-height:1.35;
+}
+.scope-option-arrow{
+  font-size:22px;color:var(--muted);flex:0 0 auto;
+  transition:transform .15s, color .15s;
+}
+.scope-option:hover .scope-option-arrow{transform:translateX(2px);color:var(--brand)}
+
+.closed-body{padding:22px 18px 10px;text-align:center}
+.closed-icon{font-size:56px;line-height:1;margin:0 0 12px}
+.closed-body h3{margin:0 0 10px;font-size:19px;color:var(--ink)}
+.closed-body p{margin:0 0 8px;font-size:14px;color:var(--muted);line-height:1.5}
+.closed-body strong{color:var(--ink)}
+
+.dup-body{padding:20px 18px 10px}
+.dup-body h3{margin:0 0 8px;font-size:18px;color:var(--ink);text-align:center}
+.dup-body p{margin:0 0 16px;font-size:14px;color:var(--muted);line-height:1.5;text-align:center}
+.dup-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.dup-field label{
+  font-size:10px;font-weight:800;letter-spacing:.05em;
+  color:var(--muted);text-transform:uppercase;
+}
+.dup-field select{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:12px;font:inherit;font-size:15px;background:#fff;color:var(--ink);
+}
+.dup-field select:focus{
+  outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent;
+}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(16px);
+  background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;
+  font-size:13.5px;opacity:0;pointer-events:none;transition:.22s;z-index:99;
+  box-shadow:0 12px 30px -10px rgba(15,23,42,.6);max-width:88vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Utilidad: ocultar hojas cerradas al imprimir solo la semana actual */
+body.print-only-current .hoja.cerrada{display:none !important;}
+
+@media print{
+  @page{ size: A3 landscape; margin: 8mm; }
+  html,body{background:#fff !important;padding:0 !important;margin:0 !important}
+  .topbar,.fab,.fab-top,.menu,.modal,.hoja-head,.hoja-actions,.empty,.toast,.banner-cerrada,.searchbar,.no-results{display:none !important}
+  main{padding:0 !important;margin:0 !important;display:block !important}
+  .hoja{
+    box-shadow:none !important;border:0 !important;border-radius:0 !important;
+    margin:0 !important;padding:0 !important;background:#fff !important;
+    break-after:page;page-break-after:always;
+    opacity:1 !important;
+    display:block !important;
+  }
+  .hoja.colapsada .table-wrap,
+  .hoja.colapsada .hoja-actions{
+    display:block !important;
+  }
+  .hoja:last-child{break-after:auto;page-break-after:auto}
+  .table-wrap{overflow:visible !important;opacity:1 !important;display:block !important}
+  .meta-row{display:table-row !important}
+  table.grid{
+    min-width:0 !important;width:100% !important;
+    table-layout:fixed !important;border-collapse:collapse !important;
+    color:#000 !important;font-size:9pt !important;
+  }
+  table.grid th,table.grid td{
+    border:1px solid #000 !important;padding:2px 3px !important;
+    color:#000 !important;background:none !important;
+    overflow:hidden;word-break:break-word;line-height:1.2;
+  }
+  table.grid tbody td{height:38px !important}
+  table.grid thead th{
+    font-weight:700 !important;text-align:left !important;
+    position:static !important;
+  }
+  table.grid thead tr.meta-row th{font-weight:700 !important;font-size:1.05em}
+  table.grid tbody tr{cursor:default;display:table-row !important}
+  .chk-print{font-weight:700 !important}
+  mark.busq{background:transparent !important;color:#000 !important}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">📍</span>
+    <div>
+      <strong>Localizaciones</strong>
+      <small>Prospección de zonas</small>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn share" data-act="share-open" title="Compartir">📤 Compartir</button>
+    <button class="btn ghost icon" data-act="menu" id="btnMenu" aria-label="Menú">⋮</button>
+  </div>
+  <nav class="menu" id="menu">
+    <button data-act="new-hoja">➕ Nueva hoja de zona</button>
+    <button data-act="settings">⚙️ Ajustes</button>
+    <div class="sep"></div>
+    <button data-act="share-open">📤 Compartir (PDF / Excel / CSV)</button>
+    <div class="sep"></div>
+    <button data-act="export-json">⬇️ Descargar copia (.json)</button>
+    <button data-act="import-json">⬆️ Importar copia (.json)</button>
+    <div class="sep"></div>
+    <button data-act="wipe" class="danger">🗑️ Borrar todos los datos</button>
+  </nav>
+</header>
+
+<div class="searchbar" id="searchbar">
+  <div class="searchbar-inner">
+    <span class="icon-search">🔍</span>
+    <input type="text" id="searchInput" placeholder="Buscar calle, propietario, teléfono…" autocomplete="off" spellcheck="false">
+    <button type="button" class="clear-search" data-act="clear-search" aria-label="Borrar búsqueda">✕</button>
+  </div>
+  <div class="search-info" id="searchInfo"></div>
+</div>
+
+<main id="app"></main>
+
+<div class="no-results" id="noResults">No hay registros que coincidan con la búsqueda.</div>
+
+<button class="fab-top" id="fabTop" data-act="scroll-top" aria-label="Volver arriba">↑</button>
+<button class="fab" data-act="new-hoja" aria-label="Añadir hoja de zona">+</button>
+
+<div class="modal" id="editor">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Editar registro">
+    <div class="sheet-head">
+      <strong id="ed-title">Registro</strong>
+      <button class="icon-btn" data-act="close-editor" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="sheet-body"><div class="fields" id="ed-fields"></div></div>
+    <div class="sheet-foot" style="flex-wrap:wrap">
+      <button class="btn danger-ghost" data-act="del-row">Eliminar</button>
+      <button class="btn" data-act="dup-row" style="background:#dbeafe;color:#1e40af">📋 Duplicar</button>
+      <button class="btn primary" data-act="close-editor">Listo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="dupModal">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Duplicar fila">
+    <div class="sheet-head">
+      <strong>Duplicar registro</strong>
+      <button class="icon-btn" data-act="close-dup" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="sheet-body dup-body">
+      <h3>📋 Copiar a nueva fila</h3>
+      <p>Se copiarán todos los datos del registro actual a una fila nueva. Después podrás modificar lo que haga falta (número, piso, etc.).</p>
+      <div class="dup-field">
+        <label>Destino</label>
+        <select id="dupDestino"></select>
+      </div>
+    </div>
+    <div class="sheet-foot" style="justify-content:center">
+      <button class="btn" data-act="close-dup" style="background:#e2e8f0;color:var(--ink)">Cancelar</button>
+      <button class="btn primary" data-act="dup-confirm">Duplicar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settings">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Ajustes">
+    <div class="sheet-head">
+      <strong>Ajustes</strong>
+      <button class="icon-btn" data-act="close-settings" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="fields">
+        <div class="field full">
+          <label>Filas por hoja</label>
+          <input type="number" id="set-filas" min="5" max="60" step="1" inputmode="numeric">
+          <p class="hint">Si una hoja tiene menos registros, se completa con filas en blanco hasta este número, igual que en el Excel original.</p>
+        </div>
+        <div class="field full">
+          <label>Tamaño de papel</label>
+          <input type="text" value="A3 horizontal (fijo)" readonly style="background:#f1f5f9;color:var(--muted)">
+          <p class="hint">El PDF y el Excel se generan siempre en A3 horizontal para que quepan todas las columnas.</p>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <span></span>
+      <button class="btn primary" data-act="save-settings">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="closedModal">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Hoja cerrada">
+    <div class="sheet-head">
+      <strong>Hoja cerrada</strong>
+      <button class="icon-btn" data-act="close-closed-modal" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="sheet-body closed-body">
+      <div class="closed-icon">🔒</div>
+      <h3>Esta hoja pertenece a la semana <span id="closedSemana">?</span></h3>
+      <p>Ya no se pueden modificar las filas de esta hoja porque pertenece a una semana anterior.</p>
+      <p>Puedes seguir viéndola, exportarla o eliminarla. Para trabajar esta semana, crea una hoja nueva con los mismos datos.</p>
+    </div>
+    <div class="sheet-foot" style="justify-content:center">
+      <button class="btn" data-act="close-closed-modal" style="background:#e2e8f0;color:var(--ink)">Entendido</button>
+      <button class="btn primary" data-act="crear-hoja-heredando" id="btnCrearHeredando">➕ Crear hoja nueva</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="sharePickModal">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Compartir">
+    <div class="sheet-head">
+      <strong>Compartir los datos</strong>
+      <button class="icon-btn" data-act="close-share-pick" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="sheet-body">
+      <p class="share-intro" style="margin:0 0 14px;font-size:13.5px;color:var(--muted);line-height:1.4">
+        Elige en qué formato quieres compartir o descargar los datos:
+      </p>
+
+      <button class="share-option pdf" data-act="share-do-pdf">
+        <span class="share-option-icon">📄</span>
+        <span class="share-option-body">
+          <strong>PDF</strong>
+          <small>Formato A3 horizontal, idéntico al Excel original</small>
+        </span>
+        <span class="share-option-arrow">›</span>
+      </button>
+
+      <button class="share-option excel" data-act="share-do-excel">
+        <span class="share-option-icon">📊</span>
+        <span class="share-option-body">
+          <strong>Excel (.xlsx)</strong>
+          <small>A3 horizontal, todas las columnas, texto ajustado</small>
+        </span>
+        <span class="share-option-arrow">›</span>
+      </button>
+
+      <button class="share-option csv" data-act="share-do-csv">
+        <span class="share-option-icon">📋</span>
+        <span class="share-option-body">
+          <strong>CSV (texto plano)</strong>
+          <small>Para Google Sheets o sistemas antiguos</small>
+        </span>
+        <span class="share-option-arrow">›</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- NUEVO: modal para elegir alcance de la exportación -->
+<div class="modal" id="exportScopeModal">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Alcance de la exportación">
+    <div class="sheet-head">
+      <strong>¿Qué quieres exportar?</strong>
+      <button class="icon-btn" data-act="close-export-scope" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="sheet-body scope-body">
+      <h3>Elige el alcance</h3>
+      <p>Puedes exportar solo las hojas de la semana actual (recomendado) o incluir también el histórico completo.</p>
+    </div>
+    <div class="scope-options">
+      <button class="scope-option current" data-act="export-scope-current">
+        <span class="scope-option-icon">📅</span>
+        <span class="scope-option-body">
+          <strong>Solo la semana actual</strong>
+          <small>Exporta únicamente las hojas de la semana en curso</small>
+        </span>
+        <span class="scope-option-arrow">›</span>
+      </button>
+      <button class="scope-option all" data-act="export-scope-all">
+        <span class="scope-option-icon">🗂️</span>
+        <span class="scope-option-body">
+          <strong>Todas las hojas (histórico)</strong>
+          <small>Incluye también las hojas cerradas de semanas anteriores</small>
+        </span>
+        <span class="scope-option-arrow">›</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="sharePdfModal">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Compartir PDF">
+    <div class="sheet-head">
+      <strong>Compartir en PDF</strong>
+      <button class="icon-btn" data-act="close-share-pdf" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="sheet-body share-body">
+      <div class="share-icon">📄</div>
+      <h3>Vamos a generar el PDF</h3>
+      <p>Se abrirá el diálogo del sistema. Sigue estos pasos según tu móvil:</p>
+      <div class="share-steps">
+        <ol id="shareStepsList"></ol>
+      </div>
+      <p class="platform-hint" id="platformHint"></p>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn" data-act="close-share-pdf" style="background:#e2e8f0;color:var(--ink)">Cancelar</button>
+      <button class="btn primary" data-act="do-print">🖨️ Abrir diálogo</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".json,application/json" hidden>
+<div class="toast" id="toast"></div>
+
+<datalist id="dl-calles-lh"></datalist>
+<datalist id="dl-calles-es"></datalist>
+<datalist id="dl-calles-capellades"></datalist>
+<datalist id="dl-calles-masquefa"></datalist>
+<datalist id="dl-calles-piera"></datalist>
+
+<script src="exceljs.min.js"></script>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   LISTAS DE OPCIONES
+   ============================================================ */
+var COMERCIALES = ['Jeniffer', 'Jose', 'Olga'];
+var OFICINAS = [
+  'Aguas', 'Av/ Madrid', 'Capellades', 'Collblanc', 'Cornellà',
+  'Enric Prat de la Riba', 'Maladeta', 'St. Andreu de la Barca', 'Piera', 'PVP'
+];
+var OFICINA_POR_DEFECTO = 'Enric Prat de la Riba';
+var ESTADOS = ['Buzón lleno', 'Okupado', 'Vacío', 'Venta', 'Otros'];
+
+var MUNICIPIOS = [
+  'Hospitalet de Llobregat',
+  'Esplugues de Llobregat',
+  'Capellades',
+  'Masquefa',
+  'Piera'
+];
+var MUNICIPIO_POR_DEFECTO = 'Hospitalet de Llobregat';
+
+/* ============================================================
+   CÁLCULO DE LA SEMANA ISO DEL AÑO
+   ============================================================ */
+function semanaISO(fecha){
+  var d = (fecha instanceof Date) ? new Date(fecha.getTime()) : new Date();
+  d.setHours(0,0,0,0);
+  var dia = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - dia + 3);
+  var primerJueves = new Date(d.getFullYear(), 0, 4);
+  var diaPrimero = (primerJueves.getDay() + 6) % 7;
+  primerJueves.setDate(primerJueves.getDate() - diaPrimero + 3);
+  var diff = d.getTime() - primerJueves.getTime();
+  return 1 + Math.round(diff / (7 * 24 * 3600 * 1000));
+}
+function semanaActualTexto(){
+  return String(semanaISO(new Date()));
+}
+function esHojaCerrada(h){
+  return h.semana !== semanaActualTexto();
+}
+
+/* ============================================================
+   CALLES
+   ============================================================ */
+var CALLES_LH_RAW = "Avinguda d'Albert Bastardas|Avinguda d'Álvarez de Castro|Avinguda d'Amadeu Torner|Avinguda d'Amèrica|Avinguda d'Europa|Avinguda d'Isabel la Catòlica|Avinguda de Can Serra|Avinguda de Carmen Amaya|Avinguda de Catalunya|Avinguda de Joan Carles I|Avinguda de Josep Molins|Avinguda de Josep Tarradellas i Joan|Avinguda de l'Electricitat|Avinguda de la Fabregada|Avinguda de la Granvia de l'Hospitalet|Avinguda de la Mare de Déu de Bellvitge|Avinguda de la Primavera|Avinguda de Manuel Azaña|Avinguda de Miraflors|Avinguda de Pau Casals|Avinguda de Ponent|Avinguda de Ramon Frontera|Avinguda de Severo Ochoa|Avinguda de Tomás Giménez|Avinguda de Ventura Gassol|Avinguda de Vilafranca|Avinguda de Vilanova|Avinguda del Bosc|Avinguda del Carrilet|Avinguda del Doctor Ramon Solanich i Riera|Avinguda del Masnou|Avinguda del Metro|Avinguda del Nord|Avinguda del Torrent Gornal|Camí d'Esplugues|Camí de Cal Joan del Ros|Camí de Cal Pau Redó|Camí de la Cadena|Camí de la Fonteta|Camí de la Ribera|Camí de la Riereta|Camí del Torrent de Can Nyac|Carrer Alt|Carrer d'Alacant|Carrer d'Albareda|Carrer d'Albéniz|Carrer d'Albiol|Carrer d'Almadén|Carrer d'Almeria|Carrer d'Amadeu Vives|Carrer d'Andorra|Carrer d'Àngel Guimerà|Carrer d'Ángeles Santos|Carrer d'Antonio Machado|Carrer d'Arquimedes|Carrer d'El Empecinado|Carrer d'Empúries|Carrer d'Enric Morera|Carrer d'Enric Prat de la Riba|Carrer d'Ernest Lluch|Carrer d'España|Carrer d'Esteve Grau|Carrer d'Estruch|Carrer d'Herrero|Carrer d'Holanda|Carrer d'Ibèria|Carrer d'Isaac Peral|Carrer d'Occident|Carrer d'Orient|Carrer d'Òrrius|Carrer d'Oviedo|Carrer de Bacardí|Carrer de Badajoz|Carrer de Badalona|Carrer de Barcelona|Carrer de Batllori|Carrer de Belchite|Carrer de Bellavista|Carrer de Bernini|Carrer de Besa|Carrer de Blas Fernández Lirola|Carrer de Buenos Aires|Carrer de Ca n'Alòs|Carrer de Calderón de la Barca|Carrer de Campoamor|Carrer de Can Pi|Carrer de Can Pujadas|Carrer de Can Trias|Carrer de Carles Martí Feced|Carrer de Carrasco i Formiguera|Carrer de Casanova|Carrer de Castelao|Carrer de Castellbò|Carrer de Castellvell|Carrer de Caterina Albert|Carrer de Ceravalls|Carrer de Cervantes|Carrer de Churruca|Carrer de Clara Campoamor|Carrer de Claret|Carrer de Clotet|Carrer de Collserola|Carrer de Colom|Carrer de Cornellà|Carrer de Corominas|Carrer de Cortada|Carrer de Cotonat|Carrer de Covadonga|Carrer de Digoine|Carrer de Diògenes|Carrer de Dolors Aleu|Carrer de Farnés|Carrer de Faus|Carrer de Felip Pedrell|Carrer de Femades|Carrer de Ferré|Carrer de Ferrer i Guàrdia|Carrer de Finestrelles|Carrer de Floridablanca|Carrer de Font|Carrer de Fortuny|Carrer de França|Carrer de Francesc Layret|Carrer de Francesc Moragas|Carrer de Frederic Prats|Carrer de Galvani|Carrer de Girona|Carrer de Gonçal Pons|Carrer de Goya|Carrer de Granada|Carrer de Graner|Carrer de Granollers|Carrer de Gravina|Carrer de Hannah Arendt|Carrer de Jacint Verdaguer|Carrer de Jansana|Carrer de Jaume Ventura i Tort|Carrer de Jerusalem|Carrer de Joan de Joanes|Carrer de Joan Maragall|Carrer de Joan N. García-Nieto|Carrer de Joan Pallarès|Carrer de Joan XXIII|Carrer de José Agustín Goytisolo|Carrer de Josep Anselm Clavé|Carrer de Josep Irla i Bosch|Carrer de Josep Maria de Sagarra|Carrer de Josep Muntané i Almirall|Carrer de Josep Pla|Carrer de Josep Prats|Carrer de Josep Suñol|Carrer de Juan de Toledo|Carrer de Juan Ramón Jiménez|Carrer de Justa Goicoechea|Carrer de l'Abedul|Carrer de l'Alegria|Carrer de l'Alhambra|Carrer de l'Alumini|Carrer de l'Ametller|Carrer de l'Amistat|Carrer de l'Antiga Travessera|Carrer de l'Aprestadora|Carrer de l'Arquitectura|Carrer de l'Atlàntida|Carrer de l'Aviació|Carrer de l'Ebre|Carrer de l'El·lipse|Carrer de l'Emigrant|Carrer de l'Empordà|Carrer de l'Enginyer Moncunill|Carrer de l'Ermita de Bellvitge|Carrer de l'Escultura|Carrer de l'Església|Carrer de l'Esmaragda|Carrer de l'Estrella|Carrer de l'Estronci|Carrer de l'Estudi|Carrer de l'Onze de Setembre|Carrer de l'Uva|Carrer de la Bisbal|Carrer de la Botànica|Carrer de la Carpa|Carrer de la Ciutat Comtal|Carrer de la Cooperativa|Carrer de la Creu Roja|Carrer de la Cultura|Carrer de la Feixa Llarga|Carrer de la Física|Carrer de la Florida|Carrer de la Fortuna|Carrer de la Glòria|Carrer de la Hierbabuena|Carrer de la Igualtat|Carrer de la Independència|Carrer de la Joventut|Carrer de la Libèl·lula|Carrer de la Literatura|Carrer de la Maladeta|Carrer de la Mare de Déu de la Llum|Carrer de la Mare de Déu de la Mercè|Carrer de la Mare de Déu de Núria|Carrer de la Mare de Déu de Puigcerver|Carrer de la Mare de Déu del Carme|Carrer de la Mare de Déu dels Desemparats|Carrer de la Metal·lúrgia|Carrer de la Mina|Carrer de la Muntanya|Carrer de la Pubilla Cases|Carrer de la Reforma|Carrer de la Renclusa|Carrer de la Residència|Carrer de la Riera Blanca|Carrer de la Riera de l'Escorxador|Carrer de la Riera de la Creu|Carrer de la Riera del Canyet|Carrer de la Riera dels Frares|Carrer de la Rosa d'Alexandria|Carrer de la Talaia|Carrer de la Terra Alta|Carrer de la Unió|Carrer de la Vinyeta|Carrer de Lavínia|Carrer de Leonardo da Vinci|Carrer de les Aigües del Llobregat|Carrer de les Amapolas|Carrer de les Arts i els Oficis|Carrer de les Bòbiles|Carrer de les Ciències|Carrer de les Esquadres|Carrer de les Illes Canàries|Carrer de les Mimoses|Carrer de les Muses|Carrer de les Planes|Carrer de les Roselles|Carrer de les Roses|Carrer de les Sangoneres|Carrer de Llançà|Carrer de Llavinés|Carrer de Lleida|Carrer de Lleó|Carrer de Llevant|Carrer de Llunàs|Carrer de Los Castillejos|Carrer de Luarca|Carrer de Màlaga|Carrer de Maluquer|Carrer de Marcel·lí Esquius|Carrer de Martí i Blasi|Carrer de Martí-Codolar|Carrer de Martorell|Carrer de Mas|Carrer de Menéndez Pidal|Carrer de Menorca|Carrer de Mercader|Carrer de Miguel Hernández|Carrer de Mileva Maric|Carrer de Miquel Romeu|Carrer de Miralta|Carrer de Mistral|Carrer de Molines|Carrer de Mont-ras|Carrer de Montserrat|Carrer de Montserrat Roig|Carrer de Mossèn Jaume Busquet|Carrer de Mossèn Lluís Pañella|Carrer de Mossèn Santiago Oliveras|Carrer de Muns|Carrer de Narcís Monturiol|Carrer de Natzaret|Carrer de Numància|Carrer de Pablo Iglesias|Carrer de Pareto|Carrer de París|Carrer de Pau Sans|Carrer de Peníscola|Carrer de Pere Pelegrí|Carrer de Pérez Galdós|Carrer de Pi i Margall|Carrer de Piera|Carrer de Plini|Carrer de Ponsich|Carrer de Portugal|Carrer de Provença|Carrer de Pujós|Carrer de Rabarté|Carrer de Rafael Barradas|Carrer de Rafael Campalans|Carrer de Rius i Carrió|Carrer de Roca i Umbert|Carrer de Rodés|Carrer de Rosalía de Castro|Carrer de Rosell|Carrer de Rosich|Carrer de Rossend Arús|Carrer de Sabadell|Carrer de Salamina|Carrer de Salvador|Carrer de Salvador Espriu|Carrer de Salvador Seguí|Carrer de Sanfeliu|Carrer de Sant Antoni|Carrer de Sant Carles|Carrer de Sant Eugeni|Carrer de Sant Francesc Xavier|Carrer de Sant Joan|Carrer de Sant Jordi|Carrer de Sant Josep|Carrer de Sant Pere|Carrer de Sant Pius X|Carrer de Sant Rafael|Carrer de Sant Ramon|Carrer de Sant Roc|Carrer de Santa Anna|Carrer de Santa Bàrbara|Carrer de Santa Eulàlia|Carrer de Santa Rosa|Carrer de Santiago Apòstol|Carrer de Santiago de Compostel·la|Carrer de Santiago Ramón y Cajal|Carrer de Santiago Rusiñol|Carrer de Saurí|Carrer de Segòvia|Carrer de Sevilla|Carrer de Simancas|Carrer de Sort|Carrer de Subur|Carrer de Tarragona|Carrer de Tecla Sala|Carrer de Terra Baixa|Carrer de Terré|Carrer de Toledo|Carrer de Torns|Carrer de Valeta|Carrer de Vallparda|Carrer de Vaquer|Carrer de Vic|Carrer de Victoria Kent|Carrer de Vigo|Carrer de Vilardosa|Carrer de Vilumara|Carrer de Vinaròs|Carrer del Baró de Maldà|Carrer del Bruc|Carrer del Canigó|Carrer del Cavall Bernat|Carrer del Centre|Carrer del Cinca|Carrer del Cobalt|Carrer del Comerç|Carrer del Congost|Carrer del Crom|Carrer del Doctor Fleming|Carrer del Doctor Gregorio Marañón|Carrer del Doctor Jaume Ferran i Clua|Carrer del Doctor Martí i Julià|Carrer del Dos de Maig|Carrer del Garraf|Carrer del Gasòmetre|Carrer del General Manso|Carrer del General Prim|Carrer del Jardí|Carrer del Llobregat|Carrer del Llorer|Carrer del Mercat|Carrer del Mestre Candi|Carrer del Mestre Carbó|Carrer del Mestre Serrano|Carrer del Migdia|Carrer del Molí|Carrer del Mont|Carrer del Montseny|Carrer del Níquel|Carrer del Pare Marchena|Carrer del Parral|Carrer del Patronat|Carrer del Pedraforca|Carrer del Pintor Mestre i Castellví|Carrer del Pintor Sorolla|Carrer del Poeta Llombart|Carrer del Prat|Carrer del Prat de la Manta|Carrer del Primer de Maig|Carrer del Príncep de Bergara|Carrer del Progrés|Carrer del Radi|Carrer del Rei En Jaume|Carrer del Rosselló|Carrer del Rubidi|Carrer del Teide|Carrer del Tel·luri|Carrer del Ter|Carrer del Transformador|Carrer del Treball|Carrer del Xipreret|Carrer dels Clavells|Carrer dels Garrofers|Carrer dels Joncs|Carrer dels Motors|Carrer dels Naranjos|Carrer dels Pins|Carrer Major|Carrer Modern|Carrer Oriental|Carrer Transversal|Carretera Antiga del Prat|Carretera d'Esplugues|Carretera de Collblanc|Carretera de la Feixa Llarga|Carretera de la Vora del Riu|Carretera de Sant Roc|Carretera del Mig|Jardins d'Antonio Machado|Jardins d'Artemisia Gentileschi|Jardins d'Hipàcia d'Alexandria|Jardins de Ca n'Arús|Jardins de Can Sumarro|Jardins de Cosme Toda|Jardins de Francesc Pedra i Lola Peñalver|Jardins de la Granota|Jardins de la Mediterrània|Jardins de la Sénia|Jardins de les Moreres|Jardins de les Nacions Unides|Jardins de Matilde Ucelay|Jardins de Pablo Picasso|Jardins de Pompeu Fabra|Jardins de Rita Fernández|Jardins de Rosa Sensat|Jardins de Salvador Dalí|Jardins de Tecla Sala|Jardins de Teresa Navarrro|Jardins del Bisbe Joan Carrera|Jardins del Canal de la Infanta|Parc de Bellvitge|Parc de Can Buxeres|Parc de Can Cluset|Parc de Can Creixells|Parc de l'Alhambra|Parc de la Cabana|Parc de la Granvia de l'Hospitalet|Parc de la Marquesa|Parc de la Remunta|Parc de la Serp|Parc de la Torrassa|Parc de les Planes|Parc dels Ocellets|Passatge d'Amat|Passatge d'Estadella|Passatge de Bonvehí|Passatge de Ca n'Alòs|Passatge de Can Polític|Passatge de Can Vila|Passatge de Can Xerricó|Passatge de Colom|Passatge de Costa|Passatge de Guilera|Passatge de Jansana|Passatge de Jaume Blanchart|Passatge de l'Escorxador|Passatge de la Concepció|Passatge de la Pau|Passatge de la Rectoria|Passatge de Llopis|Passatge de Llunàs|Passatge de Matas|Passatge de Milans|Passatge de Montserrat Isern|Passatge de Paquita|Passatge de Piera|Passatge de Pons|Passatge de Rius|Passatge de Rovira|Passatge de Salvador|Passatge de Sant Cristòfol|Passatge de Zuloaga|Passatge del Cementiri|Passatge del Patronat|Passatge del Xiprer|Passatge Dos|Passatge Miner|Passatge Oliveras|Passeig de Bellvitge|Passeig del Conveni de 1713|Plaça d'ALPI|Plaça d'Amalvígia|Plaça d'Anna Frank|Plaça d'Eivissa|Plaça d'Ernest Lluch|Plaça d'Europa|Plaça de Blas Infante|Plaça de Camilo José Cela|Plaça de Can Colom|Plaça de Can Trinxet|Plaça de Canalejas|Plaça de Federico García Lorca|Plaça de Francesc Macià i Llussà|Plaça de Frederica Montseny|Plaça de Granada|Plaça de Guernica|Plaça de Joan Brossa|Plaça de Josep Bordonau i Balaguer|Plaça de l'Ajuntament|Plaça de l'Alzina|Plaça de l'Escorsa|Plaça de l'Hortet|Plaça de l'UNICEF|Plaça de la Bòbila|Plaça de la Carpa|Plaça de la Casa de Reconciliació|Plaça de la Constitució|Plaça de la Cultura|Plaça de la Font|Plaça de la Llibertat|Plaça de la Llosa|Plaça de la Mare de Déu de Montserrat|Plaça de la Mare de Déu del Pilar|Plaça de la Pubilla Cases|Plaça de la Remunta|Plaça de la Solidaritat|Plaça de les Comunitats|Plaça de les Germanes Ocaña|Plaça de les Palmeres|Plaça de les Vidrieries Llobregat|Plaça de Lluís Companys i Jover|Plaça de Lola Anglada|Plaça de Maria Artigal|Plaça de Maria Aurèlia Capmany|Plaça de Maria Montessori|Plaça de Maria Soteras|Plaça de Marie Curie|Plaça de Milagros Consarnau i Sabaté|Plaça de Mossèn Homar|Plaça de Pius XII|Plaça de Provençana|Plaça de Puig i Gairalt|Plaça de Quart|Plaça de Sant Isidre|Plaça de Sant Jordi|Plaça de Tuzla|Plaça del Cadí|Plaça del Mercat de Collblanc|Plaça del Mestre Clavé|Plaça del Repartidor|Plaça del Repòs|Plaça del Vidre|Plaça dels Avis|Plaça dels Blocs de la Florida|Plaça dels Cirerers|Plaça dels Pirineus|Plaça dels Veïns|Plaça Espanyola|Plaça Sant Joan|Pont de Matacavalls|Rambla Catalana|Rambla de Just Oliveras|Rambla de la Marina|Ronda de Dalt|Ronda de la Torrassa|Ronda de la Via|Ronda del Litoral|Travessera de Collblanc|Travessera de les Corts|Travessia Industrial|Urbanització del Canyet|Via d'Enllaç";
+
+var CALLES_ES_RAW = "Avinguda d'Ahrensburg|Avinguda de Cornellà|Avinguda de Jacint Esteva i Fontanet|Avinguda de la Ciutat de l'Hospitalet|Avinguda de la Generalitat de Catalunya|Avinguda de la Mestra Dolors Barceló|Avinguda de la Miranda|Avinguda del Baix Llobregat|Avinguda de l'Electricitat|Avinguda de Lluis Companys|Avinguda dels Països Catalans|Avinguda dels Traginers|Avinguda del Torrent|Avinguda d'Isidre Martí|Avinguda Muntanyenca|Camí de Can Boixeres|Camí de Can Nyac|Carrer d'Alexandre Soler i March|Carrer d'Amadeu Vives|Carrer d'Andreu Amat|Carrer d'Àngel Guimerà|Carrer d'Antoni Gaudí|Carrer d'Antoni Maria Gallissà i Soqué|Carrer d'Apel·les Mestres|Carrer d'August Font i Carreras|Carrer de Bartomeu Bermejo|Carrer de Bonavista|Carrer de Can Dori|Carrer de Clara Campoamor|Carrer de David Carreras i Trias|Carrer de Díaz de la Fuente|Carrer d'Eduard Toldrà|Carrer de Ferrer i Bassa|Carrer de Finestrelles|Carrer de Francesc Layret|Carrer de Francesc Llunell|Carrer de Francesc Moragas|Carrer de Francesc Ribalta|Carrer de Francesc Romeu|Carrer de Fuerteventura|Carrer de Gaspar Fàbregas i Roses|Carrer de Jaume Balmes|Carrer de Jaume Huguet|Carrer de Jaume Marco|Carrer de Jaume Pros|Carrer de Joan Amades|Carrer de Joan Miró|Carrer de Joan XXIII|Carrer de Jordi de Déu|Carrer de José Echegaray|Carrer de Josep Anguera i Sala|Carrer de Josep Anselm Clavé|Carrer de Josep Argemí|Carrer de Josep Campreciós|Carrer de Josep Gras|Carrer de Josep Maria Jujol|Carrer de Josep Maria Ventura|Carrer de Josep Miquel Quintana|Carrer de Josep Puig i Cadafalch|Carrer de Josep Rodoreda|Carrer de Juan de la Cierva|Carrer de Juli Culebras i Barba|Carrer de Juli Garreta|Carrer del 8 de Març|Carrer de la Baronessa de Maldà|Carrer de la Constància|Carrer de la Creu del Raval|Carrer de la Ginesta|Carrer de l'Alcalde Martí Figueras i Castillo|Carrer de l'Alegria|Carrer de la Lleialtat|Carrer de la Maladeta|Carrer de la Menta|Carrer de l'Amistat|Carrer de la Pau|Carrer de la Piscina|Carrer de la Pubilla Cases|Carrer de la Rajoleria|Carrer de la Riba|Carrer de la Riereta|Carrer de la Rosella|Carrer de la Serra del Cadí|Carrer de la Serra del Montsec|Carrer de la Tramuntana|Carrer de Laureà Miró|Carrer de la Vallerona|Carrer de l'Ave Maria|Carrer de la Verge de Guadalupe|Carrer de la Verge de la Mercè|Carrer de la Verge de la Paloma|Carrer de la Via Augusta|Carrer de la Vinya|Carrer del Bruc|Carrer del Carme|Carrer del Casal de Sant Jordi|Carrer del Doctor Alexander Fleming|Carrer del Doctor Ferran|Carrer del Doctor Gimeno|Carrer del Doctor Ramon Turró|Carrer de les Escaletes|Carrer de les Flors|Carrer de l'Església|Carrer de les Glicines|Carrer de les Magnòlies|Carrer de l'Esmaragda|Carrer de les Piles|Carrer de les Planes|Carrer de l'Esport|Carrer de l'Est|Carrer del Frontó|Carrer del Gall|Carrer de l'Hortènsia|Carrer de Llevant|Carrer de Lluís Borrassà|Carrer de Lluís Domenech i Muntaner|Carrer de Lluís Labarta|Carrer de Lluís Millet|Carrer del Mar|Carrer del Marquès d'Espanya|Carrer del Mestre Joan Corrales|Carrer del Mestre Joaquim Rosal|Carrer del Mestre Manuel de Falla|Carrer del Molí|Carrer del Mossèn Esteve Carbonell|Carrer del Nord|Carrer del Pas del Sucre|Carrer del Primer de Maig|Carrer del Priorat|Carrer del Professor Barraquer|Carrer del Racó d'en Muns|Carrer del Raval|Carrer dels Àngels|Carrer dels Caquis|Carrer dels Cedres|Carrer dels Eucaliptus|Carrer dels Germans Serra|Carrer dels Jocs Florals|Carrer dels Lleons|Carrer dels Pins|Carrer dels Sometents|Carrer de Magdalena Amigó|Carrer de Manuel Florentín Pérez|Carrer de Maria Aurèlia Capmany|Carrer de Mercè Rodoreda|Carrer de Milà i Pi|Carrer d'Emili Juncadella|Carrer de Miramar|Carrer de Montesa|Carrer de Montserrat|Carrer de Montserrat Roig|Carrer de Mossèn Jacint Verdaguer|Carrer de Narcís Monturiol|Carrer de Nostra Senyora de Lourdes|Carrer d'Enric Granados|Carrer d'Enric Morera|Carrer d'Enrique Tierno Galván|Carrer de Pau Casals|Carrer de Pau Claris|Carrer de Pau Torres|Carrer de Pau Vergós|Carrer de Pedro Berruguete|Carrer de Pere Galvany|Carrer de Pere Joan|Carrer de Pere Pelegrí|Carrer de Picalques|Carrer de Rafael Casanova i Comes|Carrer de Rafael Sebastià Irla|Carrer de Ramon Llull|Carrer de Ricard Güell|Carrer de Rocabert|Carrer de Roser Artigas|Carrer de Rovellat|Carrer de Sabina Mitjavila|Carrer de Santa Anna|Carrer de Sant Albert Magne|Carrer de Sant Antoni Maria Claret|Carrer de Santa Rosa|Carrer de Sant Francesc Xavier|Carrer de Sant Gabriel|Carrer de Santiago Ramon y Cajal|Carrer de Santiago Rusiñol|Carrer de Sant Jordi|Carrer de Sant Josep|Carrer de Sant Llorenç|Carrer de Sant Mateu|Carrer de Sant Salvador|Carrer de Severo Ochoa|Carrer d'Esperança Martí|Carrer de Tenerife|Carrer de Tomàs Bretón|Carrer de Vic|Carrer de Vicenç Bou|Carrer de Vidal i Ribas|Carrer d'Ignasi Iglésias|Carrer d'Isaac Albéniz|Carrer d'Oriol|Carrer Nou|Passatge d'Alexandre Galí|Passatge de Joan Brillas|Passatge de Josep Cervera|Passatge del Baix Lloc|Passatge del Puig d'Óssa|Passatge dels Ametllers|Passatge del Xaloc|Passatge de Ramon Casas|Passatge de Santa Eulàlia|Passatge de Sant Joaquim|Passeig de Francesc Macià i Llussà|Passeig de Pablo Ruiz Picasso|Passeig de Sant Joan de Déu|Plaça de Blas Infante|Plaça de Catalunya|Plaça de Doña Carolina|Plaça de Jacinto Benavente|Plaça de Joan Tomàs i Parés|Plaça de la Constitució|Plaça de la Dona|Plaça de la Sardana|Plaça de l'Escorxador|Plaça de les Moreres|Plaça d'Elisabeth Eidenbenz|Plaça del Pare Miquel d'Esplugues|Plaça del Secretari Oliva|Plaça del Sol|Plaça del Taxi|Plaça de Macael|Plaça de Mahatma Gandhi|Plaça de Maria Guillén|Plaça de Mireia|Plaça de Pau Vila|Plaça de Pi i Margall|Plaça de Ramon Trias Fargas|Plaça de Santa Magdalena|Plaça de Sant Lluís Gonzaga|Plaça d'Oleguer Junyent|Pont Nou|Ronda de Dalt|Ronda del Canigó|Ronda del Puigmal";
+
+var CALLES_CAPELLADES_RAW = "Camí Cementiri|Camí Pas de l'Aigua|Carrer Abat Muntadas|Carrer Amador Romaní|Carrer Anselm Ferrer|Carrer Antoni Maria Claret|Carrer Ausias March|Carrer Barcelona|Carrer Benages|Carrer Catalunya|Carrer Costa de les Creus|Carrer d' Oló|Carrer de Josep Costa i Pomés|Carrer de l' Alba|Carrer de la Barquera|Carrer de la Mercè|Carrer de la Miranda|Carrer de Miramar|Carrer de Sant Joan|Carrer del Call|Carrer del Carme|Carrer del Fossar|Carrer del Molí Xic|Carrer del Pilar|Carrer del Portal|Carrer dels Alabrents|Carrer dels Pins|Carrer Divina Pastora|Carrer Doctor Fleming|Carrer Font|Carrer Font Cuitora|Carrer Font de la Reina|Carrer Garbí|Carrer Girat|Carrer J.Maragall|Carrer Joan Castells|Carrer la Canaleta|Carrer Lluis Companys|Carrer Magicarme|Carrer Major|Carrer Muntanya|Carrer Nou|Carrer Onze de Setembre de 1714|Carrer Padre Bernardí|Carrer Paperers|Carrer Pau Casals|Carrer Pep Ventura|Carrer Prolongació Miquel i Mas|Carrer Ramón Godó|Carrer Rec del Corronaire|Carrer Roca del Batista|Carrer Salvador Espriu|Carrer Sant Francesc|Carrer Sant Ramón|Carrer Santa Ana|Carrer Santa Dorotea|Carrer Santa Llúcia|Carrer Sarrià de Ter|Carrer Tarragona|Carrer Torre de Claramunt|Carrer Torrenova|Carrer Torrent de la Bleda|Carrer Torrent Formigosa|Carrer Verge de Montserrat|Carretera Matias Guasch|Passatge de la Curanya|Passatge de la Joventut|Passatge del Rossinyol|Passatge Divina Pastora|Passatge Escales|Passatge Garcia Lorca|Passatge Jardí|Passatge Lliga|Passeig de la Immaculada Concepció|Passeig Miquel Más|Plaça Àngel Guimerà|Plaça de Catalunya|Plaça de Espanya|Plaça de l' U d'Octubre|Plaça Sant Jaume|Plaça Sant Miquel|Plaça Verdaguer|Placeta d'en Pines|Ronda Capelló|Travessera de Benages|Travessera del Portal";
+
+var CALLES_MASQUEFA_RAW = "Avinguda Can Llopart|Avinguda de Can Marcet|Avinguda de Can Parellada|Avinguda de Can Valls|Avinguda de Catalunya|Avinguda de l' Hospitalet|Avinguda de la Beguda|Avinguda de la Font del Torrent|Avinguda de la Gran Via Diagonal|Avinguda de la Pineda|Avinguda de la Victòria|Avinguda de Masquefa|Avinguda del Baixador|Avinguda del Carrilet|Avinguda del Maresme|Avinguda Línia|Baixada dels Ametllers|Carrer Alta|Carrer Baix Sant Pere|Carrer Corraló de la Fassina|Carrer d' Abrera|Carrer d' Alboraia|Carrer d' Aragó|Carrer d' Esparreguera|Carrer d' Igualada|Carrer d' Ordal|Carrer d' Osona|Carrer d' Urgell|Carrer de Barcelona|Carrer de Bellavista|Carrer de Blasco de Garay|Carrer de Bonavista|Carrer de Campoamor|Carrer de Can Ginferrer|Carrer de Can Mata|Carrer de Can Valls|Carrer de Castellví de Rosanes|Carrer de Collbató|Carrer de Collserola|Carrer de Dídac Toldrà|Carrer de Francesc Macià|Carrer de Gelida|Carrer de Girona|Carrer de Granollers|Carrer de Jacint Verdaguer|Carrer de Jaume Ferran|Carrer de Joan Miró|Carrer de Josep Maria Valls|Carrer de Juan de la Cierva|Carrer de l' Alba|Carrer de l' Alt Camp|Carrer de l' Alzinar|Carrer de l' Empordà|Carrer de l' Era|Carrer de l' Escorxador|Carrer de l' Estació|Carrer de la Carretera Vella|Carrer de la Cerdanya|Carrer de la Concepció|Carrer de la Creu|Carrer de la Creueta|Carrer de la Fàbrica|Carrer de la Figuera|Carrer de la Font|Carrer de la Font de la Malesa|Carrer de la Font del Roure|Carrer de la Llum|Carrer de la Maladeta|Carrer de la Noguera|Carrer de la Pau|Carrer de la Pica d'Estats|Carrer de la Rectoria|Carrer de la Ribera d'Ebre|Carrer de la Riera de Claret|Carrer de la Segarra|Carrer de la Selva|Carrer de la Serpentina|Carrer de la Talaia|Carrer de la Tècnica|Carrer de la Tramuntana|Carrer de la Vall d'Aran|Carrer de la Verge de la Mercè|Carrer de les Escoles|Carrer de les Ginestes|Carrer de les Moreres|Carrer de les Oliveres|Carrer de Lleida|Carrer de Llevant|Carrer de Llívia|Carrer de Lluís Companys|Carrer de Lluis Millet|Carrer de Mallorca|Carrer de Maragall|Carrer de Martorell|Carrer de Mn. J. Claramunt|Carrer de Monistrol de Montserrat|Carrer de Montserrat|Carrer de Narcís Monturiol|Carrer de Pau Bruna|Carrer de Pau Casals|Carrer de Pau Claris|Carrer de Pau Margarit|Carrer de Picasso|Carrer de Piera|Carrer de Pujades|Carrer de Ramon Llull|Carrer de Rogelio Rojo|Carrer de Roger de Flor|Carrer de Roger de Llúria|Carrer de Roig Bonastre|Carrer de Sabadell|Carrer de Salvador Dalí|Carrer de Sant Antoni|Carrer de Sant Jordi|Carrer de Sant Llorenç d'Hortons|Carrer de Sant Pere|Carrer de Santa Clara|Carrer de Sòcrates|Carrer de Tarragona|Carrer de València|Carrer de Vallvidrera|Carrer del Bages|Carrer del Baix Camp|Carrer del Bon Repòs|Carrer del Bruc|Carrer del Bruga|Carrer del Cadí|Carrer del Camí de l'Alzinar|Carrer del Corraló|Carrer del Corraló de Cal Pluges|Carrer del Corraló de l'Estació|Carrer del Dipòsit|Carrer del Doctor Fleming|Carrer del Doctor Jové|Carrer del Doctor Rollant|Carrer del Garbí|Carrer del Gironès|Carrer del Maestrat|Carrer del Mestre Bosch|Carrer del Mirador de Montserrat|Carrer del Montsec|Carrer del Montseny|Carrer del Nord|Carrer del Pallars|Carrer del Pallars Sobirà|Carrer del Pas dels Oms|Carrer del Penedés|Carrer del Pi|Carrer del Piló de la Bassa|Carrer del Pintor Fortuny|Carrer del Principat d'Andorra|Carrer del Priorat|Carrer del Progres|Carrer del Puigmal|Carrer del Ripollès|Carrer del Roser|Carrer del Rosselló|Carrer del Serralet|Carrer del Sol|Carrer del Solsonés|Carrer del Sud|Carrer del Tennis|Carrer del Terme|Carrer del Virolai|Carrer dels Ametllers|Carrer dels Horts|Carrer dels Hostalets|Carrer dels Pirineus|Carrer Galceran|Carrer Leonie Mirapeix|Carrer Major|Carrer Nou|Carrer Pla dels Ocells|Carrer Xic de l'Anyé|Carretera Martorell-Capellades|Oms|Passatge d' Ocata|Passatge de Joan Isort Bonastre|Passatge de l' Amistat|Passatge de l' Era|Passatge de l' Estatut|Passatge de la Ciutadella|Passatge de la Font del Torrent|Passatge de la Tècnica|Passatge de Magarola|Passatge de Masquefa|Passatge de Parellada|Passatge de Sant Antoni|Passatge de Sant Llorenç|Passatge del Cagaferro|Passatge del Camp|Passatge del Canigó|Passatge del Pla|Passatge del Triangle|Passatge del Xarel·lo|Passatge dels Bastoners|Passatge dels Gegants|Passatge Macabeu|Passatge Solsonès|Passatge Verdaguer|Passeig de la Via|Passeig Onze de setembre|Plaça Anoia|Plaça d' Anselm Clavé|Plaça de Josep Maria Vila|Plaça de l' Església|Plaça de l' Estany|Plaça de la Figuera|Plaça de la Vila|Plaça dels Jocs|Placeta de l' Església|Travessera Dalt|Travessera de Sant Antoni|Travessera de Sant Pere|Travessera del Mig";
+
+var CALLES_PIERA_RAW = "Avinguda Àlbers|Avinguda Àliga|Avinguda Barcelona|Avinguda Can Bou|Avinguda Can Creixell|Avinguda Casa Blanca|Avinguda Castell|Avinguda Catalunya|Avinguda Companys|Avinguda Corral del Mas|Avinguda Dàlia|Avinguda de l' Amor|Avinguda dels Catalans|Avinguda Europa|Avinguda Fàbrica Nova|Avinguda Gall Mullat|Avinguda Igualada|Avinguda la Carretera d'Igualada|Avinguda les Planes|Avinguda Mallorca|Avinguda Mirador|Avinguda Montjuïc|Avinguda Montserrat|Avinguda Mozart|Avinguda Penedès|Avinguda Piera|Avinguda Sant Jordi|Avinguda Sant Sadurní|Avinguda Santiago|Avinguda Tarradellas|Avinguda Tibidabo|Baixada Cirerer|Camí Can Duran|Camí del Maset|Camí Romeu|Camí Sant Sadurní|Carrer Abat Oliba|Carrer Acàcia|Carrer Aires de Montserrat|Carrer Àliga|Carrer Alosa|Carrer Alvocat|Carrer Amadeu Vives|Carrer Ametller|Carrer Amsterdam|Carrer Andorra|Carrer Andròmeda|Carrer Àngel|Carrer Àngel Guimerà|Carrer Anoia|Carrer Aquàrius|Carrer Arboç|Carrer Arc de Sant Martí|Carrer Àries|Carrer Associació|Carrer Assutzena|Carrer Atenes|Carrer Atzavara|Carrer Avellaner|Carrer Avet|Carrer Avets|Carrer Barcelona|Carrer Baronia|Carrer Bedoll|Carrer Beethoven|Carrer Begònia|Carrer Begur|Carrer Bellavista|Carrer Berlín|Carrer Boletaires|Carrer Bonavista|Carrer Borrell|Carrer Bosc|Carrer Brussel·les|Carrer Ca n'Aguilera|Carrer Cadernera|Carrer Cadí|Carrer Cal Casals|Carrer Calderón de la Barca|Carrer Camèlia|Carrer Camèlies|Carrer Camí de Montserrat|Carrer Campaneta|Carrer Can Benet|Carrer Can Canals|Carrer Canals|Carrer Canari|Carrer Càncer|Carrer Canigó|Carrer Capellades|Carrer Capricornius|Carrer Carena|Carrer Castanyer|Carrer Centaurus|Carrer Centre|Carrer Cervantes|Carrer Cervera|Carrer Chopin|Carrer Cignus|Carrer Circumval·lació|Carrer Cirerer|Carrer Clavell|Carrer Colom|Carrer Constitució|Carrer Copenhague|Carrer Copèrnic|Carrer Corona Australis|Carrer Creueta|Carrer Creus|Carrer Dalí|Carrer Dàlia|Carrer de Baix|Carrer de Dalt|Carrer de l' Abadessa|Carrer de l' Abat Marcet|Carrer de l' Aire|Carrer de l' Alzina|Carrer de l' Estació|Carrer de la Iuca|Carrer de la Mar|Carrer de la Plaça|Carrer de la Rosa|Carrer de la Rosaleda|Carrer de la Torre|Carrer de Mossèn Joan Sabater|Carrer de Tordera|Carrer del Bedorc|Carrer del Lilà|Carrer del Parc|Carrer del Sol|Carrer dels Verdums|Carrer Diputació|Carrer Doctor Barraquer|Carrer Doctor Carles|Carrer Doctor Fleming|Carrer Doctor Gomis|Carrer Doctor Marañón|Carrer Domènech|Carrer Dret|Carrer Dublín|Carrer Edison|Carrer Einstein|Carrer els Cups|Carrer els Gats|Carrer Emili Vendrell|Carrer Empordà|Carrer Era del Poch|Carrer Escultor Salcillo|Carrer Esparver|Carrer Estatut|Carrer Estepa|Carrer Estocolm|Carrer Estrella|Carrer Eucaliptus|Carrer Europa|Carrer Faig|Carrer Fassina|Carrer Figarot|Carrer Flor|Carrer Flors|Carrer Folch i Torres|Carrer Fortesa|Carrer Freixe|Carrer Garbí|Carrer Gardènia|Carrer Gaudí|Carrer Gèminis|Carrer Generalitat|Carrer Ginesta|Carrer Gira-sol|Carrer Girona|Carrer Goya|Carrer Gran|Carrer Greco|Carrer Guinovarda|Carrer Hèrcules|Carrer Herois del Bruc|Carrer Heura|Carrer Hortènsia|Carrer Hostalets|Carrer Independència|Carrer Indústria|Carrer Insitució|Carrer Isaac Berroya|Carrer J.Balmes|Carrer Jardí|Carrer Jardins|Carrer Jaume Fons|Carrer Jaume I|Carrer Joan XXIII|Carrer Josep Ballesteros|Carrer Josep Vidal Munne|Carrer l' Illa|Carrer la Coma|Carrer la Creueta|Carrer la Font|Carrer la Grua|Carrer la Plaça|Carrer la Plana|Carrer la Riera|Carrer les Escoles|Carrer Libra|Carrer Lisboa|Carrer Llac de Banyoles|Carrer Lleida|Carrer Lleó|Carrer Llessamí|Carrer Llevant|Carrer Lliri|Carrer Lliris|Carrer Llorer|Carrer Lloro|Carrer Lluna|Carrer Londres|Carrer Lope de Vega|Carrer Lotus|Carrer Luxemburg|Carrer Lyra|Carrer Macarena|Carrer Madrid|Carrer Magnòlia|Carrer Magnòlies|Carrer Major|Carrer Maragall|Carrer Marconi|Carrer Margarida|Carrer Maria Lleopart|Carrer Marina|Carrer Martorell|Carrer Mas|Carrer Mas Bover|Carrer Masia|Carrer Masquefa|Carrer Menta|Carrer Mercat Comú|Carrer Merla|Carrer Mestre Lloret|Carrer Mestre Rafael Garcia|Carrer Mig|Carrer Migdia|Carrer Mimosa|Carrer Miquel Martí i Pol|Carrer Mirador|Carrer Miró|Carrer Montmar|Carrer Montsant|Carrer Montseny|Carrer Montserrat|Carrer Moreneta|Carrer Morera|Carrer Mossèn Bonaventura Bagaria|Carrer Mossèn Cinto Verdaguer|Carrer Mossèn Jaume Guixa|Carrer Mossèn Lluís Garcia|Carrer Munné Orpí|Carrer Muntaner|Carrer Muntanya|Carrer Muralla|Carrer Napoleó|Carrer Narcís|Carrer Narcís Monturiol|Carrer Nards|Carrer Newton|Carrer Noguera|Carrer Nord|Carrer Nostra Senyora de la Salut|Carrer Nou|Carrer Oasi|Carrer Olimpíades 92|Carrer Olivera|Carrer Oliveres|Carrer Olivereta|Carrer Onze de Setembre|Carrer Opera|Carrer Oreneta|Carrer Orenga|Carrer Orquidia|Carrer Orses|Carrer Oslo|Carrer Pablo Picasso|Carrer Països Catalans|Carrer Palmera|Carrer Paradís|Carrer Parellada|Carrer París|Carrer Patis|Carrer Pau|Carrer Pau Casals|Carrer Pau Claris|Carrer Pedraforca|Carrer Pedrera|Carrer Pegasus|Carrer Pelegrí|Carrer Penedès|Carrer Peral|Carrer Perdiu|Carrer Pere Farrés|Carrer Pi|Carrer Pi Roig|Carrer Picasso|Carrer Picos de Europa|Carrer Piereta|Carrer Pimpinella|Carrer Pins|Carrer Piscis|Carrer Planters|Carrer Poble Nou|Carrer Poma|Carrer Pomar|Carrer Pompeu Fabra|Carrer Ponent|Carrer Port de la Bonaigua|Carrer Portell|Carrer Pou|Carrer Presseguers|Carrer Pujada del Castell|Carrer Racó de Cervantes|Carrer Rafael Martínez Valls|Carrer Ramón y Cajal|Carrer Raval|Carrer Referendum|Carrer Reina Elisenda|Carrer Remeis|Carrer Revolució|Carrer Ricard Canals|Carrer Riu Anoia|Carrer Riu Cardoner|Carrer Riu Francolí|Carrer Riu Llobregat|Carrer Riu Segre|Carrer Riu Ter|Carrer Roiselles|Carrer Roma|Carrer Romaní|Carrer Rosalía de Castro|Carrer Rosella|Carrer Roser|Carrer Rosers|Carrer Rossinyol|Carrer Roure|Carrer Rovellons|Carrer Rubens|Carrer Ruda|Carrer Sagitarius|Carrer Salvador Claramunt|Carrer Salvador Mato i Casanovas|Carrer Salzes|Carrer Sant Bonifaci|Carrer Sant Cristòfol|Carrer Sant Joan|Carrer Sant Joan Baptista|Carrer Sant Jordi|Carrer Sant Josep|Carrer Sant Llorenç|Carrer Sant Nicolau|Carrer Sant Sebastià|Carrer Santa Creu de Creixa|Carrer Santa Eulàlia|Carrer Sardana|Carrer Scorpius|Carrer Segre|Carrer Septentrional|Carrer Serra del Cadí|Carrer Serral|Carrer Taronger|Carrer Tarragona|Carrer Taurus|Carrer Terme|Carrer Torres i Bages|Carrer Tórtora|Carrer Tramuntana|Carrer Tremp|Carrer Tulipa|Carrer Turó|Carrer Ursa Major|Carrer Vall d'Aran|Carrer Vall de l'Ebre|Carrer Van Gogh|Carrer Velázquez|Carrer Venus|Carrer Verdi|Carrer Verema|Carrer Verge de la Mercè|Carrer Via Làctea|Carrer Víctor Riu|Carrer Viena|Carrer Vilanova|Carrer Vinya|Carrer Violers|Carrer Violeta|Carrer Virgo|Carrer Viuda Sabater|Carrer Xaloc|Carrer Xiprer|Carrer Xiprers|Carrer Xop|Carrer Zínnies|Carreró Cal Moreno|Carreró del Prat|Carreró del Sol|Carreró Santa Eulàlia|Carreró Turó|Carretera Esparraguera|Carretera Piera|Parc Gall Mullat|Passatge Albercoc|Passatge Anoia|Passatge Barcelona|Passatge Bosc|Passatge Carral|Passatge Cirerer|Passatge Correlo|Passatge de Can Lleó|Passatge de l' Església|Passatge de les Oliveres|Passatge del Gerani|Passatge Gall Mullat|Passatge Llessamí|Passatge Llorer|Passatge Maria Lleopart|Passatge Ricard Canals|Passatge Rosa|Passatge Rosaleda|Passatge Vent|Passeig del Prat|Passeig Gaudí|Passeig Salzes|Plaça Can Bou|Plaça Canigó|Plaça Catalunya|Plaça de l' Església|Plaça de l' U d'Octubre|Plaça de la Creu|Plaça del Peix|Plaça del Tibet|Plaça Generalitat|Plaça Joan Orpí|Plaça Major|Plaça Montmar|Plaça Padró|Plaça Sant Crist|Placeta dels Vents|Prolongació Onze de Setembre|Pujada Cal Jeroni|Pujada de l' Església|Rambla Piera|Ronda Montserrat|Travessia Montserrat|Urbanització Maset d'en Martí";
+
+function poblarDatalist(id, raw){
+  try{
+    var dl = document.getElementById(id);
+    if(!dl) return;
+    var arr = raw.split('|').map(function(s){ return s.trim(); }).filter(Boolean);
+    var set = {};
+    arr.forEach(function(c){ set[c] = 1; });
+    var ordenadas = Object.keys(set).sort(function(a, b){
+      return a.localeCompare(b, 'es', { sensitivity: 'base' });
+    });
+    var frag = document.createDocumentFragment();
+    ordenadas.forEach(function(c){
+      var opt = document.createElement('option');
+      opt.value = c;
+      frag.appendChild(opt);
+    });
+    dl.appendChild(frag);
+  }catch(err){
+    console.warn('No se pudo poblar el datalist ' + id + ':', err);
+  }
+}
+poblarDatalist('dl-calles-lh', CALLES_LH_RAW);
+poblarDatalist('dl-calles-es', CALLES_ES_RAW);
+poblarDatalist('dl-calles-capellades', CALLES_CAPELLADES_RAW);
+poblarDatalist('dl-calles-masquefa', CALLES_MASQUEFA_RAW);
+poblarDatalist('dl-calles-piera', CALLES_PIERA_RAW);
+
+function datalistIdPorMunicipio(m){
+  if(m === 'Esplugues de Llobregat')  return 'dl-calles-es';
+  if(m === 'Capellades')              return 'dl-calles-capellades';
+  if(m === 'Masquefa')                return 'dl-calles-masquefa';
+  if(m === 'Piera')                   return 'dl-calles-piera';
+  return 'dl-calles-lh';
+}
+
+/* ============================================================
+   COLUMNAS
+   ============================================================ */
+const COLS = [
+  { key:'fecha',         label:'FECHA',                   w:5.0,  type:'date'     },
+  { key:'municipio',     label:'MUNICIPIO',               w:8.0,  type:'text'     },
+  { key:'calle',         label:'CALLE',                   w:11.5, type:'text'     },
+  { key:'numero',        label:'NÚMERO',                  w:3.8,  type:'text'     },
+  { key:'piso',          label:'PISO',                    w:3.8,  type:'text'     },
+  { key:'estado',        label:'ESTADO',                  w:6.5,  type:'select'   },
+  { key:'buzoneo',       label:'BUZONEO',                 w:4.5,  type:'check'    },
+  { key:'propietario',   label:'PROPIETARIO',             w:8.0,  type:'text'     },
+  { key:'telefono',      label:'TELÉFONO',                w:6.5,  type:'tel'      },
+  { key:'observaciones', label:'OBSERVACIONES',           w:12.0, type:'textarea' },
+  { key:'seguimiento',   label:'SEGUIMIENTO',             w:11.0, type:'textarea' },
+  { key:'presidente',    label:'PRESIDENTE',              w:6.0,  type:'text'     },
+  { key:'admOfrecida',   label:'ADMINISTRACIÓN OFRECIDA', w:5.0,  type:'check'    },
+  { key:'administrador', label:'ADMINISTRADOR',           w:6.0,  type:'text'     },
+  { key:'esProspecto',   label:'ES PROSPECTO',            w:5.0,  type:'check'    }
+];
+
+const FIELD_DEFS = [
+  { key:'fecha',         label:'Fecha',                   type:'date',     narrow:true },
+  { key:'municipio',     label:'Municipio',               type:'select',   options:MUNICIPIOS },
+  { key:'calle',         label:'Calle',                   type:'calle',    full:true, ph:'Escribe o selecciona una calle' },
+  { key:'numero',        label:'Número',                  type:'text',     ph:'12' },
+  { key:'piso',          label:'Piso',                    type:'text',     ph:'3ºA' },
+  { key:'estado',        label:'Estado',                  type:'select',   options:ESTADOS },
+  { key:'buzoneo',       label:'Buzoneo',                 type:'check',    text:'Buzoneado' },
+  { key:'propietario',   label:'Propietario',             type:'text' },
+  { key:'telefono',      label:'Teléfono',                type:'tel' },
+  { key:'presidente',    label:'Presidente',              type:'text' },
+  { key:'admOfrecida',   label:'Administración ofrecida', type:'check',    text:'Sí, se ofreció administración' },
+  { key:'esProspecto',   label:'Es prospecto',            type:'check',    text:'Es prospecto' },
+  { key:'administrador', label:'Administrador',           type:'text',     full:true },
+  { key:'observaciones', label:'Observaciones',           type:'textarea', full:true },
+  { key:'seguimiento',   label:'Seguimiento',             type:'textarea', full:true }
+];
+
+/* ============================================================
+   ESTADO Y ALMACENAMIENTO
+   ============================================================ */
+const KEY = 'localizaciones.v1';
+const DEFAULTS = { minFilas:15, ultimoMunicipio: MUNICIPIO_POR_DEFECTO, hojasPlegadas: {} };
+
+let state = { hojas: [], settings: Object.assign({}, DEFAULTS) };
+let editing = null;
+let saveTimer = null;
+let closedContext = null;
+let dupContext = null;
+let filtroActual = '';
+let exportScopeContext = null; /* { format: 'excel' | 'csv' | 'pdf' } */
+
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, m => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+));
+const hoyISO = () => {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+};
+function normCheck(v){
+  if(v === true || v === 1 || v === '1') return '1';
+  if(typeof v === 'string'){
+    const s = v.trim().toLowerCase();
+    if(s === 'sí' || s === 'si' || s === 'true' || s === 'x' || s === '✓') return '1';
+  }
+  return '';
+}
+function uid(){
+  return Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+}
+function buildOptions(options, valor, placeholder){
+  const list = [];
+  if(placeholder) list.push({ v:'', t:placeholder });
+  (options || []).forEach(function(o){ list.push({ v:o, t:o }); });
+  if(valor && options.indexOf(valor) === -1){
+    list.push({ v:valor, t:valor + ' (actual)' });
+  }
+  return list.map(function(o){
+    return '<option value="' + esc(o.v) + '"' + (o.v === valor ? ' selected' : '') + '>' + esc(o.t) + '</option>';
+  }).join('');
+}
+
+function newRow(){
+  const r = { id: uid() };
+  COLS.forEach(function(c){
+    if(c.type === 'check') r[c.key] = '';
+    else if(c.key === 'fecha') r[c.key] = hoyISO();
+    else r[c.key] = '';
+  });
+  r.municipio = state.settings.ultimoMunicipio || MUNICIPIO_POR_DEFECTO;
+  return r;
+}
+function newHoja(){
+  const semActual = semanaActualTexto();
+  let comercial = '';
+  let oficina = OFICINA_POR_DEFECTO;
+  let semana = semActual;
+
+  if(state.hojas.length){
+    const ult = state.hojas[state.hojas.length - 1];
+    if(ult.comercial) comercial = ult.comercial;
+    if(ult.oficina)   oficina   = ult.oficina;
+    if(ult.semana === semActual){
+      semana = ult.semana;
+    }
+  }
+
+  return { id: uid(), comercial: comercial, semana: semana, oficina: oficina, filas: [] };
+}
+function newHojaHeredandoDe(h){
+  return {
+    id: uid(),
+    comercial: h ? (h.comercial || '') : '',
+    semana: semanaActualTexto(),
+    oficina: h ? (h.oficina || OFICINA_POR_DEFECTO) : OFICINA_POR_DEFECTO,
+    filas: []
+  };
+}
+function normHoja(h){
+  const o = {
+    id: h.id || uid(),
+    comercial: h.comercial || '',
+    semana: h.semana || semanaActualTexto(),
+    oficina: h.oficina || OFICINA_POR_DEFECTO,
+    filas: []
+  };
+  (Array.isArray(h.filas) ? h.filas : []).forEach(function(r){
+    const nr = { id: r.id || uid() };
+    COLS.forEach(function(c){
+      if(c.type === 'check') nr[c.key] = normCheck(r[c.key]);
+      else nr[c.key] = r[c.key] == null ? '' : String(r[c.key]);
+    });
+    if(!nr.fecha) nr.fecha = hoyISO();
+    if(!nr.municipio) nr.municipio = MUNICIPIO_POR_DEFECTO;
+    o.filas.push(nr);
+  });
+  return o;
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d || !Array.isArray(d.hojas)) return false;
+    state.hojas = d.hojas.map(normHoja);
+    state.settings = Object.assign({}, DEFAULTS, d.settings || {});
+    if(!state.settings.ultimoMunicipio) state.settings.ultimoMunicipio = MUNICIPIO_POR_DEFECTO;
+    if(!state.settings.hojasPlegadas || typeof state.settings.hojasPlegadas !== 'object'){
+      state.settings.hojasPlegadas = {};
+    }
+    return true;
+  }catch(err){
+    console.warn('No se pudieron leer los datos', err);
+    return false;
+  }
+}
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch(err){ toast('⚠️ No se pudo guardar en este dispositivo'); }
+  }, 250);
+}
+
+function display(v, key){
+  if(!v) return '';
+  if(key === 'fecha'){
+    const p = String(v).split('-');
+    if(p.length === 3) return p[2] + '/' + p[1] + '/' + p[0];
+  }
+  if(key === 'buzoneo' || key === 'admOfrecida' || key === 'esProspecto'){
+    return normCheck(v) ? 'Sí' : '';
+  }
+  return v;
+}
+function displayParaArchivo(v, key){
+  if(key === 'buzoneo' || key === 'admOfrecida' || key === 'esProspecto'){
+    return normCheck(v) ? 'Sí' : 'No';
+  }
+  return display(v, key);
+}
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   BUSCADOR
+   ============================================================ */
+function normaliza(s){
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+function coincideFila(r, q){
+  if(!q) return true;
+  for(let i = 0; i < COLS.length; i++){
+    const c = COLS[i];
+    let v = r[c.key] || '';
+    if(c.type === 'check') v = normCheck(v) ? 'si' : 'no';
+    if(c.key === 'fecha'){
+      v = display(v, 'fecha');
+    }
+    if(normaliza(v).indexOf(q) !== -1) return true;
+  }
+  return false;
+}
+function aplicarFiltro(){
+  const q = normaliza(filtroActual);
+  const info = $('#searchInfo');
+  const barra = $('#searchbar');
+  const noRes = $('#noResults');
+
+  if(!q){
+    barra.classList.remove('has-value');
+    info.textContent = '';
+    $$('#app tbody tr').forEach(function(tr){ tr.classList.remove('fila-oculta'); });
+    $$('#app .hoja').forEach(function(h){ h.style.display = ''; });
+    noRes.style.display = 'none';
+    return;
+  }
+
+  barra.classList.add('has-value');
+
+  let totalCoincidencias = 0;
+
+  state.hojas.forEach(function(h){
+    const sec = document.querySelector('.hoja[data-hoja="' + h.id + '"]');
+    if(!sec) return;
+    let coincidenciasHoja = 0;
+
+    h.filas.forEach(function(r){
+      const tr = sec.querySelector('tr[data-row="' + r.id + '"]');
+      if(!tr) return;
+      if(coincideFila(r, q)){
+        tr.classList.remove('fila-oculta');
+        coincidenciasHoja++;
+      } else {
+        tr.classList.add('fila-oculta');
+      }
+    });
+
+    sec.querySelectorAll('tr[data-blank]').forEach(function(tr){
+      tr.classList.add('fila-oculta');
+    });
+
+    const hojaMetaCoincide =
+      normaliza(h.comercial).indexOf(q) !== -1 ||
+      normaliza(h.oficina).indexOf(q) !== -1 ||
+      normaliza(h.semana).indexOf(q) !== -1;
+
+    if(coincidenciasHoja > 0 || hojaMetaCoincide){
+      sec.style.display = '';
+      sec.classList.remove('colapsada');
+    } else {
+      sec.style.display = 'none';
+    }
+    totalCoincidencias += coincidenciasHoja;
+  });
+
+  info.textContent = totalCoincidencias + ' registro' + (totalCoincidencias === 1 ? '' : 's') + ' coincide' + (totalCoincidencias === 1 ? '' : 'n');
+  noRes.style.display = (totalCoincidencias === 0) ? 'block' : 'none';
+}
+function limpiarBusqueda(){
+  $('#searchInput').value = '';
+  filtroActual = '';
+  aplicarFiltro();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  const app = $('#app');
+  app.innerHTML = '';
+  if(!state.hojas.length){
+    const div = document.createElement('div');
+    div.className = 'empty';
+    div.innerHTML = '<p>Todavía no hay ninguna hoja de zona.</p>' +
+                    '<button class="btn primary" data-act="new-hoja">Crear hoja de zona</button>';
+    app.appendChild(div);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  state.hojas.forEach(h => frag.appendChild(buildHoja(h)));
+  app.appendChild(frag);
+
+  if(filtroActual) aplicarFiltro();
+}
+
+function rerenderHoja(id){
+  const old = document.querySelector('.hoja[data-hoja="' + id + '"]');
+  const h = state.hojas.find(x => x.id === id);
+  if(!old || !h){ render(); return; }
+  const nuevo = buildHoja(h);
+  const oldWrap = old.querySelector('.table-wrap');
+  const scrollLeft = oldWrap ? oldWrap.scrollLeft : 0;
+  old.replaceWith(nuevo);
+  const newWrap = nuevo.querySelector('.table-wrap');
+  if(newWrap) newWrap.scrollLeft = scrollLeft;
+  if(filtroActual) aplicarFiltro();
+}
+
+function buildHoja(h){
+  const cerrada = esHojaCerrada(h);
+  const semActual = semanaActualTexto();
+  const plegada = !!(state.settings.hojasPlegadas && state.settings.hojasPlegadas[h.id]);
+
+  const sec = document.createElement('section');
+  sec.className = 'hoja' + (cerrada ? ' cerrada' : '') + (cerrada && plegada ? ' colapsada' : '');
+  sec.dataset.hoja = h.id;
+  if(cerrada) sec.dataset.cerrada = '1';
+
+  const head = document.createElement('div');
+  head.className = 'hoja-head';
+
+  let extraColsHTML = '';
+  if(cerrada){
+    const ico = plegada ? '▸' : '▾';
+    extraColsHTML =
+      '<button class="toggle-collapse ' + (plegada ? '' : 'open') + '" ' +
+        'data-act="toggle-collapse" data-hoja-id="' + esc(h.id) + '" ' +
+        'title="' + (plegada ? 'Desplegar' : 'Plegar') + '" ' +
+        'aria-label="' + (plegada ? 'Desplegar' : 'Plegar') + '">' + ico + '</button>' +
+      '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja" aria-label="Eliminar hoja">✕</button>';
+  } else {
+    extraColsHTML =
+      '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja" aria-label="Eliminar hoja">✕</button>';
+  }
+
+  head.innerHTML =
+    '<label>Comercial<select data-meta="comercial">' +
+      buildOptions(COMERCIALES, h.comercial, '— Selecciona —') +
+    '</select></label>' +
+    '<label class="semana-ro">Semana (auto)' +
+      '<input type="text" data-meta="semana" value="' + esc(h.semana) + '" readonly tabindex="-1" title="Se calcula automáticamente según la semana del año">' +
+    '</label>' +
+    '<label>Oficina<select data-meta="oficina">' +
+      buildOptions(OFICINAS, h.oficina, null) +
+    '</select></label>' +
+    extraColsHTML +
+    (cerrada
+      ? '<div class="banner-cerrada" data-hoja-id="' + esc(h.id) + '">' +
+          '<span class="lock">🔒</span>' +
+          '<span class="txt"><strong>Cerrada</strong> · Semana ' + esc(h.semana) + '. Ya no se pueden modificar ni añadir filas.</span>' +
+          '<button type="button" class="banner-btn" data-act="crear-hoja-desde-banner" data-hoja-id="' + esc(h.id) + '">➕ Nueva hoja</button>' +
+        '</div>'
+      : '');
+  sec.appendChild(head);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  wrap.appendChild(buildTable(h, cerrada));
+  sec.appendChild(wrap);
+
+  const foot = document.createElement('div');
+  foot.className = 'hoja-actions';
+  if(cerrada){
+    foot.innerHTML =
+      '<button class="btn small" data-act="show-closed" data-hoja-id="' + esc(h.id) + '">🔒 Esta hoja está cerrada</button>' +
+      '<button class="btn small" data-act="crear-hoja-desde-banner" data-hoja-id="' + esc(h.id) + '">➕ Crear hoja para la semana ' + esc(semActual) + '</button>';
+  } else {
+    foot.innerHTML = '<button class="btn small" data-act="add-row">+ Añadir fila</button>';
+  }
+  sec.appendChild(foot);
+  return sec;
+}
+
+function buildTable(h, cerrada){
+  const table = document.createElement('table');
+  table.className = 'grid';
+
+  const cg = document.createElement('colgroup');
+  COLS.forEach(function(c){
+    const col = document.createElement('col');
+    col.style.width = c.w + '%';
+    cg.appendChild(col);
+  });
+  table.appendChild(cg);
+
+  const thead = document.createElement('thead');
+  const meta = document.createElement('tr');
+  meta.className = 'meta-row';
+  meta.innerHTML =
+    '<th colspan="4" data-meta-cell="comercial">COMERCIAL: <span>' + (esc(h.comercial) || '_____________________') + '</span></th>' +
+    '<th colspan="5" data-meta-cell="semana">SEMANA: <span>' + (esc(h.semana) || '________________') + '</span></th>' +
+    '<th colspan="6" data-meta-cell="oficina">OFICINA: <span>' + (esc(h.oficina) || '_____________________') + '</span></th>';
+  thead.appendChild(meta);
+
+  const cols = document.createElement('tr');
+  COLS.forEach(function(c){
+    const th = document.createElement('th');
+    th.textContent = c.label;
+    cols.appendChild(th);
+  });
+  thead.appendChild(cols);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  h.filas.forEach(function(r){ tbody.appendChild(buildRow(r)); });
+
+  const minFilas = Math.max(0, parseInt(state.settings.minFilas, 10) || 15);
+  const blanks = Math.max(0, minFilas - h.filas.length);
+  for(let i = 0; i < blanks; i++){
+    const tr = document.createElement('tr');
+    tr.className = 'blank';
+    tr.dataset.blank = '1';
+    for(let j = 0; j < COLS.length; j++) tr.appendChild(document.createElement('td'));
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  return table;
+}
+
+function buildRow(r){
+  const tr = document.createElement('tr');
+  tr.dataset.row = r.id;
+  COLS.forEach(function(c){
+    const td = document.createElement('td');
+    td.dataset.k = c.key;
+    if(c.type === 'check'){
+      if(normCheck(r[c.key])) td.innerHTML = '<span class="chk-print">Sí</span>';
+    } else {
+      td.textContent = display(r[c.key], c.key);
+    }
+    tr.appendChild(td);
+  });
+  return tr;
+}
+
+/* ============================================================
+   MODAL HOJA CERRADA
+   ============================================================ */
+function showClosedModal(hojaId){
+  const h = state.hojas.find(x => x.id === hojaId);
+  if(!h) return;
+  closedContext = { hojaId: hojaId };
+  $('#closedSemana').textContent = h.semana;
+  $('#closedModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeClosedModal(){
+  $('#closedModal').classList.remove('open');
+  document.body.style.overflow = '';
+  closedContext = null;
+}
+function crearHojaDesdeCerrada(){
+  const h = closedContext ? state.hojas.find(x => x.id === closedContext.hojaId) : null;
+  const nueva = newHojaHeredandoDe(h);
+  state.hojas.push(nueva);
+  save();
+  closeClosedModal();
+  render();
+  const el = document.querySelector('.hoja[data-hoja="' + nueva.id + '"]');
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  toast('Hoja creada para la semana ' + nueva.semana);
+}
+function crearHojaDesdeBanner(hojaId){
+  const h = state.hojas.find(x => x.id === hojaId);
+  const nueva = newHojaHeredandoDe(h);
+  state.hojas.push(nueva);
+  save(); render();
+  const el = document.querySelector('.hoja[data-hoja="' + nueva.id + '"]');
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  toast('Hoja creada para la semana ' + nueva.semana);
+}
+
+/* ============================================================
+   PLEGAR / DESPLEGAR
+   ============================================================ */
+function toggleCollapse(hojaId){
+  if(!state.settings.hojasPlegadas) state.settings.hojasPlegadas = {};
+  const actual = !!state.settings.hojasPlegadas[hojaId];
+  if(actual){
+    delete state.settings.hojasPlegadas[hojaId];
+  } else {
+    state.settings.hojasPlegadas[hojaId] = 1;
+  }
+  save();
+  const sec = document.querySelector('.hoja[data-hoja="' + hojaId + '"]');
+  if(!sec) return;
+  const plegada = !!state.settings.hojasPlegadas[hojaId];
+  sec.classList.toggle('colapsada', plegada);
+  const btn = sec.querySelector('.toggle-collapse');
+  if(btn){
+    btn.textContent = plegada ? '▸' : '▾';
+    btn.classList.toggle('open', !plegada);
+    btn.title = plegada ? 'Desplegar' : 'Plegar';
+    btn.setAttribute('aria-label', plegada ? 'Desplegar' : 'Plegar');
+  }
+}
+
+/* ============================================================
+   DUPLICAR FILA
+   ============================================================ */
+function openDupModal(){
+  if(!editing) return;
+  dupContext = { hojaId: editing.hojaId, rowId: editing.rowId };
+
+  const sel = $('#dupDestino');
+  sel.innerHTML = '';
+
+  state.hojas.forEach(function(h){
+    const cerrada = esHojaCerrada(h);
+    const opt = document.createElement('option');
+    opt.value = h.id;
+    const partes = ['Hoja ' + (state.hojas.indexOf(h) + 1)];
+    if(h.comercial) partes.push(h.comercial);
+    if(h.oficina) partes.push(h.oficina);
+    partes.push('Semana ' + h.semana);
+    if(cerrada) partes.push('(cerrada)');
+    opt.textContent = partes.join(' · ');
+    opt.disabled = cerrada;
+    if(h.id === editing.hojaId && !cerrada){
+      opt.selected = true;
+    }
+    sel.appendChild(opt);
+  });
+
+  if(!sel.value || sel.options[sel.selectedIndex].disabled){
+    for(let i = 0; i < sel.options.length; i++){
+      if(!sel.options[i].disabled){
+        sel.selectedIndex = i;
+        break;
+      }
+    }
+  }
+
+  $('#dupModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDupModal(){
+  $('#dupModal').classList.remove('open');
+  document.body.style.overflow = '';
+  dupContext = null;
+}
+function confirmarDuplicar(){
+  if(!dupContext) return;
+  const origenHoja = state.hojas.find(x => x.id === dupContext.hojaId);
+  if(!origenHoja) return;
+  const origen = origenHoja.filas.find(r => r.id === dupContext.rowId);
+  if(!origen) return;
+
+  const destinoId = $('#dupDestino').value;
+  const destinoHoja = state.hojas.find(x => x.id === destinoId);
+  if(!destinoHoja || esHojaCerrada(destinoHoja)){
+    toast('No se puede duplicar a una hoja cerrada');
+    return;
+  }
+
+  const nueva = { id: uid() };
+  COLS.forEach(function(c){
+    nueva[c.key] = origen[c.key] || '';
+  });
+  destinoHoja.filas.push(nueva);
+  save();
+  closeDupModal();
+  closeEditor();
+  render();
+  setTimeout(function(){
+    const el = document.querySelector('.hoja[data-hoja="' + destinoHoja.id + '"] tr[data-row="' + nueva.id + '"]');
+    if(el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 100);
+  toast('Registro duplicado');
+}
+
+/* ============================================================
+   ACCIONES HOJA / REGISTRO
+   ============================================================ */
+function addHoja(){
+  state.hojas.push(newHoja());
+  save(); render();
+  const last = state.hojas[state.hojas.length - 1];
+  const el = document.querySelector('.hoja[data-hoja="' + last.id + '"]');
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  closeMenu();
+}
+
+function delHoja(id){
+  const h = state.hojas.find(x => x.id === id);
+  if(!h) return;
+  const n = h.filas.length;
+  const extra = esHojaCerrada(h) ? ' (está cerrada)' : '';
+  const msg = '¿Eliminar esta hoja de zona' + extra + (n ? ' y sus ' + n + ' registros' : '') + '?';
+  if(!confirm(msg)) return;
+  state.hojas = state.hojas.filter(x => x.id !== id);
+  if(state.settings.hojasPlegadas) delete state.settings.hojasPlegadas[id];
+  save(); render();
+}
+
+function addRow(hojaId, openIt){
+  const h = state.hojas.find(x => x.id === hojaId);
+  if(!h) return;
+  if(esHojaCerrada(h)){ showClosedModal(hojaId); return; }
+  const r = newRow();
+  h.filas.push(r);
+  save(); rerenderHoja(hojaId);
+  if(openIt !== false) openEditor(hojaId, r.id);
+}
+
+function openEditor(hojaId, rowId){
+  const h = state.hojas.find(x => x.id === hojaId);
+  if(!h) return;
+  if(esHojaCerrada(h)){ showClosedModal(hojaId); return; }
+  const r = h.filas.find(x => x.id === rowId);
+  if(!r) return;
+  if(!r.fecha){ r.fecha = hoyISO(); save(); }
+  if(!r.municipio) r.municipio = state.settings.ultimoMunicipio || MUNICIPIO_POR_DEFECTO;
+
+  editing = { hojaId: hojaId, rowId: rowId };
+  const titulo = [r.calle, r.numero, r.piso].filter(Boolean).join(' ');
+  $('#ed-title').textContent = titulo || 'Nuevo registro';
+
+  const box = $('#ed-fields');
+  box.innerHTML = FIELD_DEFS.map(function(f){
+    const cls = 'field' + (f.full ? ' full' : '') + (f.narrow ? ' narrow' : '');
+    let ctrl;
+
+    if(f.type === 'textarea'){
+      ctrl = '<textarea data-k="' + f.key + '" rows="3" placeholder="' + (f.ph || '') + '">' +
+             esc(r[f.key]) + '</textarea>';
+    } else if(f.type === 'select'){
+      ctrl = '<select data-k="' + f.key + '">' +
+             buildOptions(f.options, r[f.key], null) +
+             '</select>';
+    } else if(f.type === 'check'){
+      const on = normCheck(r[f.key]) ? ' checked' : '';
+      ctrl = '<label class="check"><input type="checkbox" data-k="' + f.key + '"' + on + '>' +
+             '<span>' + esc(f.text || 'Sí') + '</span></label>';
+    } else if(f.type === 'calle'){
+      const dlId = datalistIdPorMunicipio(r.municipio);
+      ctrl = '<div class="input-with-clear">' +
+               '<input type="text" data-k="' + f.key + '" value="' + esc(r[f.key]) +
+                 '" placeholder="' + (f.ph || '') + '" list="' + dlId + '" autocomplete="off" spellcheck="false">' +
+               '<button type="button" class="clear-btn" data-act="clear-calle" title="Limpiar" aria-label="Limpiar calle">✕</button>' +
+             '</div>';
+    } else {
+      const extra =
+        (f.type === 'tel' ? ' inputmode="tel"' : '') +
+        (f.type === 'date' ? ' inputmode="numeric"' : '');
+      ctrl = '<input type="' + f.type + '" data-k="' + f.key + '" value="' + esc(r[f.key]) +
+             '" placeholder="' + (f.ph || '') + '"' + extra + ' autocomplete="off">';
+    }
+    return '<div class="' + cls + '"><label>' + f.label + '</label>' + ctrl + '</div>';
+  }).join('');
+
+  $('#editor').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const primero = box.querySelector('[data-k="calle"]');
+  if(primero && !primero.value) setTimeout(() => primero.focus(), 120);
+}
+
+function closeEditor(){
+  $('#editor').classList.remove('open');
+  document.body.style.overflow = '';
+  editing = null;
+}
+
+function deleteRow(){
+  if(!editing) return;
+  const hojaId = editing.hojaId;
+  const h = state.hojas.find(x => x.id === hojaId);
+  if(!h) return;
+  if(esHojaCerrada(h)){ closeEditor(); showClosedModal(hojaId); return; }
+  if(!confirm('¿Eliminar este registro?')) return;
+  h.filas = h.filas.filter(x => x.id !== editing.rowId);
+  save(); closeEditor(); rerenderHoja(hojaId);
+}
+
+/* ============================================================
+   COMPARTIR
+   ============================================================ */
+function openSharePick(){
+  $('#sharePickModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  closeMenu();
+}
+function closeSharePick(){
+  $('#sharePickModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* --- Nuevo: modal de alcance de exportación --- */
+function openExportScope(format){
+  exportScopeContext = { format: format };
+  $('#exportScopeModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeExportScope(){
+  $('#exportScopeModal').classList.remove('open');
+  document.body.style.overflow = '';
+  exportScopeContext = null;
+}
+function confirmExportScope(scope){
+  if(!exportScopeContext) return;
+  const format = exportScopeContext.format;
+  closeExportScope();
+  if(format === 'excel') shareExcelNow(scope);
+  else if(format === 'csv') shareCSVNow(scope);
+  else if(format === 'pdf'){
+    closeSharePick();
+    openSharePdf();
+    /* Guardamos el alcance elegido para cuando se pulse "Abrir diálogo" */
+    $('#sharePdfModal').dataset.scope = scope;
+  }
+}
+
+function detectPlatform(){
+  const ua = navigator.userAgent || '';
+  if(/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+  if(/Android/i.test(ua)) return 'android';
+  return 'desktop';
+}
+function openSharePdf(){
+  const p = detectPlatform();
+  const list = $('#shareStepsList');
+  const hint = $('#platformHint');
+
+  if(p === 'android'){
+    list.innerHTML =
+      '<li>Pulsa <strong>Abrir diálogo</strong>.</li>' +
+      '<li>En la pantalla que aparece, elige <strong>Guardar como PDF</strong>.</li>' +
+      '<li>Guarda el archivo en tu móvil.</li>' +
+      '<li>Ábrelo desde tu app de mensajería o correo y envíalo a quien quieras.</li>';
+    hint.textContent = 'El PDF se genera siempre en A3 horizontal con el formato original.';
+  } else if(p === 'ios'){
+    list.innerHTML =
+      '<li>Pulsa <strong>Abrir diálogo</strong>.</li>' +
+      '<li>Pulsa el icono de <strong>Compartir</strong> (cuadrado con flecha).</li>' +
+      '<li>Elige <strong>Guardar en Archivos</strong> o la app de mensajería que uses.</li>' +
+      '<li>Envía el archivo a quien quieras.</li>';
+    hint.textContent = 'El PDF se genera siempre en A3 horizontal con el formato original.';
+  } else {
+    list.innerHTML =
+      '<li>Pulsa <strong>Abrir diálogo</strong>.</li>' +
+      '<li>Elige <strong>Guardar como PDF</strong> como destino.</li>' +
+      '<li>Envía el archivo por tu app de mensajería o correo.</li>';
+    hint.textContent = 'El PDF se genera siempre en A3 horizontal con el formato original.';
+  }
+
+  $('#sharePdfModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSharePdf(){
+  $('#sharePdfModal').classList.remove('open');
+  document.body.style.overflow = '';
+  delete $('#sharePdfModal').dataset.scope;
+}
+function doSharePrint(){
+  const scope = $('#sharePdfModal').dataset.scope || 'current';
+  closeSharePdf();
+  $$('.hoja.colapsada').forEach(function(h){ h.classList.remove('colapsada'); });
+  if(scope === 'current'){
+    document.body.classList.add('print-only-current');
+  } else {
+    document.body.classList.remove('print-only-current');
+  }
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){
+      document.body.classList.remove('print-only-current');
+    }, 400);
+  }, 180);
+}
+
+/* ============================================================
+   GENERAR EXCEL
+   ------------------------------------------------------------
+   scope = 'current' → solo las hojas de la semana actual
+           'all'     → todas (histórico)
+   Además: ordena las hojas para que las de la semana actual
+   vayan primero, y marca la primera como pestaña activa.
+   ============================================================ */
+function getHojasParaExportar(scope){
+  const semActual = semanaActualTexto();
+  let lista = state.hojas.slice();
+  if(scope === 'current'){
+    lista = lista.filter(h => h.semana === semActual);
+  }
+  /* Ordenar: primero las de la semana actual (por orden de creación),
+     después las cerradas (por semana descendente, más reciente primero) */
+  lista.sort(function(a, b){
+    const aAct = a.semana === semActual ? 0 : 1;
+    const bAct = b.semana === semActual ? 0 : 1;
+    if(aAct !== bAct) return aAct - bAct;
+    const sa = parseInt(a.semana, 10) || 0;
+    const sb = parseInt(b.semana, 10) || 0;
+    if(sa !== sb) return sb - sa; /* semana más alta primero */
+    return 0;
+  });
+  return lista;
+}
+
+function buildExcelBuffer(scope){
+  if(typeof ExcelJS === 'undefined'){
+    throw new Error('ExcelJS no está cargado');
+  }
+  scope = scope || 'current';
+
+  const hojas = getHojasParaExportar(scope);
+  if(!hojas.length){
+    throw new Error('No hay hojas para exportar con ese alcance');
+  }
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Localizaciones PWA';
+  wb.created = new Date();
+
+  const ANCHOS = {
+    fecha:        11,
+    municipio:    17,
+    calle:        25,
+    numero:        9,
+    piso:          6,
+    estado:       12,
+    buzoneo:       9,
+    propietario:  15,
+    telefono:     13,
+    observaciones:24,
+    seguimiento:  22,
+    presidente:   12,
+    admOfrecida:  14,
+    administrador:14,
+    esProspecto:  12
+  };
+
+  const CABECERAS_ESPECIALES = {
+    numero:        { size: 10, align: 'center' },
+    admOfrecida:   { size: 10, align: 'center' },
+    administrador: { size: 10, align: 'center' },
+    esProspecto:   { size: 10, align: 'center' }
+  };
+
+  hojas.forEach(function(h, idx){
+    let nombrePestana = 'Hoja ' + (idx + 1);
+    const partes = [];
+    if(h.comercial) partes.push(h.comercial);
+    if(h.oficina) partes.push(h.oficina);
+    if(partes.length){
+      nombrePestana = 'Hoja ' + (idx + 1) + ' - ' + partes.join(' - ');
+    }
+    nombrePestana = nombrePestana.replace(/[\\\/\?\*\[\]\|:]/g, ' ').slice(0, 31).trim();
+
+    let nombreBase = nombrePestana;
+    let sufijo = 2;
+    while(wb.getWorksheet(nombrePestana)){
+      nombrePestana = (nombreBase + ' (' + sufijo + ')').slice(0, 31);
+      sufijo++;
+    }
+
+    const ws = wb.addWorksheet(nombrePestana, {
+      pageSetup: {
+        paperSize: 8,
+        orientation: 'landscape',
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 0,
+        horizontalCentered: true,
+        margins: {
+          left: 0.25, right: 0.25,
+          top: 0.5, bottom: 0.5,
+          header: 0.3, footer: 0.3
+        }
+      },
+      views: [{ state: 'frozen', ySplit: 3 }]
+    });
+
+    ws.columns = COLS.map(function(c){
+      return { width: ANCHOS[c.key] || 12 };
+    });
+
+    ws.addRow([
+      'COMERCIAL: ' + (h.comercial || ''),
+      '', '', '',
+      'SEMANA: ' + (h.semana || ''),
+      '', '', '', '',
+      'OFICINA: ' + (h.oficina || ''),
+      '', '', '', '', ''
+    ]);
+    ws.mergeCells('A1:D1');
+    ws.mergeCells('E1:I1');
+    ws.mergeCells('J1:O1');
+    ['A1','E1','J1'].forEach(function(addr){
+      ws.getCell(addr).font = { bold: true, size: 12 };
+      ws.getCell(addr).alignment = { vertical: 'middle' };
+    });
+    ws.getRow(1).height = 22;
+
+    ws.addRow([]);
+    ws.getRow(2).height = 6;
+
+    const cab = ws.addRow(COLS.map(function(c){ return c.label; }));
+    cab.height = 26;
+    cab.eachCell(function(cell, colNumber){
+      const c = COLS[colNumber - 1];
+      const esp = CABECERAS_ESPECIALES[c.key];
+      if(esp){
+        cell.font = { bold: true, size: esp.size, color: { argb: 'FF0F172A' } };
+        cell.alignment = {
+          horizontal: esp.align,
+          vertical: 'middle',
+          wrapText: true
+        };
+      } else {
+        cell.font = { bold: true, color: { argb: 'FF0F172A' } };
+        cell.alignment = {
+          horizontal: 'left',
+          vertical: 'middle',
+          wrapText: true
+        };
+      }
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFE2E8F0' } };
+      cell.border = {
+        top:    { style:'thin', color:{ argb:'FF94A3B8' } },
+        bottom: { style:'thin', color:{ argb:'FF94A3B8' } },
+        left:   { style:'thin', color:{ argb:'FF94A3B8' } },
+        right:  { style:'thin', color:{ argb:'FF94A3B8' } }
+      };
+    });
+
+    h.filas.forEach(function(r, ri){
+      const values = COLS.map(function(c){
+        return displayParaArchivo(r[c.key], c.key);
+      });
+      const row = ws.addRow(values);
+
+      const altColor = (ri % 2 === 0) ? null : 'FFF8FAFC';
+      row.eachCell({ includeEmpty: true }, function(cell, colNumber){
+        const c = COLS[colNumber - 1];
+        let hAlign = 'left';
+        if(c.key === 'numero' || c.key === 'piso' || c.key === 'buzoneo' || c.key === 'admOfrecida' || c.key === 'esProspecto'){
+          hAlign = 'center';
+        }
+        cell.alignment = { horizontal: hAlign, vertical:'top', wrapText: true };
+        if(altColor){
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: altColor } };
+        }
+        cell.border = {
+          top:    { style:'thin', color:{ argb:'FFCBD5E1' } },
+          bottom: { style:'thin', color:{ argb:'FFCBD5E1' } },
+          left:   { style:'thin', color:{ argb:'FFCBD5E1' } },
+          right:  { style:'thin', color:{ argb:'FFCBD5E1' } }
+        };
+      });
+    });
+
+    ws.pageSetup.printTitlesRow = '1:3';
+  });
+
+  /* Marcar la primera hoja como pestaña activa */
+  try{
+    if(wb.views && wb.views.length){
+      wb.views[0].activeTab = 0;
+    } else {
+      wb.views = [{ activeTab: 0 }];
+    }
+  }catch(err){ /* ignorar */ }
+
+  return wb.xlsx.writeBuffer();
+}
+
+async function shareExcelNow(scope){
+  scope = scope || 'current';
+  closeSharePick();
+
+  let buffer;
+  try{
+    buffer = await buildExcelBuffer(scope);
+  }catch(err){
+    console.warn('Error generando Excel:', err);
+    toast('⚠️ ' + (err.message || 'No se pudo generar el Excel'));
+    return;
+  }
+
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  const sufijo = scope === 'current' ? '-semana-actual' : '-historico';
+  const filename = 'localizaciones' + sufijo + '-' + hoyISO() + '.xlsx';
+
+  if(navigator.canShare){
+    try{
+      const file = new File([blob], filename, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      if(navigator.canShare({ files: [file] })){
+        await navigator.share({
+          files: [file],
+          title: 'Localizaciones',
+          text: 'Hoja de prospección · Localizaciones'
+        });
+        return;
+      }
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+      console.warn('Share Excel falló, se descarga:', err);
+    }
+  }
+
+  descargarBlob(filename, blob);
+  toast('Tu móvil no permite compartir. Se descargará el archivo.');
+}
+
+function buildCSVString(scope){
+  scope = scope || 'current';
+  const hojas = getHojasParaExportar(scope);
+  const SEP = ';';
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lineas = [];
+  const cab = ['HOJA','COMERCIAL','SEMANA','OFICINA'].concat(COLS.map(c => c.label));
+  lineas.push(cab.map(q).join(SEP));
+  hojas.forEach(function(h, i){
+    h.filas.forEach(function(r){
+      const fila = [i + 1, h.comercial, h.semana, h.oficina]
+        .concat(COLS.map(c => displayParaArchivo(r[c.key], c.key)));
+      lineas.push(fila.map(q).join(SEP));
+    });
+  });
+  return '\uFEFF' + lineas.join('\r\n');
+}
+async function shareCSVNow(scope){
+  scope = scope || 'current';
+  closeSharePick();
+
+  const txt = buildCSVString(scope);
+  const blob = new Blob([txt], { type:'text/csv;charset=utf-8' });
+  const sufijo = scope === 'current' ? '-semana-actual' : '-historico';
+  const filename = 'localizaciones' + sufijo + '-' + hoyISO() + '.csv';
+
+  if(navigator.canShare){
+    try{
+      const file = new File([blob], filename, { type:'text/csv' });
+      if(navigator.canShare({ files: [file] })){
+        await navigator.share({
+          files: [file],
+          title: 'Localizaciones (CSV)',
+          text: 'Hoja de prospección · CSV'
+        });
+        return;
+      }
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+      console.warn('Share CSV falló, se descarga:', err);
+    }
+  }
+
+  descargarBlob(filename, blob);
+  toast('Tu móvil no permite compartir. Se descargará el archivo.');
+}
+
+/* ============================================================
+   AJUSTES / EXPORT / IMPORT
+   ============================================================ */
+function openSettings(){
+  $('#set-filas').value = state.settings.minFilas || DEFAULTS.minFilas;
+  $('#settings').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  closeMenu();
+}
+function closeSettings(){
+  $('#settings').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function saveSettings(){
+  state.settings.minFilas = Math.min(60, Math.max(5, parseInt($('#set-filas').value, 10) || 15));
+  save(); render(); closeSettings();
+  toast('Ajustes guardados');
+}
+
+function descargarBlob(nombre, blob){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function descargar(nombre, contenido, mime){
+  const blob = new Blob([contenido], { type: mime || 'application/octet-stream' });
+  descargarBlob(nombre, blob);
+}
+
+function exportJSON(){
+  const nombre = 'localizaciones-' + hoyISO() + '.json';
+  descargar(nombre, JSON.stringify(state, null, 2), 'application/json');
+  closeMenu(); toast('Copia descargada');
+}
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = function(){
+    try{
+      const d = JSON.parse(reader.result);
+      if(!d || !Array.isArray(d.hojas)) throw new Error('formato');
+      if(!confirm('Se sustituirán los datos actuales por los del archivo. ¿Continuar?')) return;
+      state.hojas = d.hojas.map(normHoja);
+      state.settings = Object.assign({}, DEFAULTS, d.settings || {});
+      if(!state.settings.ultimoMunicipio) state.settings.ultimoMunicipio = MUNICIPIO_POR_DEFECTO;
+      if(!state.settings.hojasPlegadas) state.settings.hojasPlegadas = {};
+      save(); render();
+      toast('Datos importados');
+    }catch(err){
+      alert('El archivo no tiene un formato válido.');
+    }
+  };
+  reader.readAsText(file);
+}
+function wipe(){
+  if(!confirm('Se borrarán TODAS las hojas y registros de este dispositivo. ¿Seguro?')) return;
+  if(!confirm('Esta acción no se puede deshacer. ¿Continuar?')) return;
+  state.hojas = [newHoja()];
+  state.settings = Object.assign({}, DEFAULTS);
+  save(); render(); closeMenu();
+  toast('Datos borrados');
+}
+
+function toggleMenu(){ $('#menu').classList.toggle('open'); }
+function closeMenu(){ $('#menu').classList.remove('open'); }
+
+/* ============================================================
+   DISPATCHER
+   ============================================================ */
+function handleAction(act, el){
+  const hojaEl = el.closest ? el.closest('.hoja') : null;
+  const hojaId = hojaEl ? hojaEl.dataset.hoja : null;
+  const hojaIdDesdeAttr = el.dataset ? el.dataset.hojaId : null;
+
+  switch(act){
+    case 'menu':               toggleMenu(); break;
+    case 'new-hoja':           addHoja(); break;
+    case 'settings':           openSettings(); break;
+    case 'close-settings':     closeSettings(); break;
+    case 'save-settings':      saveSettings(); break;
+
+    case 'toggle-collapse':    toggleCollapse(hojaIdDesdeAttr || hojaId); break;
+    case 'show-closed':        showClosedModal(hojaIdDesdeAttr || hojaId); break;
+    case 'close-closed-modal': closeClosedModal(); break;
+    case 'crear-hoja-heredando': crearHojaDesdeCerrada(); break;
+    case 'crear-hoja-desde-banner': crearHojaDesdeBanner(hojaIdDesdeAttr || hojaId); break;
+
+    case 'dup-row':            openDupModal(); break;
+    case 'close-dup':          closeDupModal(); break;
+    case 'dup-confirm':        confirmarDuplicar(); break;
+
+    case 'clear-search':       limpiarBusqueda(); break;
+    case 'scroll-top':         window.scrollTo({ top:0, behavior:'smooth' }); break;
+
+    case 'share-open':         openSharePick(); break;
+    case 'close-share-pick':   closeSharePick(); break;
+
+    /* Al pulsar Excel / CSV / PDF, primero elegimos alcance */
+    case 'share-do-excel':     closeSharePick(); openExportScope('excel'); break;
+    case 'share-do-csv':       closeSharePick(); openExportScope('csv'); break;
+    case 'share-do-pdf':       openExportScope('pdf'); break;
+
+    case 'close-export-scope': closeExportScope(); break;
+    case 'export-scope-current': confirmExportScope('current'); break;
+    case 'export-scope-all':     confirmExportScope('all'); break;
+
+    case 'close-share-pdf':    closeSharePdf(); break;
+    case 'do-print':           doSharePrint(); break;
+
+    case 'export-json':        exportJSON(); break;
+    case 'import-json':        closeMenu(); $('#fileInput').click(); break;
+    case 'wipe':               wipe(); break;
+    case 'del-hoja':           delHoja(hojaId); break;
+    case 'add-row':            addRow(hojaId, true); break;
+    case 'close-editor':       closeEditor(); break;
+    case 'del-row':            deleteRow(); break;
+    case 'clear-calle': {
+      if(!editing) break;
+      const h = state.hojas.find(x => x.id === editing.hojaId);
+      if(!h || esHojaCerrada(h)) break;
+      const r = h.filas.find(x => x.id === editing.rowId);
+      if(!r) break;
+      r.calle = '';
+      const input = document.querySelector('#ed-fields [data-k="calle"]');
+      if(input){ input.value = ''; input.focus(); }
+      const td = document.querySelector(
+        '.hoja[data-hoja="' + editing.hojaId + '"] tr[data-row="' + editing.rowId + '"] td[data-k="calle"]'
+      );
+      if(td) td.textContent = '';
+      save();
+      break;
+    }
+  }
+}
+
+/* ============================================================
+   EVENTOS
+   ============================================================ */
+document.addEventListener('click', function(e){
+  const actEl = e.target.closest('[data-act]');
+  if(actEl){ e.preventDefault(); handleAction(actEl.dataset.act, actEl); return; }
+
+  const tr = e.target.closest('#app tbody tr');
+  if(tr){
+    const hojaEl = tr.closest('.hoja');
+    if(!hojaEl) return;
+    const hojaId = hojaEl.dataset.hoja;
+    const h = state.hojas.find(x => x.id === hojaId);
+    if(!h) return;
+    if(esHojaCerrada(h)){ showClosedModal(hojaId); return; }
+    if(tr.dataset.blank) addRow(hojaId, true);
+    else if(tr.dataset.row) openEditor(hojaId, tr.dataset.row);
+    return;
+  }
+  if(!e.target.closest('#menu') && !e.target.closest('#btnMenu')) closeMenu();
+});
+
+['editor','settings','sharePickModal','sharePdfModal','closedModal','dupModal','exportScopeModal'].forEach(function(id){
+  const m = document.getElementById(id);
+  if(!m) return;
+  m.addEventListener('click', function(e){
+    if(e.target === m){
+      if(id === 'editor') closeEditor();
+      else if(id === 'settings') closeSettings();
+      else if(id === 'sharePickModal') closeSharePick();
+      else if(id === 'sharePdfModal') closeSharePdf();
+      else if(id === 'closedModal') closeClosedModal();
+      else if(id === 'dupModal') closeDupModal();
+      else if(id === 'exportScopeModal') closeExportScope();
+    }
+  });
+});
+
+function onFieldChange(e){
+  const el = e.target;
+  if(el.dataset && el.dataset.meta){
+    const sec = el.closest('.hoja');
+    if(!sec) return;
+    const h = state.hojas.find(x => x.id === sec.dataset.hoja);
+    if(!h) return;
+
+    if(el.dataset.meta === 'semana') return;
+
+    if(esHojaCerrada(h)){
+      if(el.dataset.meta === 'comercial') el.value = h.comercial || '';
+      if(el.dataset.meta === 'oficina') el.value = h.oficina || OFICINA_POR_DEFECTO;
+      showClosedModal(h.id);
+      return;
+    }
+
+    h[el.dataset.meta] = el.value;
+    const span = sec.querySelector('[data-meta-cell="' + el.dataset.meta + '"] span');
+    if(span){
+      const relleno = el.dataset.meta === 'semana' ? '________________' : '_____________________';
+      span.textContent = el.value || relleno;
+    }
+    save(); return;
+  }
+  if(editing && el.dataset && el.dataset.k){
+    const h = state.hojas.find(x => x.id === editing.hojaId);
+    if(!h || esHojaCerrada(h)) return;
+    const r = h.filas.find(x => x.id === editing.rowId);
+    if(!r) return;
+    const key = el.dataset.k;
+
+    if(el.type === 'checkbox'){
+      r[key] = el.checked ? '1' : '';
+    } else {
+      r[key] = el.value;
+    }
+
+    if(key === 'municipio'){
+      state.settings.ultimoMunicipio = r.municipio;
+      save();
+      const inputCalle = document.querySelector('#ed-fields [data-k="calle"]');
+      if(inputCalle){
+        inputCalle.setAttribute('list', datalistIdPorMunicipio(r.municipio));
+      }
+    }
+
+    const td = document.querySelector(
+      '.hoja[data-hoja="' + editing.hojaId + '"] tr[data-row="' + editing.rowId +
+      '"] td[data-k="' + key + '"]'
+    );
+    if(td){
+      if(el.type === 'checkbox'){
+        td.innerHTML = normCheck(r[key]) ? '<span class="chk-print">Sí</span>' : '';
+      } else {
+        td.textContent = display(r[key], key);
+      }
+    }
+    if(key === 'calle' || key === 'numero' || key === 'piso'){
+      const t = [r.calle, r.numero, r.piso].filter(Boolean).join(' ');
+      $('#ed-title').textContent = t || 'Nuevo registro';
+    }
+    save();
+    if(filtroActual) aplicarFiltro();
+  }
+}
+document.addEventListener('input',  onFieldChange);
+document.addEventListener('change', onFieldChange);
+
+document.addEventListener('input', function(e){
+  if(e.target && e.target.id === 'searchInput'){
+    filtroActual = e.target.value.trim();
+    aplicarFiltro();
+  }
+});
+
+$('#fileInput').addEventListener('change', function(e){
+  const f = e.target.files && e.target.files[0];
+  if(f) importJSON(f);
+  e.target.value = '';
+});
+
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    if($('#editor').classList.contains('open')) closeEditor();
+    else if($('#settings').classList.contains('open')) closeSettings();
+    else if($('#sharePickModal').classList.contains('open')) closeSharePick();
+    else if($('#sharePdfModal').classList.contains('open')) closeSharePdf();
+    else if($('#closedModal').classList.contains('open')) closeClosedModal();
+    else if($('#dupModal').classList.contains('open')) closeDupModal();
+    else if($('#exportScopeModal').classList.contains('open')) closeExportScope();
+    else closeMenu();
+  }
+});
+
+function onScroll(){
+  const btn = $('#fabTop');
+  if(!btn) return;
+  if(window.scrollY > 400) btn.classList.add('visible');
+  else btn.classList.remove('visible');
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+
+function registerSW(){
+  if(!('serviceWorker' in navigator)) return;
+  if(location.protocol === 'file:') return;
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then(function(reg){ if(reg && reg.update) reg.update(); })
+      .catch(function(err){ console.warn('Service Worker no registrado:', err); });
+  });
+}
+
+function init(){
+  const ok = load();
+  if(!ok) state.hojas = [newHoja()];
+  if(!state.settings.minFilas) state.settings.minFilas = DEFAULTS.minFilas;
+  if(!state.settings.ultimoMunicipio) state.settings.ultimoMunicipio = MUNICIPIO_POR_DEFECTO;
+  if(!state.settings.hojasPlegadas) state.settings.hojasPlegadas = {};
+
+  state.hojas.forEach(function(h){
+    if(esHojaCerrada(h) && state.settings.hojasPlegadas[h.id] === undefined){
+      state.settings.hojasPlegadas[h.id] = 1;
+    }
+  });
+  save();
+
+  render();
+  onScroll();
+  registerSW();
+}
+init();
+})();
+</script>
+</body>
+</html>
