@@ -1339,6 +1339,19 @@ function render(){
   if(filtroActual) aplicarFiltro();
 }
 
+function rerenderHoja(id){
+  const old = document.querySelector('.hoja[data-hoja="' + id + '"]');
+  const h = state.hojas.find(x => x.id === id);
+  if(!old || !h){ render(); return; }
+  const nuevo = buildHoja(h);
+  const oldWrap = old.querySelector('.table-wrap');
+  const scrollLeft = oldWrap ? oldWrap.scrollLeft : 0;
+  old.replaceWith(nuevo);
+  const newWrap = nuevo.querySelector('.table-wrap');
+  if(newWrap) newWrap.scrollLeft = scrollLeft;
+  if(filtroActual) aplicarFiltro();
+}
+
 function buildHoja(h){
   const cerrada = esHojaCerrada(h);
   const semActual = semanaActualTexto();
