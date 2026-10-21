@@ -154,14 +154,12 @@ main{padding:0 0 20px}
   border-bottom:0;
 }
 
-/* Grid cabecera: hoja ACTIVA */
 .hoja-head{
   display:grid;
   grid-template-columns: repeat(3, minmax(0,1fr)) 34px;
   gap:7px;padding:10px;background:#f8fafc;
   border-bottom:1px solid var(--line);align-items:end;
 }
-/* Grid cabecera: hoja CERRADA (una columna más para el toggle + borrar) */
 .hoja.cerrada .hoja-head{
   grid-template-columns: repeat(3, minmax(0,1fr)) 34px 34px;
 }
@@ -183,7 +181,6 @@ main{padding:0 0 20px}
 }
 .hoja-head .semana-ro input:focus{outline:none}
 
-/* Toggle plegar/desplegar hojas cerradas */
 .toggle-collapse{
   border:0;background:#e2e8f0;color:var(--ink);
   width:34px;height:34px;border-radius:9px;
@@ -194,7 +191,6 @@ main{padding:0 0 20px}
 .toggle-collapse:hover{background:#cbd5e1}
 .toggle-collapse.open{transform:rotate(90deg)}
 
-/* Banner "cerrada" */
 .banner-cerrada{
   grid-column:1/-1;
   display:flex;align-items:center;gap:8px;
@@ -373,7 +369,6 @@ mark.busq{
 }
 .share-option:hover .share-option-arrow{transform:translateX(2px);color:var(--brand)}
 
-/* Nuevo modal de alcance de exportación */
 .scope-body{padding:18px 18px 6px;text-align:center}
 .scope-body h3{margin:0 0 8px;font-size:19px;color:var(--ink)}
 .scope-body p{margin:0 0 16px;font-size:14px;color:var(--muted);line-height:1.5}
@@ -439,7 +434,6 @@ mark.busq{
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* Utilidad: ocultar hojas cerradas al imprimir solo la semana actual */
 body.print-only-current .hoja.cerrada{display:none !important;}
 
 /* ====== LOGIN ====== */
@@ -486,10 +480,29 @@ body.print-only-current .hoja.cerrada{display:none !important;}
   text-align:center;line-height:1.4;
 }
 
+/* ====== SYNC INDICATOR ====== */
+.sync-indicator{
+  position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));
+  left:16px;z-index:44;
+  background:var(--ink);color:#fff;
+  padding:8px 12px;border-radius:999px;
+  font-size:11.5px;font-weight:600;
+  box-shadow:0 6px 20px -6px rgba(15,23,42,.5);
+  display:none;align-items:center;gap:6px;
+}
+.sync-indicator.visible{display:flex}
+.sync-indicator .dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#22c55e;
+}
+.sync-indicator.syncing .dot{background:#f59e0b;animation:pulse 1.2s infinite}
+.sync-indicator.error .dot{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
 @media print{
   @page{ size: A3 landscape; margin: 8mm; }
   html,body{background:#fff !important;padding:0 !important;margin:0 !important}
-  .topbar,.fab,.fab-top,.menu,.modal,.hoja-head,.hoja-actions,.empty,.toast,.banner-cerrada,.searchbar,.no-results,.login-overlay{display:none !important}
+  .topbar,.fab,.fab-top,.menu,.modal,.hoja-head,.hoja-actions,.empty,.toast,.banner-cerrada,.searchbar,.no-results,.login-overlay,.sync-indicator{display:none !important}
   main{padding:0 !important;margin:0 !important;display:block !important}
   .hoja{
     box-shadow:none !important;border:0 !important;border-radius:0 !important;
@@ -555,7 +568,6 @@ body.print-only-current .hoja.cerrada{display:none !important;}
   </nav>
 </header>
 
-<!-- Pantalla de login (tapada cuando hay sesión) -->
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
     <div class="login-logo">📍</div>
@@ -592,6 +604,11 @@ body.print-only-current .hoja.cerrada{display:none !important;}
 <main id="app"></main>
 
 <div class="no-results" id="noResults">No hay registros que coincidan con la búsqueda.</div>
+
+<div class="sync-indicator" id="syncIndicator">
+  <span class="dot"></span>
+  <span id="syncText">Sincronizado</span>
+</div>
 
 <button class="fab-top" id="fabTop" data-act="scroll-top" aria-label="Volver arriba">↑</button>
 <button class="fab" data-act="new-hoja" aria-label="Añadir hoja de zona">+</button>
@@ -643,12 +660,7 @@ body.print-only-current .hoja.cerrada{display:none !important;}
         <div class="field full">
           <label>Filas por hoja</label>
           <input type="number" id="set-filas" min="5" max="60" step="1" inputmode="numeric">
-          <p class="hint">Si una hoja tiene menos registros, se completa con filas en blanco hasta este número, igual que en el Excel original.</p>
-        </div>
-        <div class="field full">
-          <label>Tamaño de papel</label>
-          <input type="text" value="A3 horizontal (fijo)" readonly style="background:#f1f5f9;color:var(--muted)">
-          <p class="hint">El PDF y el Excel se generan siempre en A3 horizontal para que quepan todas las columnas.</p>
+          <p class="hint">Si una hoja tiene menos registros, se completa con filas en blanco hasta este número.</p>
         </div>
       </div>
     </div>
@@ -685,7 +697,7 @@ body.print-only-current .hoja.cerrada{display:none !important;}
       <button class="icon-btn" data-act="close-share-pick" aria-label="Cerrar">✕</button>
     </div>
     <div class="sheet-body">
-      <p class="share-intro" style="margin:0 0 14px;font-size:13.5px;color:var(--muted);line-height:1.4">
+      <p style="margin:0 0 14px;font-size:13.5px;color:var(--muted);line-height:1.4">
         Elige en qué formato quieres compartir o descargar los datos:
       </p>
 
@@ -719,7 +731,6 @@ body.print-only-current .hoja.cerrada{display:none !important;}
   </div>
 </div>
 
-<!-- NUEVO: modal para elegir alcance de la exportación -->
 <div class="modal" id="exportScopeModal">
   <div class="sheet" role="dialog" aria-modal="true" aria-label="Alcance de la exportación">
     <div class="sheet-head">
@@ -728,7 +739,7 @@ body.print-only-current .hoja.cerrada{display:none !important;}
     </div>
     <div class="sheet-body scope-body">
       <h3>Elige el alcance</h3>
-      <p>Puedes exportar solo las hojas de la semana actual (recomendado) o incluir también el histórico completo.</p>
+      <p>Puedes exportar solo las hojas de la semana actual o incluir también el histórico completo.</p>
     </div>
     <div class="scope-options">
       <button class="scope-option current" data-act="export-scope-current">
@@ -789,7 +800,9 @@ body.print-only-current .hoja.cerrada{display:none !important;}
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
-    getFirestore, doc, getDoc, setDoc, serverTimestamp
+    getFirestore, doc, getDoc, setDoc, serverTimestamp,
+    collection, onSnapshot, query, where, orderBy,
+    addDoc, updateDoc, deleteDoc, arrayUnion, enableIndexedDbPersistence
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -805,16 +818,23 @@ body.print-only-current .hoja.cerrada{display:none !important;}
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Exponer al script principal (no modular) como window.__fb
+  // Caché offline persistente (útil en prospección sin cobertura)
+  try{
+    enableIndexedDbPersistence(db).catch(function(err){
+      console.warn('Persistencia offline no disponible:', err.code);
+    });
+  }catch(e){ /* ignorar */ }
+
   window.__fb = {
     auth, db,
     signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
-    doc, getDoc, setDoc, serverTimestamp
+    doc, getDoc, setDoc, serverTimestamp,
+    collection, onSnapshot, query, where, orderBy,
+    addDoc, updateDoc, deleteDoc, arrayUnion
   };
 
-  // Avisar al resto de la app de que Firebase ya está listo
   window.dispatchEvent(new Event('firebase-ready'));
 </script>
 
@@ -848,16 +868,13 @@ var MUNICIPIO_POR_DEFECTO = 'Hospitalet de Llobregat';
    FIREBASE · LOGIN Y SESIÓN
    ============================================================ */
 const EMAIL_DOMAIN = 'localizaciones.local';
-let fbUser = null;      // { uid, email, nombre, rol }
-let fbReady = false;
+let fbUser = null;
 
 function usernameToEmail(user){
-  // "comercial 01" → "comercial01@localizaciones.local"
-  // "master"       → "master@localizaciones.local"
   const clean = String(user || '')
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, '');           // quitar espacios
+    .replace(/\s+/g, '');
   return clean + '@' + EMAIL_DOMAIN;
 }
 
@@ -882,7 +899,6 @@ async function doLogin(user, pass){
   if(btn){ btn.disabled = true; btn.textContent = 'Entrando…'; }
   try{
     await fb.signInWithEmailAndPassword(fb.auth, email, pass);
-    // onAuthStateChanged se encarga del resto
   }catch(err){
     console.warn('Login error', err);
     let msg = 'Usuario o contraseña incorrectos.';
@@ -909,8 +925,6 @@ async function cargarPerfilYArrancar(user){
 
   let perfil;
   if(!snap.exists()){
-    // Primer login: autocreamos el doc como comercial
-    // El nombre se deduce del email: comercial01@... → "comercial 01"
     const localPart = user.email.split('@')[0];
     const m = localPart.match(/^comercial(\d{1,2})$/);
     const nombre = m ? 'comercial ' + String(parseInt(m[1],10)).padStart(2,'0') : localPart;
@@ -946,7 +960,6 @@ async function cargarPerfilYArrancar(user){
 
   mostrarLogin(false);
   document.body.classList.add('logueado');
-  // Arrancar la app solo si no estaba ya arrancada
   if(!window.__appStarted){
     window.__appStarted = true;
     try{
@@ -962,16 +975,16 @@ async function hacerLogout(){
   if(!confirm('¿Cerrar sesión?')) return;
   const fb = window.__fb;
   if(fb) await fb.signOut(fb.auth);
-  // Limpiar UI y volver a login
   window.__appStarted = false;
   fbUser = null;
+  unsubLocalizaciones && unsubLocalizaciones();
+  localizaciones.clear();
   const app = document.getElementById('app');
   if(app) app.innerHTML = '';
   document.body.classList.remove('logueado');
   mostrarLogin(true);
 }
 
-// Inicializa el binding del form y el listener de auth
 function bindAuth(){
   const form = document.getElementById('loginForm');
   if(form){
@@ -990,11 +1003,8 @@ function bindAuth(){
   }
 
   fb.onAuthStateChanged(fb.auth, function(user){
-    if(user){
-      cargarPerfilYArrancar(user);
-    } else {
-      mostrarLogin(true);
-    }
+    if(user) cargarPerfilYArrancar(user);
+    else mostrarLogin(true);
   });
 }
 
@@ -1020,16 +1030,12 @@ function esHojaCerrada(h){
 }
 
 /* ============================================================
-   CALLES
+   CALLES (sin cambios)
    ============================================================ */
 var CALLES_LH_RAW = "Avinguda d'Albert Bastardas|Avinguda d'Álvarez de Castro|Avinguda d'Amadeu Torner|Avinguda d'Amèrica|Avinguda d'Europa|Avinguda d'Isabel la Catòlica|Avinguda de Can Serra|Avinguda de Carmen Amaya|Avinguda de Catalunya|Avinguda de Joan Carles I|Avinguda de Josep Molins|Avinguda de Josep Tarradellas i Joan|Avinguda de l'Electricitat|Avinguda de la Fabregada|Avinguda de la Granvia de l'Hospitalet|Avinguda de la Mare de Déu de Bellvitge|Avinguda de la Primavera|Avinguda de Manuel Azaña|Avinguda de Miraflors|Avinguda de Pau Casals|Avinguda de Ponent|Avinguda de Ramon Frontera|Avinguda de Severo Ochoa|Avinguda de Tomás Giménez|Avinguda de Ventura Gassol|Avinguda de Vilafranca|Avinguda de Vilanova|Avinguda del Bosc|Avinguda del Carrilet|Avinguda del Doctor Ramon Solanich i Riera|Avinguda del Masnou|Avinguda del Metro|Avinguda del Nord|Avinguda del Torrent Gornal|Camí d'Esplugues|Camí de Cal Joan del Ros|Camí de Cal Pau Redó|Camí de la Cadena|Camí de la Fonteta|Camí de la Ribera|Camí de la Riereta|Camí del Torrent de Can Nyac|Carrer Alt|Carrer d'Alacant|Carrer d'Albareda|Carrer d'Albéniz|Carrer d'Albiol|Carrer d'Almadén|Carrer d'Almeria|Carrer d'Amadeu Vives|Carrer d'Andorra|Carrer d'Àngel Guimerà|Carrer d'Ángeles Santos|Carrer d'Antonio Machado|Carrer d'Arquimedes|Carrer d'El Empecinado|Carrer d'Empúries|Carrer d'Enric Morera|Carrer d'Enric Prat de la Riba|Carrer d'Ernest Lluch|Carrer d'España|Carrer d'Esteve Grau|Carrer d'Estruch|Carrer d'Herrero|Carrer d'Holanda|Carrer d'Ibèria|Carrer d'Isaac Peral|Carrer d'Occident|Carrer d'Orient|Carrer d'Òrrius|Carrer d'Oviedo|Carrer de Bacardí|Carrer de Badajoz|Carrer de Badalona|Carrer de Barcelona|Carrer de Batllori|Carrer de Belchite|Carrer de Bellavista|Carrer de Bernini|Carrer de Besa|Carrer de Blas Fernández Lirola|Carrer de Buenos Aires|Carrer de Ca n'Alòs|Carrer de Calderón de la Barca|Carrer de Campoamor|Carrer de Can Pi|Carrer de Can Pujadas|Carrer de Can Trias|Carrer de Carles Martí Feced|Carrer de Carrasco i Formiguera|Carrer de Casanova|Carrer de Castelao|Carrer de Castellbò|Carrer de Castellvell|Carrer de Caterina Albert|Carrer de Ceravalls|Carrer de Cervantes|Carrer de Churruca|Carrer de Clara Campoamor|Carrer de Claret|Carrer de Clotet|Carrer de Collserola|Carrer de Colom|Carrer de Cornellà|Carrer de Corominas|Carrer de Cortada|Carrer de Cotonat|Carrer de Covadonga|Carrer de Digoine|Carrer de Diògenes|Carrer de Dolors Aleu|Carrer de Farnés|Carrer de Faus|Carrer de Felip Pedrell|Carrer de Femades|Carrer de Ferré|Carrer de Ferrer i Guàrdia|Carrer de Finestrelles|Carrer de Floridablanca|Carrer de Font|Carrer de Fortuny|Carrer de França|Carrer de Francesc Layret|Carrer de Francesc Moragas|Carrer de Frederic Prats|Carrer de Galvani|Carrer de Girona|Carrer de Gonçal Pons|Carrer de Goya|Carrer de Granada|Carrer de Graner|Carrer de Granollers|Carrer de Gravina|Carrer de Hannah Arendt|Carrer de Jacint Verdaguer|Carrer de Jansana|Carrer de Jaume Ventura i Tort|Carrer de Jerusalem|Carrer de Joan de Joanes|Carrer de Joan Maragall|Carrer de Joan N. García-Nieto|Carrer de Joan Pallarès|Carrer de Joan XXIII|Carrer de José Agustín Goytisolo|Carrer de Josep Anselm Clavé|Carrer de Josep Irla i Bosch|Carrer de Josep Maria de Sagarra|Carrer de Josep Muntané i Almirall|Carrer de Josep Pla|Carrer de Josep Prats|Carrer de Josep Suñol|Carrer de Juan de Toledo|Carrer de Juan Ramón Jiménez|Carrer de Justa Goicoechea|Carrer de l'Abedul|Carrer de l'Alegria|Carrer de l'Alhambra|Carrer de l'Alumini|Carrer de l'Ametller|Carrer de l'Amistat|Carrer de l'Antiga Travessera|Carrer de l'Aprestadora|Carrer de l'Arquitectura|Carrer de l'Atlàntida|Carrer de l'Aviació|Carrer de l'Ebre|Carrer de l'El·lipse|Carrer de l'Emigrant|Carrer de l'Empordà|Carrer de l'Enginyer Moncunill|Carrer de l'Ermita de Bellvitge|Carrer de l'Escultura|Carrer de l'Església|Carrer de l'Esmaragda|Carrer de l'Estrella|Carrer de l'Estronci|Carrer de l'Estudi|Carrer de l'Onze de Setembre|Carrer de l'Uva|Carrer de la Bisbal|Carrer de la Botànica|Carrer de la Carpa|Carrer de la Ciutat Comtal|Carrer de la Cooperativa|Carrer de la Creu Roja|Carrer de la Cultura|Carrer de la Feixa Llarga|Carrer de la Física|Carrer de la Florida|Carrer de la Fortuna|Carrer de la Glòria|Carrer de la Hierbabuena|Carrer de la Igualtat|Carrer de la Independència|Carrer de la Joventut|Carrer de la Libèl·lula|Carrer de la Literatura|Carrer de la Maladeta|Carrer de la Mare de Déu de la Llum|Carrer de la Mare de Déu de la Mercè|Carrer de la Mare de Déu de Núria|Carrer de la Mare de Déu de Puigcerver|Carrer de la Mare de Déu del Carme|Carrer de la Mare de Déu dels Desemparats|Carrer de la Metal·lúrgia|Carrer de la Mina|Carrer de la Muntanya|Carrer de la Pubilla Cases|Carrer de la Reforma|Carrer de la Renclusa|Carrer de la Residència|Carrer de la Riera Blanca|Carrer de la Riera de l'Escorxador|Carrer de la Riera de la Creu|Carrer de la Riera del Canyet|Carrer de la Riera dels Frares|Carrer de la Rosa d'Alexandria|Carrer de la Talaia|Carrer de la Terra Alta|Carrer de la Unió|Carrer de la Vinyeta|Carrer de Lavínia|Carrer de Leonardo da Vinci|Carrer de les Aigües del Llobregat|Carrer de les Amapolas|Carrer de les Arts i els Oficis|Carrer de les Bòbiles|Carrer de les Ciències|Carrer de les Esquadres|Carrer de les Illes Canàries|Carrer de les Mimoses|Carrer de les Muses|Carrer de les Planes|Carrer de les Roselles|Carrer de les Roses|Carrer de les Sangoneres|Carrer de Llançà|Carrer de Llavinés|Carrer de Lleida|Carrer de Lleó|Carrer de Llevant|Carrer de Llunàs|Carrer de Los Castillejos|Carrer de Luarca|Carrer de Màlaga|Carrer de Maluquer|Carrer de Marcel·lí Esquius|Carrer de Martí i Blasi|Carrer de Martí-Codolar|Carrer de Martorell|Carrer de Mas|Carrer de Menéndez Pidal|Carrer de Menorca|Carrer de Mercader|Carrer de Miguel Hernández|Carrer de Mileva Maric|Carrer de Miquel Romeu|Carrer de Miralta|Carrer de Mistral|Carrer de Molines|Carrer de Mont-ras|Carrer de Montserrat|Carrer de Montserrat Roig|Carrer de Mossèn Jaume Busquet|Carrer de Mossèn Lluís Pañella|Carrer de Mossèn Santiago Oliveras|Carrer de Muns|Carrer de Narcís Monturiol|Carrer de Natzaret|Carrer de Numància|Carrer de Pablo Iglesias|Carrer de Pareto|Carrer de París|Carrer de Pau Sans|Carrer de Peníscola|Carrer de Pere Pelegrí|Carrer de Pérez Galdós|Carrer de Pi i Margall|Carrer de Piera|Carrer de Plini|Carrer de Ponsich|Carrer de Portugal|Carrer de Provença|Carrer de Pujós|Carrer de Rabarté|Carrer de Rafael Barradas|Carrer de Rafael Campalans|Carrer de Rius i Carrió|Carrer de Roca i Umbert|Carrer de Rodés|Carrer de Rosalía de Castro|Carrer de Rosell|Carrer de Rosich|Carrer de Rossend Arús|Carrer de Sabadell|Carrer de Salamina|Carrer de Salvador|Carrer de Salvador Espriu|Carrer de Salvador Seguí|Carrer de Sanfeliu|Carrer de Sant Antoni|Carrer de Sant Carles|Carrer de Sant Eugeni|Carrer de Sant Francesc Xavier|Carrer de Sant Joan|Carrer de Sant Jordi|Carrer de Sant Josep|Carrer de Sant Pere|Carrer de Sant Pius X|Carrer de Sant Rafael|Carrer de Sant Ramon|Carrer de Sant Roc|Carrer de Santa Anna|Carrer de Santa Bàrbara|Carrer de Santa Eulàlia|Carrer de Santa Rosa|Carrer de Santiago Apòstol|Carrer de Santiago de Compostel·la|Carrer de Santiago Ramón y Cajal|Carrer de Santiago Rusiñol|Carrer de Saurí|Carrer de Segòvia|Carrer de Sevilla|Carrer de Simancas|Carrer de Sort|Carrer de Subur|Carrer de Tarragona|Carrer de Tecla Sala|Carrer de Terra Baixa|Carrer de Terré|Carrer de Toledo|Carrer de Torns|Carrer de Valeta|Carrer de Vallparda|Carrer de Vaquer|Carrer de Vic|Carrer de Victoria Kent|Carrer de Vigo|Carrer de Vilardosa|Carrer de Vilumara|Carrer de Vinaròs|Carrer del Baró de Maldà|Carrer del Bruc|Carrer del Canigó|Carrer del Cavall Bernat|Carrer del Centre|Carrer del Cinca|Carrer del Cobalt|Carrer del Comerç|Carrer del Congost|Carrer del Crom|Carrer del Doctor Fleming|Carrer del Doctor Gregorio Marañón|Carrer del Doctor Jaume Ferran i Clua|Carrer del Doctor Martí i Julià|Carrer del Dos de Maig|Carrer del Garraf|Carrer del Gasòmetre|Carrer del General Manso|Carrer del General Prim|Carrer del Jardí|Carrer del Llobregat|Carrer del Llorer|Carrer del Mercat|Carrer del Mestre Candi|Carrer del Mestre Carbó|Carrer del Mestre Serrano|Carrer del Migdia|Carrer del Molí|Carrer del Mont|Carrer del Montseny|Carrer del Níquel|Carrer del Pare Marchena|Carrer del Parral|Carrer del Patronat|Carrer del Pedraforca|Carrer del Pintor Mestre i Castellví|Carrer del Pintor Sorolla|Carrer del Poeta Llombart|Carrer del Prat|Carrer del Prat de la Manta|Carrer del Primer de Maig|Carrer del Príncep de Bergara|Carrer del Progrés|Carrer del Radi|Carrer del Rei En Jaume|Carrer del Rosselló|Carrer del Rubidi|Carrer del Teide|Carrer del Tel·luri|Carrer del Ter|Carrer del Transformador|Carrer del Treball|Carrer del Xipreret|Carrer dels Clavells|Carrer dels Garrofers|Carrer dels Joncs|Carrer dels Motors|Carrer dels Naranjos|Carrer dels Pins|Carrer Major|Carrer Modern|Carrer Oriental|Carrer Transversal|Carretera Antiga del Prat|Carretera d'Esplugues|Carretera de Collblanc|Carretera de la Feixa Llarga|Carretera de la Vora del Riu|Carretera de Sant Roc|Carretera del Mig|Jardins d'Antonio Machado|Jardins d'Artemisia Gentileschi|Jardins d'Hipàcia d'Alexandria|Jardins de Ca n'Arús|Jardins de Can Sumarro|Jardins de Cosme Toda|Jardins de Francesc Pedra i Lola Peñalver|Jardins de la Granota|Jardins de la Mediterrània|Jardins de la Sénia|Jardins de les Moreres|Jardins de les Nacions Unides|Jardins de Matilde Ucelay|Jardins de Pablo Picasso|Jardins de Pompeu Fabra|Jardins de Rita Fernández|Jardins de Rosa Sensat|Jardins de Salvador Dalí|Jardins de Tecla Sala|Jardins de Teresa Navarrro|Jardins del Bisbe Joan Carrera|Jardins del Canal de la Infanta|Parc de Bellvitge|Parc de Can Buxeres|Parc de Can Cluset|Parc de Can Creixells|Parc de l'Alhambra|Parc de la Cabana|Parc de la Granvia de l'Hospitalet|Parc de la Marquesa|Parc de la Remunta|Parc de la Serp|Parc de la Torrassa|Parc de les Planes|Parc dels Ocellets|Passatge d'Amat|Passatge d'Estadella|Passatge de Bonvehí|Passatge de Ca n'Alòs|Passatge de Can Polític|Passatge de Can Vila|Passatge de Can Xerricó|Passatge de Colom|Passatge de Costa|Passatge de Guilera|Passatge de Jansana|Passatge de Jaume Blanchart|Passatge de l'Escorxador|Passatge de la Concepció|Passatge de la Pau|Passatge de la Rectoria|Passatge de Llopis|Passatge de Llunàs|Passatge de Matas|Passatge de Milans|Passatge de Montserrat Isern|Passatge de Paquita|Passatge de Piera|Passatge de Pons|Passatge de Rius|Passatge de Rovira|Passatge de Salvador|Passatge de Sant Cristòfol|Passatge de Zuloaga|Passatge del Cementiri|Passatge del Patronat|Passatge del Xiprer|Passatge Dos|Passatge Miner|Passatge Oliveras|Passeig de Bellvitge|Passeig del Conveni de 1713|Plaça d'ALPI|Plaça d'Amalvígia|Plaça d'Anna Frank|Plaça d'Eivissa|Plaça d'Ernest Lluch|Plaça d'Europa|Plaça de Blas Infante|Plaça de Camilo José Cela|Plaça de Can Colom|Plaça de Can Trinxet|Plaça de Canalejas|Plaça de Federico García Lorca|Plaça de Francesc Macià i Llussà|Plaça de Frederica Montseny|Plaça de Granada|Plaça de Guernica|Plaça de Joan Brossa|Plaça de Josep Bordonau i Balaguer|Plaça de l'Ajuntament|Plaça de l'Alzina|Plaça de l'Escorsa|Plaça de l'Hortet|Plaça de l'UNICEF|Plaça de la Bòbila|Plaça de la Carpa|Plaça de la Casa de Reconciliació|Plaça de la Constitució|Plaça de la Cultura|Plaça de la Font|Plaça de la Llibertat|Plaça de la Llosa|Plaça de la Mare de Déu de Montserrat|Plaça de la Mare de Déu del Pilar|Plaça de la Pubilla Cases|Plaça de la Remunta|Plaça de la Solidaritat|Plaça de les Comunitats|Plaça de les Germanes Ocaña|Plaça de les Palmeres|Plaça de les Vidrieries Llobregat|Plaça de Lluís Companys i Jover|Plaça de Lola Anglada|Plaça de Maria Artigal|Plaça de Maria Aurèlia Capmany|Plaça de Maria Montessori|Plaça de Maria Soteras|Plaça de Marie Curie|Plaça de Milagros Consarnau i Sabaté|Plaça de Mossèn Homar|Plaça de Pius XII|Plaça de Provençana|Plaça de Puig i Gairalt|Plaça de Quart|Plaça de Sant Isidre|Plaça de Sant Jordi|Plaça de Tuzla|Plaça del Cadí|Plaça del Mercat de Collblanc|Plaça del Mestre Clavé|Plaça del Repartidor|Plaça del Repòs|Plaça del Vidre|Plaça dels Avis|Plaça dels Blocs de la Florida|Plaça dels Cirerers|Plaça dels Pirineus|Plaça dels Veïns|Plaça Espanyola|Plaça Sant Joan|Pont de Matacavalls|Rambla Catalana|Rambla de Just Oliveras|Rambla de la Marina|Ronda de Dalt|Ronda de la Torrassa|Ronda de la Via|Ronda del Litoral|Travessera de Collblanc|Travessera de les Corts|Travessia Industrial|Urbanització del Canyet|Via d'Enllaç";
-
 var CALLES_ES_RAW = "Avinguda d'Ahrensburg|Avinguda de Cornellà|Avinguda de Jacint Esteva i Fontanet|Avinguda de la Ciutat de l'Hospitalet|Avinguda de la Generalitat de Catalunya|Avinguda de la Mestra Dolors Barceló|Avinguda de la Miranda|Avinguda del Baix Llobregat|Avinguda de l'Electricitat|Avinguda de Lluis Companys|Avinguda dels Països Catalans|Avinguda dels Traginers|Avinguda del Torrent|Avinguda d'Isidre Martí|Avinguda Muntanyenca|Camí de Can Boixeres|Camí de Can Nyac|Carrer d'Alexandre Soler i March|Carrer d'Amadeu Vives|Carrer d'Andreu Amat|Carrer d'Àngel Guimerà|Carrer d'Antoni Gaudí|Carrer d'Antoni Maria Gallissà i Soqué|Carrer d'Apel·les Mestres|Carrer d'August Font i Carreras|Carrer de Bartomeu Bermejo|Carrer de Bonavista|Carrer de Can Dori|Carrer de Clara Campoamor|Carrer de David Carreras i Trias|Carrer de Díaz de la Fuente|Carrer d'Eduard Toldrà|Carrer de Ferrer i Bassa|Carrer de Finestrelles|Carrer de Francesc Layret|Carrer de Francesc Llunell|Carrer de Francesc Moragas|Carrer de Francesc Ribalta|Carrer de Francesc Romeu|Carrer de Fuerteventura|Carrer de Gaspar Fàbregas i Roses|Carrer de Jaume Balmes|Carrer de Jaume Huguet|Carrer de Jaume Marco|Carrer de Jaume Pros|Carrer de Joan Amades|Carrer de Joan Miró|Carrer de Joan XXIII|Carrer de Jordi de Déu|Carrer de José Echegaray|Carrer de Josep Anguera i Sala|Carrer de Josep Anselm Clavé|Carrer de Josep Argemí|Carrer de Josep Campreciós|Carrer de Josep Gras|Carrer de Josep Maria Jujol|Carrer de Josep Maria Ventura|Carrer de Josep Miquel Quintana|Carrer de Josep Puig i Cadafalch|Carrer de Josep Rodoreda|Carrer de Juan de la Cierva|Carrer de Juli Culebras i Barba|Carrer de Juli Garreta|Carrer del 8 de Març|Carrer de la Baronessa de Maldà|Carrer de la Constància|Carrer de la Creu del Raval|Carrer de la Ginesta|Carrer de l'Alcalde Martí Figueras i Castillo|Carrer de l'Alegria|Carrer de la Lleialtat|Carrer de la Maladeta|Carrer de la Menta|Carrer de l'Amistat|Carrer de la Pau|Carrer de la Piscina|Carrer de la Pubilla Cases|Carrer de la Rajoleria|Carrer de la Riba|Carrer de la Riereta|Carrer de la Rosella|Carrer de la Serra del Cadí|Carrer de la Serra del Montsec|Carrer de la Tramuntana|Carrer de Laureà Miró|Carrer de la Vallerona|Carrer de l'Ave Maria|Carrer de la Verge de Guadalupe|Carrer de la Verge de la Mercè|Carrer de la Verge de la Paloma|Carrer de la Via Augusta|Carrer de la Vinya|Carrer del Bruc|Carrer del Carme|Carrer del Casal de Sant Jordi|Carrer del Doctor Alexander Fleming|Carrer del Doctor Ferran|Carrer del Doctor Gimeno|Carrer del Doctor Ramon Turró|Carrer de les Escaletes|Carrer de les Flors|Carrer de l'Església|Carrer de les Glicines|Carrer de les Magnòlies|Carrer de l'Esmaragda|Carrer de les Piles|Carrer de les Planes|Carrer de l'Esport|Carrer de l'Est|Carrer del Frontó|Carrer del Gall|Carrer de l'Hortènsia|Carrer de Llevant|Carrer de Lluís Borrassà|Carrer de Lluís Domenech i Muntaner|Carrer de Lluís Labarta|Carrer de Lluís Millet|Carrer del Mar|Carrer del Marquès d'Espanya|Carrer del Mestre Joan Corrales|Carrer del Mestre Joaquim Rosal|Carrer del Mestre Manuel de Falla|Carrer del Molí|Carrer del Mossèn Esteve Carbonell|Carrer del Nord|Carrer del Pas del Sucre|Carrer del Primer de Maig|Carrer del Priorat|Carrer del Professor Barraquer|Carrer del Racó d'en Muns|Carrer del Raval|Carrer dels Àngels|Carrer dels Caquis|Carrer dels Cedres|Carrer dels Eucaliptus|Carrer dels Germans Serra|Carrer dels Jocs Florals|Carrer dels Lleons|Carrer dels Pins|Carrer dels Sometents|Carrer de Magdalena Amigó|Carrer de Manuel Florentín Pérez|Carrer de Maria Aurèlia Capmany|Carrer de Mercè Rodoreda|Carrer de Milà i Pi|Carrer d'Emili Juncadella|Carrer de Miramar|Carrer de Montesa|Carrer de Montserrat|Carrer de Montserrat Roig|Carrer de Mossèn Jacint Verdaguer|Carrer de Narcís Monturiol|Carrer de Nostra Senyora de Lourdes|Carrer d'Enric Granados|Carrer d'Enric Morera|Carrer d'Enrique Tierno Galván|Carrer de Pau Casals|Carrer de Pau Claris|Carrer de Pau Torres|Carrer de Pau Vergós|Carrer de Pedro Berruguete|Carrer de Pere Galvany|Carrer de Pere Joan|Carrer de Pere Pelegrí|Carrer de Picalques|Carrer de Rafael Casanova i Comes|Carrer de Rafael Sebastià Irla|Carrer de Ramon Llull|Carrer de Ricard Güell|Carrer de Rocabert|Carrer de Roser Artigas|Carrer de Rovellat|Carrer de Sabina Mitjavila|Carrer de Santa Anna|Carrer de Sant Albert Magne|Carrer de Sant Antoni Maria Claret|Carrer de Santa Rosa|Carrer de Sant Francesc Xavier|Carrer de Sant Gabriel|Carrer de Santiago Ramon y Cajal|Carrer de Santiago Rusiñol|Carrer de Sant Jordi|Carrer de Sant Josep|Carrer de Sant Llorenç|Carrer de Sant Mateu|Carrer de Sant Salvador|Carrer de Severo Ochoa|Carrer d'Esperança Martí|Carrer de Tenerife|Carrer de Tomàs Bretón|Carrer de Vic|Carrer de Vicenç Bou|Carrer de Vidal i Ribas|Carrer d'Ignasi Iglésias|Carrer d'Isaac Albéniz|Carrer d'Oriol|Carrer Nou|Passatge d'Alexandre Galí|Passatge de Joan Brillas|Passatge de Josep Cervera|Passatge del Baix Lloc|Passatge del Puig d'Óssa|Passatge dels Ametllers|Passatge del Xaloc|Passatge de Ramon Casas|Passatge de Santa Eulàlia|Passatge de Sant Joaquim|Passeig de Francesc Macià i Llussà|Passeig de Pablo Ruiz Picasso|Passeig de Sant Joan de Déu|Plaça de Blas Infante|Plaça de Catalunya|Plaça de Doña Carolina|Plaça de Jacinto Benavente|Plaça de Joan Tomàs i Parés|Plaça de la Constitució|Plaça de la Dona|Plaça de la Sardana|Plaça de l'Escorxador|Plaça de les Moreres|Plaça d'Elisabeth Eidenbenz|Plaça del Pare Miquel d'Esplugues|Plaça del Secretari Oliva|Plaça del Sol|Plaça del Taxi|Plaça de Macael|Plaça de Mahatma Gandhi|Plaça de Maria Guillén|Plaça de Mireia|Plaça de Pau Vila|Plaça de Pi i Margall|Plaça de Ramon Trias Fargas|Plaça de Santa Magdalena|Plaça de Sant Lluís Gonzaga|Plaça d'Oleguer Junyent|Pont Nou|Ronda de Dalt|Ronda del Canigó|Ronda del Puigmal";
-
 var CALLES_CAPELLADES_RAW = "Camí Cementiri|Camí Pas de l'Aigua|Carrer Abat Muntadas|Carrer Amador Romaní|Carrer Anselm Ferrer|Carrer Antoni Maria Claret|Carrer Ausias March|Carrer Barcelona|Carrer Benages|Carrer Catalunya|Carrer Costa de les Creus|Carrer d' Oló|Carrer de Josep Costa i Pomés|Carrer de l' Alba|Carrer de la Barquera|Carrer de la Mercè|Carrer de la Miranda|Carrer de Miramar|Carrer de Sant Joan|Carrer del Call|Carrer del Carme|Carrer del Fossar|Carrer del Molí Xic|Carrer del Pilar|Carrer del Portal|Carrer dels Alabrents|Carrer dels Pins|Carrer Divina Pastora|Carrer Doctor Fleming|Carrer Font|Carrer Font Cuitora|Carrer Font de la Reina|Carrer Garbí|Carrer Girat|Carrer J.Maragall|Carrer Joan Castells|Carrer la Canaleta|Carrer Lluis Companys|Carrer Magicarme|Carrer Major|Carrer Muntanya|Carrer Nou|Carrer Onze de Setembre de 1714|Carrer Padre Bernardí|Carrer Paperers|Carrer Pau Casals|Carrer Pep Ventura|Carrer Prolongació Miquel i Mas|Carrer Ramón Godó|Carrer Rec del Corronaire|Carrer Roca del Batista|Carrer Salvador Espriu|Carrer Sant Francesc|Carrer Sant Ramón|Carrer Santa Ana|Carrer Santa Dorotea|Carrer Santa Llúcia|Carrer Sarrià de Ter|Carrer Tarragona|Carrer Torre de Claramunt|Carrer Torrenova|Carrer Torrent de la Bleda|Carrer Torrent Formigosa|Carrer Verge de Montserrat|Carretera Matias Guasch|Passatge de la Curanya|Passatge de la Joventut|Passatge del Rossinyol|Passatge Divina Pastora|Passatge Escales|Passatge Garcia Lorca|Passatge Jardí|Passatge Lliga|Passeig de la Immaculada Concepció|Passeig Miquel Más|Plaça Àngel Guimerà|Plaça de Catalunya|Plaça de Espanya|Plaça de l' U d'Octubre|Plaça Sant Jaume|Plaça Sant Miquel|Plaça Verdaguer|Placeta d'en Pines|Ronda Capelló|Travessera de Benages|Travessera del Portal";
-
 var CALLES_MASQUEFA_RAW = "Avinguda Can Llopart|Avinguda de Can Marcet|Avinguda de Can Parellada|Avinguda de Can Valls|Avinguda de Catalunya|Avinguda de l' Hospitalet|Avinguda de la Beguda|Avinguda de la Font del Torrent|Avinguda de la Gran Via Diagonal|Avinguda de la Pineda|Avinguda de la Victòria|Avinguda de Masquefa|Avinguda del Baixador|Avinguda del Carrilet|Avinguda del Maresme|Avinguda Línia|Baixada dels Ametllers|Carrer Alta|Carrer Baix Sant Pere|Carrer Corraló de la Fassina|Carrer d' Abrera|Carrer d' Alboraia|Carrer d' Aragó|Carrer d' Esparreguera|Carrer d' Igualada|Carrer d' Ordal|Carrer d' Osona|Carrer d' Urgell|Carrer de Barcelona|Carrer de Bellavista|Carrer de Blasco de Garay|Carrer de Bonavista|Carrer de Campoamor|Carrer de Can Ginferrer|Carrer de Can Mata|Carrer de Can Valls|Carrer de Castellví de Rosanes|Carrer de Collbató|Carrer de Collserola|Carrer de Dídac Toldrà|Carrer de Francesc Macià|Carrer de Gelida|Carrer de Girona|Carrer de Granollers|Carrer de Jacint Verdaguer|Carrer de Jaume Ferran|Carrer de Joan Miró|Carrer de Josep Maria Valls|Carrer de Juan de la Cierva|Carrer de l' Alba|Carrer de l' Alt Camp|Carrer de l' Alzinar|Carrer de l' Empordà|Carrer de l' Era|Carrer de l' Escorxador|Carrer de l' Estació|Carrer de la Carretera Vella|Carrer de la Cerdanya|Carrer de la Concepció|Carrer de la Creu|Carrer de la Creueta|Carrer de la Fàbrica|Carrer de la Figuera|Carrer de la Font|Carrer de la Font de la Malesa|Carrer de la Font del Roure|Carrer de la Llum|Carrer de la Maladeta|Carrer de la Noguera|Carrer de la Pau|Carrer de la Pica d'Estats|Carrer de la Rectoria|Carrer de la Ribera d'Ebre|Carrer de la Riera de Claret|Carrer de la Segarra|Carrer de la Selva|Carrer de la Serpentina|Carrer de la Talaia|Carrer de la Tècnica|Carrer de la Tramuntana|Carrer de la Vall d'Aran|Carrer de la Verge de la Mercè|Carrer de les Escoles|Carrer de les Ginestes|Carrer de les Moreres|Carrer de les Oliveres|Carrer de Lleida|Carrer de Llevant|Carrer de Llívia|Carrer de Lluís Companys|Carrer de Lluis Millet|Carrer de Mallorca|Carrer de Maragall|Carrer de Martorell|Carrer de Mn. J. Claramunt|Carrer de Monistrol de Montserrat|Carrer de Montserrat|Carrer de Narcís Monturiol|Carrer de Pau Bruna|Carrer de Pau Casals|Carrer de Pau Claris|Carrer de Pau Margarit|Carrer de Picasso|Carrer de Piera|Carrer de Pujades|Carrer de Ramon Llull|Carrer de Rogelio Rojo|Carrer de Roger de Flor|Carrer de Roger de Llúria|Carrer de Roig Bonastre|Carrer de Sabadell|Carrer de Salvador Dalí|Carrer de Sant Antoni|Carrer de Sant Jordi|Carrer de Sant Llorenç d'Hortons|Carrer de Sant Pere|Carrer de Santa Clara|Carrer de Sòcrates|Carrer de Tarragona|Carrer de València|Carrer de Vallvidrera|Carrer del Bages|Carrer del Baix Camp|Carrer del Bon Repòs|Carrer del Bruc|Carrer del Bruga|Carrer del Cadí|Carrer del Camí de l'Alzinar|Carrer del Corraló|Carrer del Corraló de Cal Pluges|Carrer del Corraló de l'Estació|Carrer del Dipòsit|Carrer del Doctor Fleming|Carrer del Doctor Jové|Carrer del Doctor Rollant|Carrer del Garbí|Carrer del Gironès|Carrer del Maestrat|Carrer del Mestre Bosch|Carrer del Mirador de Montserrat|Carrer del Montsec|Carrer del Montseny|Carrer del Nord|Carrer del Pallars|Carrer del Pallars Sobirà|Carrer del Pas dels Oms|Carrer del Penedés|Carrer del Pi|Carrer del Piló de la Bassa|Carrer del Pintor Fortuny|Carrer del Principat d'Andorra|Carrer del Priorat|Carrer del Progres|Carrer del Puigmal|Carrer del Ripollès|Carrer del Roser|Carrer del Rosselló|Carrer del Serralet|Carrer del Sol|Carrer del Solsonés|Carrer del Sud|Carrer del Tennis|Carrer del Terme|Carrer del Virolai|Carrer dels Ametllers|Carrer dels Horts|Carrer dels Hostalets|Carrer dels Pirineus|Carrer Galceran|Carrer Leonie Mirapeix|Carrer Major|Carrer Nou|Carrer Pla dels Ocells|Carrer Xic de l'Anyé|Carretera Martorell-Capellades|Oms|Passatge d' Ocata|Passatge de Joan Isort Bonastre|Passatge de l' Amistat|Passatge de l' Era|Passatge de l' Estatut|Passatge de la Ciutadella|Passatge de la Font del Torrent|Passatge de la Tècnica|Passatge de Magarola|Passatge de Masquefa|Passatge de Parellada|Passatge de Sant Antoni|Passatge de Sant Llorenç|Passatge del Cagaferro|Passatge del Camp|Passatge del Canigó|Passatge del Pla|Passatge del Triangle|Passatge del Xarel·lo|Passatge dels Bastoners|Passatge dels Gegants|Passatge Macabeu|Passatge Solsonès|Passatge Verdaguer|Passeig de la Via|Passeig Onze de setembre|Plaça Anoia|Plaça d' Anselm Clavé|Plaça de Josep Maria Vila|Plaça de l' Església|Plaça de l' Estany|Plaça de la Figuera|Plaça de la Vila|Plaça dels Jocs|Placeta de l' Església|Travessera Dalt|Travessera de Sant Antoni|Travessera de Sant Pere|Travessera del Mig";
-
 var CALLES_PIERA_RAW = "Avinguda Àlbers|Avinguda Àliga|Avinguda Barcelona|Avinguda Can Bou|Avinguda Can Creixell|Avinguda Casa Blanca|Avinguda Castell|Avinguda Catalunya|Avinguda Companys|Avinguda Corral del Mas|Avinguda Dàlia|Avinguda de l' Amor|Avinguda dels Catalans|Avinguda Europa|Avinguda Fàbrica Nova|Avinguda Gall Mullat|Avinguda Igualada|Avinguda la Carretera d'Igualada|Avinguda les Planes|Avinguda Mallorca|Avinguda Mirador|Avinguda Montjuïc|Avinguda Montserrat|Avinguda Mozart|Avinguda Penedès|Avinguda Piera|Avinguda Sant Jordi|Avinguda Sant Sadurní|Avinguda Santiago|Avinguda Tarradellas|Avinguda Tibidabo|Baixada Cirerer|Camí Can Duran|Camí del Maset|Camí Romeu|Camí Sant Sadurní|Carrer Abat Oliba|Carrer Acàcia|Carrer Aires de Montserrat|Carrer Àliga|Carrer Alosa|Carrer Alvocat|Carrer Amadeu Vives|Carrer Ametller|Carrer Amsterdam|Carrer Andorra|Carrer Andròmeda|Carrer Àngel|Carrer Àngel Guimerà|Carrer Anoia|Carrer Aquàrius|Carrer Arboç|Carrer Arc de Sant Martí|Carrer Àries|Carrer Associació|Carrer Assutzena|Carrer Atenes|Carrer Atzavara|Carrer Avellaner|Carrer Avet|Carrer Avets|Carrer Barcelona|Carrer Baronia|Carrer Bedoll|Carrer Beethoven|Carrer Begònia|Carrer Begur|Carrer Bellavista|Carrer Berlín|Carrer Boletaires|Carrer Bonavista|Carrer Borrell|Carrer Bosc|Carrer Brussel·les|Carrer Ca n'Aguilera|Carrer Cadernera|Carrer Cadí|Carrer Cal Casals|Carrer Calderón de la Barca|Carrer Camèlia|Carrer Camèlies|Carrer Camí de Montserrat|Carrer Campaneta|Carrer Can Benet|Carrer Can Canals|Carrer Canals|Carrer Canari|Carrer Càncer|Carrer Canigó|Carrer Capellades|Carrer Capricornius|Carrer Carena|Carrer Castanyer|Carrer Centaurus|Carrer Centre|Carrer Cervantes|Carrer Cervera|Carrer Chopin|Carrer Cignus|Carrer Circumval·lació|Carrer Cirerer|Carrer Clavell|Carrer Colom|Carrer Constitució|Carrer Copenhague|Carrer Copèrnic|Carrer Corona Australis|Carrer Creueta|Carrer Creus|Carrer Dalí|Carrer Dàlia|Carrer de Baix|Carrer de Dalt|Carrer de l' Abadessa|Carrer de l' Abat Marcet|Carrer de l' Aire|Carrer de l' Alzina|Carrer de l' Estació|Carrer de la Iuca|Carrer de la Mar|Carrer de la Plaça|Carrer de la Rosa|Carrer de la Rosaleda|Carrer de la Torre|Carrer de Mossèn Joan Sabater|Carrer de Tordera|Carrer del Bedorc|Carrer del Lilà|Carrer del Parc|Carrer del Sol|Carrer dels Verdums|Carrer Diputació|Carrer Doctor Barraquer|Carrer Doctor Carles|Carrer Doctor Fleming|Carrer Doctor Gomis|Carrer Doctor Marañón|Carrer Domènech|Carrer Dret|Carrer Dublín|Carrer Edison|Carrer Einstein|Carrer els Cups|Carrer els Gats|Carrer Emili Vendrell|Carrer Empordà|Carrer Era del Poch|Carrer Escultor Salcillo|Carrer Esparver|Carrer Estatut|Carrer Estepa|Carrer Estocolm|Carrer Estrella|Carrer Eucaliptus|Carrer Europa|Carrer Faig|Carrer Fassina|Carrer Figarot|Carrer Flor|Carrer Flors|Carrer Folch i Torres|Carrer Fortesa|Carrer Freixe|Carrer Garbí|Carrer Gardènia|Carrer Gaudí|Carrer Gèminis|Carrer Generalitat|Carrer Ginesta|Carrer Gira-sol|Carrer Girona|Carrer Goya|Carrer Gran|Carrer Greco|Carrer Guinovarda|Carrer Hèrcules|Carrer Herois del Bruc|Carrer Heura|Carrer Hortènsia|Carrer Hostalets|Carrer Independència|Carrer Indústria|Carrer Insitució|Carrer Isaac Berroya|Carrer J.Balmes|Carrer Jardí|Carrer Jardins|Carrer Jaume Fons|Carrer Jaume I|Carrer Joan XXIII|Carrer Josep Ballesteros|Carrer Josep Vidal Munne|Carrer l' Illa|Carrer la Coma|Carrer la Creueta|Carrer la Font|Carrer la Grua|Carrer la Plaça|Carrer la Plana|Carrer la Riera|Carrer les Escoles|Carrer Libra|Carrer Lisboa|Carrer Llac de Banyoles|Carrer Lleida|Carrer Lleó|Carrer Llessamí|Carrer Llevant|Carrer Lliri|Carrer Lliris|Carrer Llorer|Carrer Lloro|Carrer Lluna|Carrer Londres|Carrer Lope de Vega|Carrer Lotus|Carrer Luxemburg|Carrer Lyra|Carrer Macarena|Carrer Madrid|Carrer Magnòlia|Carrer Magnòlies|Carrer Major|Carrer Maragall|Carrer Marconi|Carrer Margarida|Carrer Maria Lleopart|Carrer Marina|Carrer Martorell|Carrer Mas|Carrer Mas Bover|Carrer Masia|Carrer Masquefa|Carrer Menta|Carrer Mercat Comú|Carrer Merla|Carrer Mestre Lloret|Carrer Mestre Rafael Garcia|Carrer Mig|Carrer Migdia|Carrer Mimosa|Carrer Miquel Martí i Pol|Carrer Mirador|Carrer Miró|Carrer Montmar|Carrer Montsant|Carrer Montseny|Carrer Montserrat|Carrer Moreneta|Carrer Morera|Carrer Mossèn Bonaventura Bagaria|Carrer Mossèn Cinto Verdaguer|Carrer Mossèn Jaume Guixa|Carrer Mossèn Lluís Garcia|Carrer Munné Orpí|Carrer Muntaner|Carrer Muntanya|Carrer Muralla|Carrer Napoleó|Carrer Narcís|Carrer Narcís Monturiol|Carrer Nards|Carrer Newton|Carrer Noguera|Carrer Nord|Carrer Nostra Senyora de la Salut|Carrer Nou|Carrer Oasi|Carrer Olimpíades 92|Carrer Olivera|Carrer Oliveres|Carrer Olivereta|Carrer Onze de Setembre|Carrer Opera|Carrer Oreneta|Carrer Orenga|Carrer Orquidia|Carrer Orses|Carrer Oslo|Carrer Pablo Picasso|Carrer Països Catalans|Carrer Palmera|Carrer Paradís|Carrer Parellada|Carrer París|Carrer Patis|Carrer Pau|Carrer Pau Casals|Carrer Pau Claris|Carrer Pedraforca|Carrer Pedrera|Carrer Pegasus|Carrer Pelegrí|Carrer Penedès|Carrer Peral|Carrer Perdiu|Carrer Pere Farrés|Carrer Pi|Carrer Pi Roig|Carrer Picasso|Carrer Picos de Europa|Carrer Piereta|Carrer Pimpinella|Carrer Pins|Carrer Piscis|Carrer Planters|Carrer Poble Nou|Carrer Poma|Carrer Pomar|Carrer Pompeu Fabra|Carrer Ponent|Carrer Port de la Bonaigua|Carrer Portell|Carrer Pou|Carrer Presseguers|Carrer Pujada del Castell|Carrer Racó de Cervantes|Carrer Rafael Martínez Valls|Carrer Ramón y Cajal|Carrer Raval|Carrer Referendum|Carrer Reina Elisenda|Carrer Remeis|Carrer Revolució|Carrer Ricard Canals|Carrer Riu Anoia|Carrer Riu Cardoner|Carrer Riu Francolí|Carrer Riu Llobregat|Carrer Riu Segre|Carrer Riu Ter|Carrer Roiselles|Carrer Roma|Carrer Romaní|Carrer Rosalía de Castro|Carrer Rosella|Carrer Roser|Carrer Rosers|Carrer Rossinyol|Carrer Roure|Carrer Rovellons|Carrer Rubens|Carrer Ruda|Carrer Sagitarius|Carrer Salvador Claramunt|Carrer Salvador Mato i Casanovas|Carrer Salzes|Carrer Sant Bonifaci|Carrer Sant Cristòfol|Carrer Sant Joan|Carrer Sant Joan Baptista|Carrer Sant Jordi|Carrer Sant Josep|Carrer Sant Llorenç|Carrer Sant Nicolau|Carrer Sant Sebastià|Carrer Santa Creu de Creixa|Carrer Santa Eulàlia|Carrer Sardana|Carrer Scorpius|Carrer Segre|Carrer Septentrional|Carrer Serra del Cadí|Carrer Serral|Carrer Taronger|Carrer Tarragona|Carrer Taurus|Carrer Terme|Carrer Torres i Bages|Carrer Tórtora|Carrer Tramuntana|Carrer Tremp|Carrer Tulipa|Carrer Turó|Carrer Ursa Major|Carrer Vall d'Aran|Carrer Vall de l'Ebre|Carrer Van Gogh|Carrer Velázquez|Carrer Venus|Carrer Verdi|Carrer Verema|Carrer Verge de la Mercè|Carrer Via Làctea|Carrer Víctor Riu|Carrer Viena|Carrer Vilanova|Carrer Vinya|Carrer Violers|Carrer Violeta|Carrer Virgo|Carrer Viuda Sabater|Carrer Xaloc|Carrer Xiprer|Carrer Xiprers|Carrer Xop|Carrer Zínnies|Carreró Cal Moreno|Carreró del Prat|Carreró del Sol|Carreró Santa Eulàlia|Carreró Turó|Carretera Esparraguera|Carretera Piera|Parc Gall Mullat|Passatge Albercoc|Passatge Anoia|Passatge Barcelona|Passatge Bosc|Passatge Carral|Passatge Cirerer|Passatge Correlo|Passatge de Can Lleó|Passatge de l' Església|Passatge de les Oliveres|Passatge del Gerani|Passatge Gall Mullat|Passatge Llessamí|Passatge Llorer|Passatge Maria Lleopart|Passatge Ricard Canals|Passatge Rosa|Passatge Rosaleda|Passatge Vent|Passeig del Prat|Passeig Gaudí|Passeig Salzes|Plaça Can Bou|Plaça Canigó|Plaça Catalunya|Plaça de l' Església|Plaça de l' U d'Octubre|Plaça de la Creu|Plaça del Peix|Plaça del Tibet|Plaça Generalitat|Plaça Joan Orpí|Plaça Major|Plaça Montmar|Plaça Padró|Plaça Sant Crist|Placeta dels Vents|Prolongació Onze de Setembre|Pujada Cal Jeroni|Pujada de l' Església|Rambla Piera|Ronda Montserrat|Travessia Montserrat|Urbanització Maset d'en Martí";
 
 function poblarDatalist(id, raw){
@@ -1107,18 +1113,22 @@ const FIELD_DEFS = [
 ];
 
 /* ============================================================
-   ESTADO Y ALMACENAMIENTO
+   ESTADO EN MEMORIA
    ============================================================ */
-const KEY = 'localizaciones.v1';
 const DEFAULTS = { minFilas:15, ultimoMunicipio: MUNICIPIO_POR_DEFECTO, hojasPlegadas: {} };
 
 let state = { hojas: [], settings: Object.assign({}, DEFAULTS) };
+
+/* Caché local de localizaciones: idLocalizacion -> datos */
+const localizaciones = new Map();
+let unsubLocalizaciones = null;
+
 let editing = null;
 let saveTimer = null;
 let closedContext = null;
 let dupContext = null;
 let filtroActual = '';
-let exportScopeContext = null; /* { format: 'excel' | 'csv' | 'pdf' } */
+let exportScopeContext = null;
 
 const $  = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -1152,196 +1162,207 @@ function buildOptions(options, valor, placeholder){
   }).join('');
 }
 
-function newRow(){
-  const r = { id: uid() };
-  COLS.forEach(function(c){
-    if(c.type === 'check') r[c.key] = '';
-    else if(c.key === 'fecha') r[c.key] = hoyISO();
-    else r[c.key] = '';
-  });
-  r.municipio = state.settings.ultimoMunicipio || MUNICIPIO_POR_DEFECTO;
-  return r;
-}
-function newHoja(){
-  const semActual = semanaActualTexto();
-  let comercial = '';
-  let oficina = OFICINA_POR_DEFECTO;
-  let semana = semActual;
-
-  if(state.hojas.length){
-    const ult = state.hojas[state.hojas.length - 1];
-    if(ult.comercial) comercial = ult.comercial;
-    if(ult.oficina)   oficina   = ult.oficina;
-    if(ult.semana === semActual){
-      semana = ult.semana;
-    }
-  }
-
-  return { id: uid(), comercial: comercial, semana: semana, oficina: oficina, filas: [] };
-}
-function newHojaHeredandoDe(h){
-  return {
-    id: uid(),
-    comercial: h ? (h.comercial || '') : '',
-    semana: semanaActualTexto(),
-    oficina: h ? (h.oficina || OFICINA_POR_DEFECTO) : OFICINA_POR_DEFECTO,
-    filas: []
-  };
-}
-function normHoja(h){
-  const o = {
-    id: h.id || uid(),
-    comercial: h.comercial || '',
-    semana: h.semana || semanaActualTexto(),
-    oficina: h.oficina || OFICINA_POR_DEFECTO,
-    filas: []
-  };
-  (Array.isArray(h.filas) ? h.filas : []).forEach(function(r){
-    const nr = { id: r.id || uid() };
-    COLS.forEach(function(c){
-      if(c.type === 'check') nr[c.key] = normCheck(r[c.key]);
-      else nr[c.key] = r[c.key] == null ? '' : String(r[c.key]);
-    });
-    if(!nr.fecha) nr.fecha = hoyISO();
-    if(!nr.municipio) nr.municipio = MUNICIPIO_POR_DEFECTO;
-    o.filas.push(nr);
-  });
-  return o;
-}
-
-function load(){
-  try{
-    const raw = localStorage.getItem(KEY);
-    if(!raw) return false;
-    const d = JSON.parse(raw);
-    if(!d || !Array.isArray(d.hojas)) return false;
-    state.hojas = d.hojas.map(normHoja);
-    state.settings = Object.assign({}, DEFAULTS, d.settings || {});
-    if(!state.settings.ultimoMunicipio) state.settings.ultimoMunicipio = MUNICIPIO_POR_DEFECTO;
-    if(!state.settings.hojasPlegadas || typeof state.settings.hojasPlegadas !== 'object'){
-      state.settings.hojasPlegadas = {};
-    }
-    return true;
-  }catch(err){
-    console.warn('No se pudieron leer los datos', err);
-    return false;
-  }
-}
-function save(){
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(function(){
-    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch(err){ toast('⚠️ No se pudo guardar en este dispositivo'); }
-  }, 250);
-}
-
-function display(v, key){
-  if(!v) return '';
-  if(key === 'fecha'){
-    const p = String(v).split('-');
-    if(p.length === 3) return p[2] + '/' + p[1] + '/' + p[0];
-  }
-  if(key === 'buzoneo' || key === 'admOfrecida' || key === 'esProspecto'){
-    return normCheck(v) ? 'Sí' : '';
-  }
-  return v;
-}
-function displayParaArchivo(v, key){
-  if(key === 'buzoneo' || key === 'admOfrecida' || key === 'esProspecto'){
-    return normCheck(v) ? 'Sí' : 'No';
-  }
-  return display(v, key);
-}
-function toast(msg){
-  const t = $('#toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), 2200);
-}
-
 /* ============================================================
-   BUSCADOR
+   CLAVE ÚNICA DE LOCALIZACIÓN
    ============================================================ */
-function normaliza(s){
+function normalizaClave(s){
   return String(s == null ? '' : s)
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
-function coincideFila(r, q){
-  if(!q) return true;
-  for(let i = 0; i < COLS.length; i++){
-    const c = COLS[i];
-    let v = r[c.key] || '';
-    if(c.type === 'check') v = normCheck(v) ? 'si' : 'no';
-    if(c.key === 'fecha'){
-      v = display(v, 'fecha');
-    }
-    if(normaliza(v).indexOf(q) !== -1) return true;
-  }
-  return false;
+function claveUnicaDe(datos){
+  return [
+    normalizaClave(datos.municipio),
+    normalizaClave(datos.calle),
+    normalizaClave(datos.numero),
+    normalizaClave(datos.piso)
+  ].join('|');
 }
-function aplicarFiltro(){
-  const q = normaliza(filtroActual);
-  const info = $('#searchInfo');
-  const barra = $('#searchbar');
-  const noRes = $('#noResults');
 
-  if(!q){
-    barra.classList.remove('has-value');
-    info.textContent = '';
-    $$('#app tbody tr').forEach(function(tr){ tr.classList.remove('fila-oculta'); });
-    $$('#app .hoja').forEach(function(h){ h.style.display = ''; });
-    noRes.style.display = 'none';
-    return;
+/* ============================================================
+   PERSISTENCIA: HOJAS en localStorage (metadatos)
+   Las filas ya no se guardan; solo los IDs de localización.
+   ============================================================ */
+function loadMetadatos(){
+  try{
+    const raw = localStorage.getItem('localizaciones.v2');
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d || !Array.isArray(d.hojas)) return false;
+    state.hojas = d.hojas.map(function(h){
+      return {
+        id: h.id || uid(),
+        comercial: h.comercial || '',
+        semana: h.semana || semanaActualTexto(),
+        oficina: h.oficina || OFICINA_POR_DEFECTO,
+        filas: Array.isArray(h.filas) ? h.filas.map(function(r){
+          // r puede ser { idLocalizacion } o { id } heredado
+          return { idLocalizacion: r.idLocalizacion || r.id || uid() };
+        }) : []
+      };
+    });
+    state.settings = Object.assign({}, DEFAULTS, d.settings || {});
+    return true;
+  }catch(err){
+    console.warn('No se pudieron leer los metadatos', err);
+    return false;
+  }
+}
+
+function saveMetadatos(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){
+    try{
+      localStorage.setItem('localizaciones.v2', JSON.stringify({
+        hojas: state.hojas.map(function(h){
+          return {
+            id: h.id, comercial: h.comercial, semana: h.semana, oficina: h.oficina,
+            filas: h.filas.map(function(r){ return { idLocalizacion: r.idLocalizacion }; })
+          };
+        }),
+        settings: state.settings
+      }));
+    }catch(err){
+      toast('⚠️ No se pudo guardar en este dispositivo');
+    }
+  }, 250);
+}
+
+/* ============================================================
+   FIRESTORE · LOCALIZACIONES (lectura en tiempo real)
+   ============================================================ */
+function initSyncLocalizaciones(){
+  const fb = window.__fb;
+  if(!fb) return;
+  if(unsubLocalizaciones){ unsubLocalizaciones(); unsubLocalizaciones = null; }
+
+  setSyncStatus('syncing', 'Sincronizando…');
+
+  const q = fb.collection(fb.db, 'localizaciones');
+  unsubLocalizaciones = fb.onSnapshot(q, function(snap){
+    localizaciones.clear();
+    snap.forEach(function(d){
+      const data = d.data();
+      data.id = d.id;
+      localizaciones.set(d.id, data);
+    });
+    setSyncStatus('ok', 'Sincronizado');
+    render();
+  }, function(err){
+    console.warn('Error sincronizando localizaciones', err);
+    setSyncStatus('error', 'Sin conexión');
+    render();
+  });
+}
+
+function setSyncStatus(kind, text){
+  const el = document.getElementById('syncIndicator');
+  const txt = document.getElementById('syncText');
+  if(!el) return;
+  el.classList.add('visible');
+  el.classList.remove('syncing', 'error');
+  if(kind === 'syncing') el.classList.add('syncing');
+  if(kind === 'error') el.classList.add('error');
+  if(txt) txt.textContent = text;
+}
+
+/* ============================================================
+   FIRESTORE · CRUD de localizaciones
+   ============================================================ */
+async function crearLocalizacion(datos){
+  const fb = window.__fb;
+  if(!fb) throw new Error('Firebase no está listo');
+  const claveUnica = claveUnicaDe(datos);
+
+  // Detección de duplicado
+  const q = fb.query(
+    fb.collection(fb.db, 'localizaciones'),
+    fb.where('claveUnica', '==', claveUnica)
+  );
+  const snap = await new Promise(function(resolve, reject){
+    const unsub = fb.onSnapshot(q, function(s){
+      unsub();
+      resolve(s);
+    }, reject);
+  });
+  if(snap.size > 0){
+    const existente = snap.docs[0];
+    const data = existente.data();
+    const msg = 'Ya existe una localización con esta dirección' +
+                (data.calle ? ' (' + data.calle + ' ' + (data.numero||'') + (data.piso ? ', ' + data.piso : '') + ')' : '') +
+                '.\n\n¿Quieres abrirla para actualizarla?';
+    if(confirm(msg)){
+      return { id: existente.id, existente: true };
+    }
+    throw new Error('cancelado');
   }
 
-  barra.classList.add('has-value');
+  const ahora = fb.serverTimestamp();
+  const datosFinales = Object.assign({}, datos, {
+    claveUnica: claveUnica,
+    creadoPor: fbUser.nombre,
+    creadoPorUid: fbUser.uid,
+    creadoEn: ahora,
+    actualizadoPor: fbUser.nombre,
+    actualizadoPorUid: fbUser.uid,
+    actualizadoEn: ahora,
+    historial: []
+  });
+  const ref = await fb.addDoc(fb.collection(fb.db, 'localizaciones'), datosFinales);
+  return { id: ref.id, existente: false };
+}
 
-  let totalCoincidencias = 0;
+async function actualizarLocalizacion(id, cambios){
+  const fb = window.__fb;
+  if(!fb) throw new Error('Firebase no está listo');
+  const actual = localizaciones.get(id);
+  if(!actual) throw new Error('Localización no encontrada');
 
-  state.hojas.forEach(function(h){
-    const sec = document.querySelector('.hoja[data-hoja="' + h.id + '"]');
-    if(!sec) return;
-    let coincidenciasHoja = 0;
+  const nuevasEntradas = [];
+  const update = {};
+  const ahora = fb.serverTimestamp();
 
-    h.filas.forEach(function(r){
-      const tr = sec.querySelector('tr[data-row="' + r.id + '"]');
-      if(!tr) return;
-      if(coincideFila(r, q)){
-        tr.classList.remove('fila-oculta');
-        coincidenciasHoja++;
-      } else {
-        tr.classList.add('fila-oculta');
-      }
-    });
-
-    sec.querySelectorAll('tr[data-blank]').forEach(function(tr){
-      tr.classList.add('fila-oculta');
-    });
-
-    const hojaMetaCoincide =
-      normaliza(h.comercial).indexOf(q) !== -1 ||
-      normaliza(h.oficina).indexOf(q) !== -1 ||
-      normaliza(h.semana).indexOf(q) !== -1;
-
-    if(coincidenciasHoja > 0 || hojaMetaCoincide){
-      sec.style.display = '';
-      sec.classList.remove('colapsada');
-    } else {
-      sec.style.display = 'none';
+  Object.keys(cambios).forEach(function(k){
+    if(k === 'historial' || k === 'id') return;
+    const de = actual[k] == null ? '' : String(actual[k]);
+    const a = cambios[k] == null ? '' : String(cambios[k]);
+    if(de !== a){
+      update[k] = a;
+      nuevasEntradas.push({
+        campo: k,
+        de: de,
+        a: a,
+        por: fbUser.nombre,
+        uid: fbUser.uid,
+        cuando: ahora
+      });
     }
-    totalCoincidencias += coincidenciasHoja;
   });
 
-  info.textContent = totalCoincidencias + ' registro' + (totalCoincidencias === 1 ? '' : 's') + ' coincide' + (totalCoincidencias === 1 ? '' : 'n');
-  noRes.style.display = (totalCoincidencias === 0) ? 'block' : 'none';
+  if(!Object.keys(update).length) return;
+
+  update.actualizadoPor = fbUser.nombre;
+  update.actualizadoPorUid = fbUser.uid;
+  update.actualizadoEn = ahora;
+
+  // Recalcular clave única si cambian municipio/calle/numero/piso
+  const direccionCambiada = ['municipio','calle','numero','piso'].some(function(k){ return k in update; });
+  if(direccionCambiada){
+    update.claveUnica = claveUnicaDe(Object.assign({}, actual, update));
+  }
+
+  await fb.updateDoc(fb.doc(fb.db, 'localizaciones', id), Object.assign(update, {
+    historial: fb.arrayUnion.apply(null, nuevasEntradas)
+  }));
 }
-function limpiarBusqueda(){
-  $('#searchInput').value = '';
-  filtroActual = '';
-  aplicarFiltro();
+
+async function borrarLocalizacion(id){
+  const fb = window.__fb;
+  if(!fb) throw new Error('Firebase no está listo');
+  await fb.deleteDoc(fb.doc(fb.db, 'localizaciones', id));
 }
 
 /* ============================================================
@@ -1397,12 +1418,11 @@ function buildHoja(h){
     extraColsHTML =
       '<button class="toggle-collapse ' + (plegada ? '' : 'open') + '" ' +
         'data-act="toggle-collapse" data-hoja-id="' + esc(h.id) + '" ' +
-        'title="' + (plegada ? 'Desplegar' : 'Plegar') + '" ' +
-        'aria-label="' + (plegada ? 'Desplegar' : 'Plegar') + '">' + ico + '</button>' +
-      '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja" aria-label="Eliminar hoja">✕</button>';
+        'title="' + (plegada ? 'Desplegar' : 'Plegar') + '">' + ico + '</button>' +
+      '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja">✕</button>';
   } else {
     extraColsHTML =
-      '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja" aria-label="Eliminar hoja">✕</button>';
+      '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja">✕</button>';
   }
 
   head.innerHTML =
@@ -1410,7 +1430,7 @@ function buildHoja(h){
       buildOptions(COMERCIALES, h.comercial, '— Selecciona —') +
     '</select></label>' +
     '<label class="semana-ro">Semana (auto)' +
-      '<input type="text" data-meta="semana" value="' + esc(h.semana) + '" readonly tabindex="-1" title="Se calcula automáticamente según la semana del año">' +
+      '<input type="text" data-meta="semana" value="' + esc(h.semana) + '" readonly tabindex="-1">' +
     '</label>' +
     '<label>Oficina<select data-meta="oficina">' +
       buildOptions(OFICINAS, h.oficina, null) +
@@ -1474,7 +1494,23 @@ function buildTable(h, cerrada){
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
-  h.filas.forEach(function(r){ tbody.appendChild(buildRow(r)); });
+  h.filas.forEach(function(r){
+    const loc = localizaciones.get(r.idLocalizacion);
+    if(loc){
+      const tr = buildRow(loc, r.idLocalizacion);
+      tbody.appendChild(tr);
+    } else {
+      // Localización aún no cargada (o borrada). Mostramos placeholder.
+      const tr = document.createElement('tr');
+      tr.dataset.row = r.idLocalizacion;
+      for(let j = 0; j < COLS.length; j++){
+        const td = document.createElement('td');
+        if(j === 2) td.textContent = '(cargando…)';
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+  });
 
   const minFilas = Math.max(0, parseInt(state.settings.minFilas, 10) || 15);
   const blanks = Math.max(0, minFilas - h.filas.length);
@@ -1489,16 +1525,16 @@ function buildTable(h, cerrada){
   return table;
 }
 
-function buildRow(r){
+function buildRow(loc, idLocalizacion){
   const tr = document.createElement('tr');
-  tr.dataset.row = r.id;
+  tr.dataset.row = idLocalizacion;
   COLS.forEach(function(c){
     const td = document.createElement('td');
     td.dataset.k = c.key;
     if(c.type === 'check'){
-      if(normCheck(r[c.key])) td.innerHTML = '<span class="chk-print">Sí</span>';
+      if(normCheck(loc[c.key])) td.innerHTML = '<span class="chk-print">Sí</span>';
     } else {
-      td.textContent = display(r[c.key], c.key);
+      td.textContent = display(loc[c.key], c.key);
     }
     tr.appendChild(td);
   });
@@ -1525,7 +1561,7 @@ function crearHojaDesdeCerrada(){
   const h = closedContext ? state.hojas.find(x => x.id === closedContext.hojaId) : null;
   const nueva = newHojaHeredandoDe(h);
   state.hojas.push(nueva);
-  save();
+  saveMetadatos();
   closeClosedModal();
   render();
   const el = document.querySelector('.hoja[data-hoja="' + nueva.id + '"]');
@@ -1536,7 +1572,7 @@ function crearHojaDesdeBanner(hojaId){
   const h = state.hojas.find(x => x.id === hojaId);
   const nueva = newHojaHeredandoDe(h);
   state.hojas.push(nueva);
-  save(); render();
+  saveMetadatos(); render();
   const el = document.querySelector('.hoja[data-hoja="' + nueva.id + '"]');
   if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
   toast('Hoja creada para la semana ' + nueva.semana);
@@ -1548,12 +1584,9 @@ function crearHojaDesdeBanner(hojaId){
 function toggleCollapse(hojaId){
   if(!state.settings.hojasPlegadas) state.settings.hojasPlegadas = {};
   const actual = !!state.settings.hojasPlegadas[hojaId];
-  if(actual){
-    delete state.settings.hojasPlegadas[hojaId];
-  } else {
-    state.settings.hojasPlegadas[hojaId] = 1;
-  }
-  save();
+  if(actual) delete state.settings.hojasPlegadas[hojaId];
+  else state.settings.hojasPlegadas[hojaId] = 1;
+  saveMetadatos();
   const sec = document.querySelector('.hoja[data-hoja="' + hojaId + '"]');
   if(!sec) return;
   const plegada = !!state.settings.hojasPlegadas[hojaId];
@@ -1562,21 +1595,17 @@ function toggleCollapse(hojaId){
   if(btn){
     btn.textContent = plegada ? '▸' : '▾';
     btn.classList.toggle('open', !plegada);
-    btn.title = plegada ? 'Desplegar' : 'Plegar';
-    btn.setAttribute('aria-label', plegada ? 'Desplegar' : 'Plegar');
   }
 }
 
 /* ============================================================
-   DUPLICAR FILA
+   DUPLICAR FILA (crea nueva localización)
    ============================================================ */
 function openDupModal(){
   if(!editing) return;
   dupContext = { hojaId: editing.hojaId, rowId: editing.rowId };
-
   const sel = $('#dupDestino');
   sel.innerHTML = '';
-
   state.hojas.forEach(function(h){
     const cerrada = esHojaCerrada(h);
     const opt = document.createElement('option');
@@ -1588,21 +1617,14 @@ function openDupModal(){
     if(cerrada) partes.push('(cerrada)');
     opt.textContent = partes.join(' · ');
     opt.disabled = cerrada;
-    if(h.id === editing.hojaId && !cerrada){
-      opt.selected = true;
-    }
+    if(h.id === editing.hojaId && !cerrada) opt.selected = true;
     sel.appendChild(opt);
   });
-
   if(!sel.value || sel.options[sel.selectedIndex].disabled){
     for(let i = 0; i < sel.options.length; i++){
-      if(!sel.options[i].disabled){
-        sel.selectedIndex = i;
-        break;
-      }
+      if(!sel.options[i].disabled){ sel.selectedIndex = i; break; }
     }
   }
-
   $('#dupModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1611,11 +1633,11 @@ function closeDupModal(){
   document.body.style.overflow = '';
   dupContext = null;
 }
-function confirmarDuplicar(){
+async function confirmarDuplicar(){
   if(!dupContext) return;
   const origenHoja = state.hojas.find(x => x.id === dupContext.hojaId);
   if(!origenHoja) return;
-  const origen = origenHoja.filas.find(r => r.id === dupContext.rowId);
+  const origen = localizaciones.get(dupContext.rowId);
   if(!origen) return;
 
   const destinoId = $('#dupDestino').value;
@@ -1625,32 +1647,66 @@ function confirmarDuplicar(){
     return;
   }
 
-  const nueva = { id: uid() };
-  COLS.forEach(function(c){
-    nueva[c.key] = origen[c.key] || '';
-  });
-  destinoHoja.filas.push(nueva);
-  save();
-  closeDupModal();
-  closeEditor();
-  render();
-  setTimeout(function(){
-    const el = document.querySelector('.hoja[data-hoja="' + destinoHoja.id + '"] tr[data-row="' + nueva.id + '"]');
-    if(el) el.scrollIntoView({ behavior:'smooth', block:'center' });
-  }, 100);
-  toast('Registro duplicado');
+  // Crear localización nueva con los mismos datos (sin claveUnica forzada, se recalcula)
+  const datos = {};
+  COLS.forEach(function(c){ datos[c.key] = origen[c.key] || ''; });
+  // Limpiar id y campos de control
+  delete datos.id;
+  delete datos.claveUnica;
+  delete datos.creadoPor;
+  delete datos.creadoPorUid;
+  delete datos.creadoEn;
+  delete datos.actualizadoPor;
+  delete datos.actualizadoPorUid;
+  delete datos.actualizadoEn;
+  delete datos.historial;
+
+  try{
+    const res = await crearLocalizacion(datos);
+    destinoHoja.filas.push({ idLocalizacion: res.id });
+    saveMetadatos();
+    closeDupModal();
+    closeEditor();
+    render();
+    toast('Localización duplicada');
+  }catch(err){
+    if(err.message !== 'cancelado'){
+      console.warn(err);
+      toast('⚠️ ' + (err.message || 'No se pudo duplicar'));
+    }
+  }
 }
 
 /* ============================================================
-   ACCIONES HOJA / REGISTRO
+   ACCIONES
    ============================================================ */
 function addHoja(){
   state.hojas.push(newHoja());
-  save(); render();
+  saveMetadatos(); render();
   const last = state.hojas[state.hojas.length - 1];
   const el = document.querySelector('.hoja[data-hoja="' + last.id + '"]');
   if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
   closeMenu();
+}
+function newHoja(){
+  const semActual = semanaActualTexto();
+  let comercial = '';
+  let oficina = OFICINA_POR_DEFECTO;
+  if(state.hojas.length){
+    const ult = state.hojas[state.hojas.length - 1];
+    if(ult.comercial) comercial = ult.comercial;
+    if(ult.oficina)   oficina   = ult.oficina;
+  }
+  return { id: uid(), comercial: comercial, semana: semActual, oficina: oficina, filas: [] };
+}
+function newHojaHeredandoDe(h){
+  return {
+    id: uid(),
+    comercial: h ? (h.comercial || '') : '',
+    semana: semanaActualTexto(),
+    oficina: h ? (h.oficina || OFICINA_POR_DEFECTO) : OFICINA_POR_DEFECTO,
+    filas: []
+  };
 }
 
 function delHoja(id){
@@ -1662,31 +1718,50 @@ function delHoja(id){
   if(!confirm(msg)) return;
   state.hojas = state.hojas.filter(x => x.id !== id);
   if(state.settings.hojasPlegadas) delete state.settings.hojasPlegadas[id];
-  save(); render();
+  saveMetadatos(); render();
 }
 
-function addRow(hojaId, openIt){
+async function addRow(hojaId, openIt){
   const h = state.hojas.find(x => x.id === hojaId);
   if(!h) return;
   if(esHojaCerrada(h)){ showClosedModal(hojaId); return; }
-  const r = newRow();
-  h.filas.push(r);
-  save(); rerenderHoja(hojaId);
-  if(openIt !== false) openEditor(hojaId, r.id);
+
+  const datos = {};
+  COLS.forEach(function(c){
+    if(c.type === 'check') datos[c.key] = '';
+    else if(c.key === 'fecha') datos[c.key] = hoyISO();
+    else datos[c.key] = '';
+  });
+  datos.municipio = state.settings.ultimoMunicipio || MUNICIPIO_POR_DEFECTO;
+
+  // Crear localización "vacía" en Firestore
+  try{
+    const res = await crearLocalizacion(datos);
+    h.filas.push({ idLocalizacion: res.id });
+    saveMetadatos();
+    if(openIt !== false) openEditor(hojaId, res.id);
+    else render();
+  }catch(err){
+    if(err.message !== 'cancelado'){
+      console.warn(err);
+      toast('⚠️ ' + (err.message || 'No se pudo crear la localización'));
+    }
+  }
 }
 
-function openEditor(hojaId, rowId){
+function openEditor(hojaId, idLocalizacion){
   const h = state.hojas.find(x => x.id === hojaId);
   if(!h) return;
   if(esHojaCerrada(h)){ showClosedModal(hojaId); return; }
-  const r = h.filas.find(x => x.id === rowId);
-  if(!r) return;
-  if(!r.fecha){ r.fecha = hoyISO(); save(); }
-  if(!r.municipio) r.municipio = state.settings.ultimoMunicipio || MUNICIPIO_POR_DEFECTO;
+  const loc = localizaciones.get(idLocalizacion);
+  if(!loc){
+    toast('Localización no cargada. Espera a que se sincronice.');
+    return;
+  }
 
-  editing = { hojaId: hojaId, rowId: rowId };
-  const titulo = [r.calle, r.numero, r.piso].filter(Boolean).join(' ');
-  $('#ed-title').textContent = titulo || 'Nuevo registro';
+  editing = { hojaId: hojaId, rowId: idLocalizacion };
+  const titulo = [loc.calle, loc.numero, loc.piso].filter(Boolean).join(' ');
+  $('#ed-title').textContent = titulo || 'Nueva localización';
 
   const box = $('#ed-fields');
   box.innerHTML = FIELD_DEFS.map(function(f){
@@ -1695,27 +1770,27 @@ function openEditor(hojaId, rowId){
 
     if(f.type === 'textarea'){
       ctrl = '<textarea data-k="' + f.key + '" rows="3" placeholder="' + (f.ph || '') + '">' +
-             esc(r[f.key]) + '</textarea>';
+             esc(loc[f.key]) + '</textarea>';
     } else if(f.type === 'select'){
       ctrl = '<select data-k="' + f.key + '">' +
-             buildOptions(f.options, r[f.key], null) +
+             buildOptions(f.options, loc[f.key], null) +
              '</select>';
     } else if(f.type === 'check'){
-      const on = normCheck(r[f.key]) ? ' checked' : '';
+      const on = normCheck(loc[f.key]) ? ' checked' : '';
       ctrl = '<label class="check"><input type="checkbox" data-k="' + f.key + '"' + on + '>' +
              '<span>' + esc(f.text || 'Sí') + '</span></label>';
     } else if(f.type === 'calle'){
-      const dlId = datalistIdPorMunicipio(r.municipio);
+      const dlId = datalistIdPorMunicipio(loc.municipio);
       ctrl = '<div class="input-with-clear">' +
-               '<input type="text" data-k="' + f.key + '" value="' + esc(r[f.key]) +
+               '<input type="text" data-k="' + f.key + '" value="' + esc(loc[f.key]) +
                  '" placeholder="' + (f.ph || '') + '" list="' + dlId + '" autocomplete="off" spellcheck="false">' +
-               '<button type="button" class="clear-btn" data-act="clear-calle" title="Limpiar" aria-label="Limpiar calle">✕</button>' +
+               '<button type="button" class="clear-btn" data-act="clear-calle" title="Limpiar">✕</button>' +
              '</div>';
     } else {
       const extra =
         (f.type === 'tel' ? ' inputmode="tel"' : '') +
         (f.type === 'date' ? ' inputmode="numeric"' : '');
-      ctrl = '<input type="' + f.type + '" data-k="' + f.key + '" value="' + esc(r[f.key]) +
+      ctrl = '<input type="' + f.type + '" data-k="' + f.key + '" value="' + esc(loc[f.key]) +
              '" placeholder="' + (f.ph || '') + '"' + extra + ' autocomplete="off">';
     }
     return '<div class="' + cls + '"><label>' + f.label + '</label>' + ctrl + '</div>';
@@ -1733,464 +1808,30 @@ function closeEditor(){
   editing = null;
 }
 
-function deleteRow(){
+async function deleteRow(){
   if(!editing) return;
   const hojaId = editing.hojaId;
   const h = state.hojas.find(x => x.id === hojaId);
   if(!h) return;
   if(esHojaCerrada(h)){ closeEditor(); showClosedModal(hojaId); return; }
   if(!confirm('¿Eliminar este registro?')) return;
-  h.filas = h.filas.filter(x => x.id !== editing.rowId);
-  save(); closeEditor(); rerenderHoja(hojaId);
-}
 
-/* ============================================================
-   COMPARTIR
-   ============================================================ */
-function openSharePick(){
-  $('#sharePickModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  closeMenu();
-}
-function closeSharePick(){
-  $('#sharePickModal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-/* --- Nuevo: modal de alcance de exportación --- */
-function openExportScope(format){
-  exportScopeContext = { format: format };
-  $('#exportScopeModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeExportScope(){
-  $('#exportScopeModal').classList.remove('open');
-  document.body.style.overflow = '';
-  exportScopeContext = null;
-}
-function confirmExportScope(scope){
-  if(!exportScopeContext) return;
-  const format = exportScopeContext.format;
-  closeExportScope();
-  if(format === 'excel') shareExcelNow(scope);
-  else if(format === 'csv') shareCSVNow(scope);
-  else if(format === 'pdf'){
-    closeSharePick();
-    openSharePdf();
-    /* Guardamos el alcance elegido para cuando se pulse "Abrir diálogo" */
-    $('#sharePdfModal').dataset.scope = scope;
-  }
-}
-
-function detectPlatform(){
-  const ua = navigator.userAgent || '';
-  if(/iPhone|iPad|iPod/i.test(ua)) return 'ios';
-  if(/Android/i.test(ua)) return 'android';
-  return 'desktop';
-}
-function openSharePdf(){
-  const p = detectPlatform();
-  const list = $('#shareStepsList');
-  const hint = $('#platformHint');
-
-  if(p === 'android'){
-    list.innerHTML =
-      '<li>Pulsa <strong>Abrir diálogo</strong>.</li>' +
-      '<li>En la pantalla que aparece, elige <strong>Guardar como PDF</strong>.</li>' +
-      '<li>Guarda el archivo en tu móvil.</li>' +
-      '<li>Ábrelo desde tu app de mensajería o correo y envíalo a quien quieras.</li>';
-    hint.textContent = 'El PDF se genera siempre en A3 horizontal con el formato original.';
-  } else if(p === 'ios'){
-    list.innerHTML =
-      '<li>Pulsa <strong>Abrir diálogo</strong>.</li>' +
-      '<li>Pulsa el icono de <strong>Compartir</strong> (cuadrado con flecha).</li>' +
-      '<li>Elige <strong>Guardar en Archivos</strong> o la app de mensajería que uses.</li>' +
-      '<li>Envía el archivo a quien quieras.</li>';
-    hint.textContent = 'El PDF se genera siempre en A3 horizontal con el formato original.';
-  } else {
-    list.innerHTML =
-      '<li>Pulsa <strong>Abrir diálogo</strong>.</li>' +
-      '<li>Elige <strong>Guardar como PDF</strong> como destino.</li>' +
-      '<li>Envía el archivo por tu app de mensajería o correo.</li>';
-    hint.textContent = 'El PDF se genera siempre en A3 horizontal con el formato original.';
-  }
-
-  $('#sharePdfModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeSharePdf(){
-  $('#sharePdfModal').classList.remove('open');
-  document.body.style.overflow = '';
-  delete $('#sharePdfModal').dataset.scope;
-}
-function doSharePrint(){
-  const scope = $('#sharePdfModal').dataset.scope || 'current';
-  closeSharePdf();
-  $$('.hoja.colapsada').forEach(function(h){ h.classList.remove('colapsada'); });
-  if(scope === 'current'){
-    document.body.classList.add('print-only-current');
-  } else {
-    document.body.classList.remove('print-only-current');
-  }
-  setTimeout(function(){
-    window.print();
-    setTimeout(function(){
-      document.body.classList.remove('print-only-current');
-    }, 400);
-  }, 180);
-}
-
-/* ============================================================
-   GENERAR EXCEL
-   ------------------------------------------------------------
-   scope = 'current' → solo las hojas de la semana actual
-           'all'     → todas (histórico)
-   Además: ordena las hojas para que las de la semana actual
-   vayan primero, y marca la primera como pestaña activa.
-   ============================================================ */
-function getHojasParaExportar(scope){
-  const semActual = semanaActualTexto();
-  let lista = state.hojas.slice();
-  if(scope === 'current'){
-    lista = lista.filter(h => h.semana === semActual);
-  }
-  /* Ordenar: primero las de la semana actual (por orden de creación),
-     después las cerradas (por semana descendente, más reciente primero) */
-  lista.sort(function(a, b){
-    const aAct = a.semana === semActual ? 0 : 1;
-    const bAct = b.semana === semActual ? 0 : 1;
-    if(aAct !== bAct) return aAct - bAct;
-    const sa = parseInt(a.semana, 10) || 0;
-    const sb = parseInt(b.semana, 10) || 0;
-    if(sa !== sb) return sb - sa; /* semana más alta primero */
-    return 0;
-  });
-  return lista;
-}
-
-function buildExcelBuffer(scope){
-  if(typeof ExcelJS === 'undefined'){
-    throw new Error('ExcelJS no está cargado');
-  }
-  scope = scope || 'current';
-
-  const hojas = getHojasParaExportar(scope);
-  if(!hojas.length){
-    throw new Error('No hay hojas para exportar con ese alcance');
-  }
-
-  const wb = new ExcelJS.Workbook();
-  wb.creator = 'Localizaciones PWA';
-  wb.created = new Date();
-
-  const ANCHOS = {
-    fecha:        11,
-    municipio:    17,
-    calle:        25,
-    numero:        9,
-    piso:          6,
-    estado:       12,
-    buzoneo:       9,
-    propietario:  15,
-    telefono:     13,
-    observaciones:24,
-    seguimiento:  22,
-    presidente:   12,
-    admOfrecida:  14,
-    administrador:14,
-    esProspecto:  12
-  };
-
-  const CABECERAS_ESPECIALES = {
-    numero:        { size: 10, align: 'center' },
-    admOfrecida:   { size: 10, align: 'center' },
-    administrador: { size: 10, align: 'center' },
-    esProspecto:   { size: 10, align: 'center' }
-  };
-
-  hojas.forEach(function(h, idx){
-    let nombrePestana = 'Hoja ' + (idx + 1);
-    const partes = [];
-    if(h.comercial) partes.push(h.comercial);
-    if(h.oficina) partes.push(h.oficina);
-    if(partes.length){
-      nombrePestana = 'Hoja ' + (idx + 1) + ' - ' + partes.join(' - ');
-    }
-    nombrePestana = nombrePestana.replace(/[\\\/\?\*\[\]\|:]/g, ' ').slice(0, 31).trim();
-
-    let nombreBase = nombrePestana;
-    let sufijo = 2;
-    while(wb.getWorksheet(nombrePestana)){
-      nombrePestana = (nombreBase + ' (' + sufijo + ')').slice(0, 31);
-      sufijo++;
-    }
-
-    const ws = wb.addWorksheet(nombrePestana, {
-      pageSetup: {
-        paperSize: 8,
-        orientation: 'landscape',
-        fitToPage: true,
-        fitToWidth: 1,
-        fitToHeight: 0,
-        horizontalCentered: true,
-        margins: {
-          left: 0.25, right: 0.25,
-          top: 0.5, bottom: 0.5,
-          header: 0.3, footer: 0.3
-        }
-      },
-      views: [{ state: 'frozen', ySplit: 3 }]
-    });
-
-    ws.columns = COLS.map(function(c){
-      return { width: ANCHOS[c.key] || 12 };
-    });
-
-    ws.addRow([
-      'COMERCIAL: ' + (h.comercial || ''),
-      '', '', '',
-      'SEMANA: ' + (h.semana || ''),
-      '', '', '', '',
-      'OFICINA: ' + (h.oficina || ''),
-      '', '', '', '', ''
-    ]);
-    ws.mergeCells('A1:D1');
-    ws.mergeCells('E1:I1');
-    ws.mergeCells('J1:O1');
-    ['A1','E1','J1'].forEach(function(addr){
-      ws.getCell(addr).font = { bold: true, size: 12 };
-      ws.getCell(addr).alignment = { vertical: 'middle' };
-    });
-    ws.getRow(1).height = 22;
-
-    ws.addRow([]);
-    ws.getRow(2).height = 6;
-
-    const cab = ws.addRow(COLS.map(function(c){ return c.label; }));
-    cab.height = 26;
-    cab.eachCell(function(cell, colNumber){
-      const c = COLS[colNumber - 1];
-      const esp = CABECERAS_ESPECIALES[c.key];
-      if(esp){
-        cell.font = { bold: true, size: esp.size, color: { argb: 'FF0F172A' } };
-        cell.alignment = {
-          horizontal: esp.align,
-          vertical: 'middle',
-          wrapText: true
-        };
-      } else {
-        cell.font = { bold: true, color: { argb: 'FF0F172A' } };
-        cell.alignment = {
-          horizontal: 'left',
-          vertical: 'middle',
-          wrapText: true
-        };
-      }
-      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFE2E8F0' } };
-      cell.border = {
-        top:    { style:'thin', color:{ argb:'FF94A3B8' } },
-        bottom: { style:'thin', color:{ argb:'FF94A3B8' } },
-        left:   { style:'thin', color:{ argb:'FF94A3B8' } },
-        right:  { style:'thin', color:{ argb:'FF94A3B8' } }
-      };
-    });
-
-    h.filas.forEach(function(r, ri){
-      const values = COLS.map(function(c){
-        return displayParaArchivo(r[c.key], c.key);
-      });
-      const row = ws.addRow(values);
-
-      const altColor = (ri % 2 === 0) ? null : 'FFF8FAFC';
-      row.eachCell({ includeEmpty: true }, function(cell, colNumber){
-        const c = COLS[colNumber - 1];
-        let hAlign = 'left';
-        if(c.key === 'numero' || c.key === 'piso' || c.key === 'buzoneo' || c.key === 'admOfrecida' || c.key === 'esProspecto'){
-          hAlign = 'center';
-        }
-        cell.alignment = { horizontal: hAlign, vertical:'top', wrapText: true };
-        if(altColor){
-          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: altColor } };
-        }
-        cell.border = {
-          top:    { style:'thin', color:{ argb:'FFCBD5E1' } },
-          bottom: { style:'thin', color:{ argb:'FFCBD5E1' } },
-          left:   { style:'thin', color:{ argb:'FFCBD5E1' } },
-          right:  { style:'thin', color:{ argb:'FFCBD5E1' } }
-        };
-      });
-    });
-
-    ws.pageSetup.printTitlesRow = '1:3';
-  });
-
-  /* Marcar la primera hoja como pestaña activa */
+  const idLoc = editing.rowId;
+  h.filas = h.filas.filter(x => x.idLocalizacion !== idLoc);
+  saveMetadatos();
   try{
-    if(wb.views && wb.views.length){
-      wb.views[0].activeTab = 0;
+    // Solo el MASTER puede borrar localizaciones (según reglas Firestore)
+    if(fbUser && fbUser.rol === 'master'){
+      await borrarLocalizacion(idLoc);
     } else {
-      wb.views = [{ activeTab: 0 }];
+      // Los comerciales solo quitan la fila de su hoja, no la localización
     }
-  }catch(err){ /* ignorar */ }
-
-  return wb.xlsx.writeBuffer();
-}
-
-async function shareExcelNow(scope){
-  scope = scope || 'current';
-  closeSharePick();
-
-  let buffer;
-  try{
-    buffer = await buildExcelBuffer(scope);
   }catch(err){
-    console.warn('Error generando Excel:', err);
-    toast('⚠️ ' + (err.message || 'No se pudo generar el Excel'));
-    return;
+    console.warn(err);
   }
-
-  const blob = new Blob([buffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  });
-  const sufijo = scope === 'current' ? '-semana-actual' : '-historico';
-  const filename = 'localizaciones' + sufijo + '-' + hoyISO() + '.xlsx';
-
-  if(navigator.canShare){
-    try{
-      const file = new File([blob], filename, {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-      if(navigator.canShare({ files: [file] })){
-        await navigator.share({
-          files: [file],
-          title: 'Localizaciones',
-          text: 'Hoja de prospección · Localizaciones'
-        });
-        return;
-      }
-    }catch(err){
-      if(err && err.name === 'AbortError') return;
-      console.warn('Share Excel falló, se descarga:', err);
-    }
-  }
-
-  descargarBlob(filename, blob);
-  toast('Tu móvil no permite compartir. Se descargará el archivo.');
+  closeEditor();
+  render();
 }
-
-function buildCSVString(scope){
-  scope = scope || 'current';
-  const hojas = getHojasParaExportar(scope);
-  const SEP = ';';
-  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const lineas = [];
-  const cab = ['HOJA','COMERCIAL','SEMANA','OFICINA'].concat(COLS.map(c => c.label));
-  lineas.push(cab.map(q).join(SEP));
-  hojas.forEach(function(h, i){
-    h.filas.forEach(function(r){
-      const fila = [i + 1, h.comercial, h.semana, h.oficina]
-        .concat(COLS.map(c => displayParaArchivo(r[c.key], c.key)));
-      lineas.push(fila.map(q).join(SEP));
-    });
-  });
-  return '\uFEFF' + lineas.join('\r\n');
-}
-async function shareCSVNow(scope){
-  scope = scope || 'current';
-  closeSharePick();
-
-  const txt = buildCSVString(scope);
-  const blob = new Blob([txt], { type:'text/csv;charset=utf-8' });
-  const sufijo = scope === 'current' ? '-semana-actual' : '-historico';
-  const filename = 'localizaciones' + sufijo + '-' + hoyISO() + '.csv';
-
-  if(navigator.canShare){
-    try{
-      const file = new File([blob], filename, { type:'text/csv' });
-      if(navigator.canShare({ files: [file] })){
-        await navigator.share({
-          files: [file],
-          title: 'Localizaciones (CSV)',
-          text: 'Hoja de prospección · CSV'
-        });
-        return;
-      }
-    }catch(err){
-      if(err && err.name === 'AbortError') return;
-      console.warn('Share CSV falló, se descarga:', err);
-    }
-  }
-
-  descargarBlob(filename, blob);
-  toast('Tu móvil no permite compartir. Se descargará el archivo.');
-}
-
-/* ============================================================
-   AJUSTES / EXPORT / IMPORT
-   ============================================================ */
-function openSettings(){
-  $('#set-filas').value = state.settings.minFilas || DEFAULTS.minFilas;
-  $('#settings').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  closeMenu();
-}
-function closeSettings(){
-  $('#settings').classList.remove('open');
-  document.body.style.overflow = '';
-}
-function saveSettings(){
-  state.settings.minFilas = Math.min(60, Math.max(5, parseInt($('#set-filas').value, 10) || 15));
-  save(); render(); closeSettings();
-  toast('Ajustes guardados');
-}
-
-function descargarBlob(nombre, blob){
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = nombre;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
-function descargar(nombre, contenido, mime){
-  const blob = new Blob([contenido], { type: mime || 'application/octet-stream' });
-  descargarBlob(nombre, blob);
-}
-
-function exportJSON(){
-  const nombre = 'localizaciones-' + hoyISO() + '.json';
-  descargar(nombre, JSON.stringify(state, null, 2), 'application/json');
-  closeMenu(); toast('Copia descargada');
-}
-function importJSON(file){
-  const reader = new FileReader();
-  reader.onload = function(){
-    try{
-      const d = JSON.parse(reader.result);
-      if(!d || !Array.isArray(d.hojas)) throw new Error('formato');
-      if(!confirm('Se sustituirán los datos actuales por los del archivo. ¿Continuar?')) return;
-      state.hojas = d.hojas.map(normHoja);
-      state.settings = Object.assign({}, DEFAULTS, d.settings || {});
-      if(!state.settings.ultimoMunicipio) state.settings.ultimoMunicipio = MUNICIPIO_POR_DEFECTO;
-      if(!state.settings.hojasPlegadas) state.settings.hojasPlegadas = {};
-      save(); render();
-      toast('Datos importados');
-    }catch(err){
-      alert('El archivo no tiene un formato válido.');
-    }
-  };
-  reader.readAsText(file);
-}
-function wipe(){
-  if(!confirm('Se borrarán TODAS las hojas y registros de este dispositivo. ¿Seguro?')) return;
-  if(!confirm('Esta acción no se puede deshacer. ¿Continuar?')) return;
-  state.hojas = [newHoja()];
-  state.settings = Object.assign({}, DEFAULTS);
-  save(); render(); closeMenu();
-  toast('Datos borrados');
-}
-
-function toggleMenu(){ $('#menu').classList.toggle('open'); }
-function closeMenu(){ $('#menu').classList.remove('open'); }
 
 /* ============================================================
    DISPATCHER
@@ -2223,7 +1864,6 @@ function handleAction(act, el){
     case 'share-open':         openSharePick(); break;
     case 'close-share-pick':   closeSharePick(); break;
 
-    /* Al pulsar Excel / CSV / PDF, primero elegimos alcance */
     case 'share-do-excel':     closeSharePick(); openExportScope('excel'); break;
     case 'share-do-csv':       closeSharePick(); openExportScope('csv'); break;
     case 'share-do-pdf':       openExportScope('pdf'); break;
@@ -2245,18 +1885,8 @@ function handleAction(act, el){
     case 'del-row':            deleteRow(); break;
     case 'clear-calle': {
       if(!editing) break;
-      const h = state.hojas.find(x => x.id === editing.hojaId);
-      if(!h || esHojaCerrada(h)) break;
-      const r = h.filas.find(x => x.id === editing.rowId);
-      if(!r) break;
-      r.calle = '';
       const input = document.querySelector('#ed-fields [data-k="calle"]');
       if(input){ input.value = ''; input.focus(); }
-      const td = document.querySelector(
-        '.hoja[data-hoja="' + editing.hojaId + '"] tr[data-row="' + editing.rowId + '"] td[data-k="calle"]'
-      );
-      if(td) td.textContent = '';
-      save();
       break;
     }
   }
@@ -2300,14 +1930,21 @@ document.addEventListener('click', function(e){
   });
 });
 
+/* ============================================================
+   EDICIÓN EN VIVO
+   ============================================================ */
+let editDebounceTimer = null;
+const editsPendientes = {};
+
 function onFieldChange(e){
   const el = e.target;
+
+  // Metadatos de la hoja
   if(el.dataset && el.dataset.meta){
     const sec = el.closest('.hoja');
     if(!sec) return;
     const h = state.hojas.find(x => x.id === sec.dataset.hoja);
     if(!h) return;
-
     if(el.dataset.meta === 'semana') return;
 
     if(esHojaCerrada(h)){
@@ -2316,56 +1953,63 @@ function onFieldChange(e){
       showClosedModal(h.id);
       return;
     }
-
     h[el.dataset.meta] = el.value;
     const span = sec.querySelector('[data-meta-cell="' + el.dataset.meta + '"] span');
     if(span){
       const relleno = el.dataset.meta === 'semana' ? '________________' : '_____________________';
       span.textContent = el.value || relleno;
     }
-    save(); return;
+    saveMetadatos();
+    return;
   }
+
+  // Edición de localización
   if(editing && el.dataset && el.dataset.k){
-    const h = state.hojas.find(x => x.id === editing.hojaId);
-    if(!h || esHojaCerrada(h)) return;
-    const r = h.filas.find(x => x.id === editing.rowId);
-    if(!r) return;
     const key = el.dataset.k;
+    const valor = el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value;
 
-    if(el.type === 'checkbox'){
-      r[key] = el.checked ? '1' : '';
-    } else {
-      r[key] = el.value;
-    }
+    editsPendientes[key] = valor;
 
-    if(key === 'municipio'){
-      state.settings.ultimoMunicipio = r.municipio;
-      save();
-      const inputCalle = document.querySelector('#ed-fields [data-k="calle"]');
-      if(inputCalle){
-        inputCalle.setAttribute('list', datalistIdPorMunicipio(r.municipio));
-      }
-    }
-
+    // Actualizar UI de la fila correspondiente
     const td = document.querySelector(
       '.hoja[data-hoja="' + editing.hojaId + '"] tr[data-row="' + editing.rowId +
       '"] td[data-k="' + key + '"]'
     );
     if(td){
       if(el.type === 'checkbox'){
-        td.innerHTML = normCheck(r[key]) ? '<span class="chk-print">Sí</span>' : '';
+        td.innerHTML = normCheck(valor) ? '<span class="chk-print">Sí</span>' : '';
       } else {
-        td.textContent = display(r[key], key);
+        td.textContent = display(valor, key);
       }
     }
     if(key === 'calle' || key === 'numero' || key === 'piso'){
-      const t = [r.calle, r.numero, r.piso].filter(Boolean).join(' ');
-      $('#ed-title').textContent = t || 'Nuevo registro';
+      const calle = editsPendientes.calle != null ? editsPendientes.calle : (localizaciones.get(editing.rowId) || {}).calle;
+      const numero = editsPendientes.numero != null ? editsPendientes.numero : (localizaciones.get(editing.rowId) || {}).numero;
+      const piso = editsPendientes.piso != null ? editsPendientes.piso : (localizaciones.get(editing.rowId) || {}).piso;
+      const t = [calle, numero, piso].filter(Boolean).join(' ');
+      $('#ed-title').textContent = t || 'Nueva localización';
     }
-    save();
-    if(filtroActual) aplicarFiltro();
+
+    // Guardar con debounce de 700 ms
+    clearTimeout(editDebounceTimer);
+    editDebounceTimer = setTimeout(flushEdiciones, 700);
   }
 }
+
+async function flushEdiciones(){
+  if(!editing) return;
+  const id = editing.rowId;
+  const cambios = Object.assign({}, editsPendientes);
+  Object.keys(editsPendientes).forEach(k => delete editsPendientes[k]);
+  if(!Object.keys(cambios).length) return;
+  try{
+    await actualizarLocalizacion(id, cambios);
+  }catch(err){
+    console.warn('Error guardando localización', err);
+    toast('⚠️ No se pudo guardar. Revisa tu conexión.');
+  }
+}
+
 document.addEventListener('input',  onFieldChange);
 document.addEventListener('change', onFieldChange);
 
@@ -2414,7 +2058,7 @@ function registerSW(){
 }
 
 function init(){
-  const ok = load();
+  const ok = loadMetadatos();
   if(!ok) state.hojas = [newHoja()];
   if(!state.settings.minFilas) state.settings.minFilas = DEFAULTS.minFilas;
   if(!state.settings.ultimoMunicipio) state.settings.ultimoMunicipio = MUNICIPIO_POR_DEFECTO;
@@ -2425,14 +2069,408 @@ function init(){
       state.settings.hojasPlegadas[h.id] = 1;
     }
   });
-  save();
-
+  saveMetadatos();
+  initSyncLocalizaciones();
   render();
   onScroll();
   registerSW();
 }
 
-/* Arranque: primero Firebase, luego login, luego init() */
+/* Utilidades generales (display, toast, filtrar, etc.) */
+function display(v, key){
+  if(!v) return '';
+  if(key === 'fecha'){
+    const p = String(v).split('-');
+    if(p.length === 3) return p[2] + '/' + p[1] + '/' + p[0];
+  }
+  if(key === 'buzoneo' || key === 'admOfrecida' || key === 'esProspecto'){
+    return normCheck(v) ? 'Sí' : '';
+  }
+  return v;
+}
+function displayParaArchivo(v, key){
+  if(key === 'buzoneo' || key === 'admOfrecida' || key === 'esProspecto'){
+    return normCheck(v) ? 'Sí' : 'No';
+  }
+  return display(v, key);
+}
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function normaliza(s){
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+function coincideFila(loc, q){
+  if(!q) return true;
+  for(let i = 0; i < COLS.length; i++){
+    const c = COLS[i];
+    let v = loc[c.key] || '';
+    if(c.type === 'check') v = normCheck(v) ? 'si' : 'no';
+    if(c.key === 'fecha') v = display(v, 'fecha');
+    if(normaliza(v).indexOf(q) !== -1) return true;
+  }
+  return false;
+}
+function aplicarFiltro(){
+  const q = normaliza(filtroActual);
+  const info = $('#searchInfo');
+  const barra = $('#searchbar');
+  const noRes = $('#noResults');
+
+  if(!q){
+    barra.classList.remove('has-value');
+    info.textContent = '';
+    $$('#app tbody tr').forEach(function(tr){ tr.classList.remove('fila-oculta'); });
+    $$('#app .hoja').forEach(function(h){ h.style.display = ''; });
+    noRes.style.display = 'none';
+    return;
+  }
+
+  barra.classList.add('has-value');
+  let totalCoincidencias = 0;
+
+  state.hojas.forEach(function(h){
+    const sec = document.querySelector('.hoja[data-hoja="' + h.id + '"]');
+    if(!sec) return;
+    let coincidenciasHoja = 0;
+
+    h.filas.forEach(function(r){
+      const tr = sec.querySelector('tr[data-row="' + r.idLocalizacion + '"]');
+      if(!tr) return;
+      const loc = localizaciones.get(r.idLocalizacion);
+      if(loc && coincideFila(loc, q)){
+        tr.classList.remove('fila-oculta');
+        coincidenciasHoja++;
+      } else {
+        tr.classList.add('fila-oculta');
+      }
+    });
+
+    sec.querySelectorAll('tr[data-blank]').forEach(function(tr){ tr.classList.add('fila-oculta'); });
+
+    const hojaMetaCoincide =
+      normaliza(h.comercial).indexOf(q) !== -1 ||
+      normaliza(h.oficina).indexOf(q) !== -1 ||
+      normaliza(h.semana).indexOf(q) !== -1;
+
+    if(coincidenciasHoja > 0 || hojaMetaCoincide){
+      sec.style.display = '';
+      sec.classList.remove('colapsada');
+    } else {
+      sec.style.display = 'none';
+    }
+    totalCoincidencias += coincidenciasHoja;
+  });
+
+  info.textContent = totalCoincidencias + ' registro' + (totalCoincidencias === 1 ? '' : 's') + ' coincide' + (totalCoincidencias === 1 ? '' : 'n');
+  noRes.style.display = (totalCoincidencias === 0) ? 'block' : 'none';
+}
+function limpiarBusqueda(){
+  $('#searchInput').value = '';
+  filtroActual = '';
+  aplicarFiltro();
+}
+
+/* Ajustes */
+function openSettings(){
+  $('#set-filas').value = state.settings.minFilas || DEFAULTS.minFilas;
+  $('#settings').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  closeMenu();
+}
+function closeSettings(){
+  $('#settings').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function saveSettings(){
+  state.settings.minFilas = Math.min(60, Math.max(5, parseInt($('#set-filas').value, 10) || 15));
+  saveMetadatos(); render(); closeSettings();
+  toast('Ajustes guardados');
+}
+
+/* Exportaciones: adaptadas al nuevo modelo (leen de localizaciones) */
+function openSharePick(){
+  $('#sharePickModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  closeMenu();
+}
+function closeSharePick(){
+  $('#sharePickModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function openExportScope(format){
+  exportScopeContext = { format: format };
+  $('#exportScopeModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeExportScope(){
+  $('#exportScopeModal').classList.remove('open');
+  document.body.style.overflow = '';
+  exportScopeContext = null;
+}
+function confirmExportScope(scope){
+  if(!exportScopeContext) return;
+  const format = exportScopeContext.format;
+  closeExportScope();
+  if(format === 'excel') shareExcelNow(scope);
+  else if(format === 'csv') shareCSVNow(scope);
+  else if(format === 'pdf'){
+    closeSharePick();
+    openSharePdf();
+    $('#sharePdfModal').dataset.scope = scope;
+  }
+}
+function detectPlatform(){
+  const ua = navigator.userAgent || '';
+  if(/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+  if(/Android/i.test(ua)) return 'android';
+  return 'desktop';
+}
+function openSharePdf(){
+  const p = detectPlatform();
+  const list = $('#shareStepsList');
+  const hint = $('#platformHint');
+  if(p === 'android'){
+    list.innerHTML = '<li>Pulsa <strong>Abrir diálogo</strong>.</li><li>Elige <strong>Guardar como PDF</strong>.</li><li>Guarda el archivo en tu móvil.</li><li>Envíalo a quien quieras.</li>';
+    hint.textContent = 'El PDF se genera siempre en A3 horizontal.';
+  } else if(p === 'ios'){
+    list.innerHTML = '<li>Pulsa <strong>Abrir diálogo</strong>.</li><li>Pulsa el icono de <strong>Compartir</strong>.</li><li>Elige <strong>Guardar en Archivos</strong> o la app que uses.</li><li>Envía el archivo.</li>';
+    hint.textContent = 'El PDF se genera siempre en A3 horizontal.';
+  } else {
+    list.innerHTML = '<li>Pulsa <strong>Abrir diálogo</strong>.</li><li>Elige <strong>Guardar como PDF</strong>.</li><li>Envía el archivo por tu app de mensajería o correo.</li>';
+    hint.textContent = 'El PDF se genera siempre en A3 horizontal.';
+  }
+  $('#sharePdfModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSharePdf(){
+  $('#sharePdfModal').classList.remove('open');
+  document.body.style.overflow = '';
+  delete $('#sharePdfModal').dataset.scope;
+}
+function doSharePrint(){
+  const scope = $('#sharePdfModal').dataset.scope || 'current';
+  closeSharePdf();
+  $$('.hoja.colapsada').forEach(function(h){ h.classList.remove('colapsada'); });
+  if(scope === 'current') document.body.classList.add('print-only-current');
+  else document.body.classList.remove('print-only-current');
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){ document.body.classList.remove('print-only-current'); }, 400);
+  }, 180);
+}
+
+function getHojasParaExportar(scope){
+  const semActual = semanaActualTexto();
+  let lista = state.hojas.slice();
+  if(scope === 'current') lista = lista.filter(h => h.semana === semActual);
+  lista.sort(function(a, b){
+    const aAct = a.semana === semActual ? 0 : 1;
+    const bAct = b.semana === semActual ? 0 : 1;
+    if(aAct !== bAct) return aAct - bAct;
+    const sa = parseInt(a.semana, 10) || 0;
+    const sb = parseInt(b.semana, 10) || 0;
+    if(sa !== sb) return sb - sa;
+    return 0;
+  });
+  return lista;
+}
+
+function buildExcelBuffer(scope){
+  if(typeof ExcelJS === 'undefined') throw new Error('ExcelJS no está cargado');
+  scope = scope || 'current';
+  const hojas = getHojasParaExportar(scope);
+  if(!hojas.length) throw new Error('No hay hojas para exportar');
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Localizaciones PWA';
+  wb.created = new Date();
+
+  const ANCHOS = {
+    fecha:11, municipio:17, calle:25, numero:9, piso:6, estado:12, buzoneo:9,
+    propietario:15, telefono:13, observaciones:24, seguimiento:22, presidente:12,
+    admOfrecida:14, administrador:14, esProspecto:12
+  };
+  const CABECERAS_ESPECIALES = {
+    numero:{size:10,align:'center'}, admOfrecida:{size:10,align:'center'},
+    administrador:{size:10,align:'center'}, esProspecto:{size:10,align:'center'}
+  };
+
+  hojas.forEach(function(h, idx){
+    let nombrePestana = 'Hoja ' + (idx + 1);
+    const partes = [];
+    if(h.comercial) partes.push(h.comercial);
+    if(h.oficina) partes.push(h.oficina);
+    if(partes.length) nombrePestana = 'Hoja ' + (idx + 1) + ' - ' + partes.join(' - ');
+    nombrePestana = nombrePestana.replace(/[\\\/\?\*\[\]\|:]/g, ' ').slice(0, 31).trim();
+
+    let nombreBase = nombrePestana, sufijo = 2;
+    while(wb.getWorksheet(nombrePestana)){
+      nombrePestana = (nombreBase + ' (' + sufijo + ')').slice(0, 31);
+      sufijo++;
+    }
+
+    const ws = wb.addWorksheet(nombrePestana, {
+      pageSetup: { paperSize:8, orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true,
+        margins: { left:0.25, right:0.25, top:0.5, bottom:0.5, header:0.3, footer:0.3 } },
+      views: [{ state:'frozen', ySplit:3 }]
+    });
+
+    ws.columns = COLS.map(c => ({ width: ANCHOS[c.key] || 12 }));
+
+    ws.addRow(['COMERCIAL: ' + (h.comercial || ''), '', '', '', 'SEMANA: ' + (h.semana || ''), '', '', '', '', 'OFICINA: ' + (h.oficina || ''), '', '', '', '', '']);
+    ws.mergeCells('A1:D1'); ws.mergeCells('E1:I1'); ws.mergeCells('J1:O1');
+    ['A1','E1','J1'].forEach(a => { ws.getCell(a).font = { bold:true, size:12 }; ws.getCell(a).alignment = { vertical:'middle' }; });
+    ws.getRow(1).height = 22;
+    ws.addRow([]); ws.getRow(2).height = 6;
+
+    const cab = ws.addRow(COLS.map(c => c.label));
+    cab.height = 26;
+    cab.eachCell(function(cell, colNumber){
+      const c = COLS[colNumber - 1];
+      const esp = CABECERAS_ESPECIALES[c.key];
+      cell.font = { bold:true, size: esp ? esp.size : 11, color: { argb:'FF0F172A' } };
+      cell.alignment = { horizontal: esp ? esp.align : 'left', vertical:'middle', wrapText:true };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFE2E8F0' } };
+      cell.border = { top:{style:'thin',color:{argb:'FF94A3B8'}}, bottom:{style:'thin',color:{argb:'FF94A3B8'}}, left:{style:'thin',color:{argb:'FF94A3B8'}}, right:{style:'thin',color:{argb:'FF94A3B8'}} };
+    });
+
+    h.filas.forEach(function(r, ri){
+      const loc = localizaciones.get(r.idLocalizacion);
+      if(!loc) return;
+      const values = COLS.map(c => displayParaArchivo(loc[c.key], c.key));
+      const row = ws.addRow(values);
+      const altColor = (ri % 2 === 0) ? null : 'FFF8FAFC';
+      row.eachCell({ includeEmpty:true }, function(cell, colNumber){
+        const c = COLS[colNumber - 1];
+        let hAlign = 'left';
+        if(['numero','piso','buzoneo','admOfrecida','esProspecto'].indexOf(c.key) !== -1) hAlign = 'center';
+        cell.alignment = { horizontal: hAlign, vertical:'top', wrapText:true };
+        if(altColor) cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: altColor } };
+        cell.border = { top:{style:'thin',color:{argb:'FFCBD5E1'}}, bottom:{style:'thin',color:{argb:'FFCBD5E1'}}, left:{style:'thin',color:{argb:'FFCBD5E1'}}, right:{style:'thin',color:{argb:'FFCBD5E1'}} };
+      });
+    });
+
+    ws.pageSetup.printTitlesRow = '1:3';
+  });
+
+  try{
+    if(wb.views && wb.views.length) wb.views[0].activeTab = 0;
+    else wb.views = [{ activeTab:0 }];
+  }catch(err){}
+
+  return wb.xlsx.writeBuffer();
+}
+
+async function shareExcelNow(scope){
+  scope = scope || 'current';
+  closeSharePick();
+  let buffer;
+  try{ buffer = await buildExcelBuffer(scope); }
+  catch(err){
+    console.warn('Error generando Excel:', err);
+    toast('⚠️ ' + (err.message || 'No se pudo generar el Excel'));
+    return;
+  }
+  const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const sufijo = scope === 'current' ? '-semana-actual' : '-historico';
+  const filename = 'localizaciones' + sufijo + '-' + hoyISO() + '.xlsx';
+
+  if(navigator.canShare){
+    try{
+      const file = new File([blob], filename, { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      if(navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], title:'Localizaciones', text:'Hoja de prospección' });
+        return;
+      }
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+    }
+  }
+  descargarBlob(filename, blob);
+  toast('Tu móvil no permite compartir. Se descargará el archivo.');
+}
+
+function buildCSVString(scope){
+  scope = scope || 'current';
+  const hojas = getHojasParaExportar(scope);
+  const SEP = ';';
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lineas = [];
+  const cab = ['HOJA','COMERCIAL','SEMANA','OFICINA'].concat(COLS.map(c => c.label));
+  lineas.push(cab.map(q).join(SEP));
+  hojas.forEach(function(h, i){
+    h.filas.forEach(function(r){
+      const loc = localizaciones.get(r.idLocalizacion);
+      if(!loc) return;
+      const fila = [i + 1, h.comercial, h.semana, h.oficina]
+        .concat(COLS.map(c => displayParaArchivo(loc[c.key], c.key)));
+      lineas.push(fila.map(q).join(SEP));
+    });
+  });
+  return '\uFEFF' + lineas.join('\r\n');
+}
+async function shareCSVNow(scope){
+  scope = scope || 'current';
+  closeSharePick();
+  const txt = buildCSVString(scope);
+  const blob = new Blob([txt], { type:'text/csv;charset=utf-8' });
+  const sufijo = scope === 'current' ? '-semana-actual' : '-historico';
+  const filename = 'localizaciones' + sufijo + '-' + hoyISO() + '.csv';
+
+  if(navigator.canShare){
+    try{
+      const file = new File([blob], filename, { type:'text/csv' });
+      if(navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], title:'Localizaciones (CSV)', text:'Hoja de prospección' });
+        return;
+      }
+    }catch(err){
+      if(err && err.name === 'AbortError') return;
+    }
+  }
+  descargarBlob(filename, blob);
+  toast('Tu móvil no permite compartir. Se descargará el archivo.');
+}
+
+function descargarBlob(nombre, blob){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function descargar(nombre, contenido, mime){
+  const blob = new Blob([contenido], { type: mime || 'application/octet-stream' });
+  descargarBlob(nombre, blob);
+}
+function exportJSON(){
+  const nombre = 'localizaciones-' + hoyISO() + '.json';
+  descargar(nombre, JSON.stringify(state, null, 2), 'application/json');
+  closeMenu(); toast('Copia descargada');
+}
+function importJSON(file){
+  // En sub-bloque 2.3 lo adaptamos al nuevo modelo.
+  toast('La importación se habilitará en la próxima actualización');
+}
+function wipe(){
+  if(!confirm('Se borrarán TODAS las hojas de este dispositivo (las localizaciones de Firestore NO se borran). ¿Seguro?')) return;
+  state.hojas = [newHoja()];
+  state.settings = Object.assign({}, DEFAULTS);
+  saveMetadatos(); render(); closeMenu();
+  toast('Hojas borradas localmente');
+}
+function toggleMenu(){ $('#menu').classList.toggle('open'); }
+function closeMenu(){ $('#menu').classList.remove('open'); }
+
+/* Arranque */
 bindAuth();
 
 })();
