@@ -1083,7 +1083,6 @@ let closedContext = null;
 let dupContext = null;
 let filtroActual = '';
 let exportScopeContext = null;
-// Para el fix de "duplicado"
 let addRowEnCurso = false;
 
 const $  = (s, r) => (r || document).querySelector(s);
@@ -1207,33 +1206,36 @@ function setSyncStatus(kind, text){
 async function crearLocalizacion(datos){
   const fb = window.__fb;
   if(!fb) throw new Error('Firebase no está listo');
-  const claveUnica = claveUnicaDe(datos);
 
-  const q = fb.query(
-    fb.collection(fb.db, 'localizaciones'),
-    fb.where('claveUnica', '==', claveUnica)
-  );
-  const snap = await new Promise(function(resolve, reject){
-    const unsub = fb.onSnapshot(q, function(s){
-      unsub();
-      resolve(s);
-    }, reject);
-  });
-  if(snap.size > 0){
-    const existente = snap.docs[0];
-    const data = existente.data();
-    const msg = 'Ya existe una localización con esta dirección' +
-                (data.calle ? ' (' + data.calle + ' ' + (data.numero||'') + (data.piso ? ', ' + data.piso : '') + ')' : '') +
-                '.\n\n¿Quieres abrirla para actualizarla?';
-    if(confirm(msg)){
-      return { id: existente.id, existente: true };
+  // Si la calle está vacía, no comprobamos duplicados (es una fila en blanco)
+  if(datos.calle && datos.calle.trim() !== ''){
+    const claveUnica = claveUnicaDe(datos);
+    const q = fb.query(
+      fb.collection(fb.db, 'localizaciones'),
+      fb.where('claveUnica', '==', claveUnica)
+    );
+    const snap = await new Promise(function(resolve, reject){
+      const unsub = fb.onSnapshot(q, function(s){
+        unsub();
+        resolve(s);
+      }, reject);
+    });
+    if(snap.size > 0){
+      const existente = snap.docs[0];
+      const data = existente.data();
+      const msg = 'Ya existe una localización con esta dirección' +
+                  (data.calle ? ' (' + data.calle + ' ' + (data.numero||'') + (data.piso ? ', ' + data.piso : '') + ')' : '') +
+                  '.\n\n¿Quieres abrirla para actualizarla?';
+      if(confirm(msg)){
+        return { id: existente.id, existente: true };
+      }
+      throw new Error('cancelado');
     }
-    throw new Error('cancelado');
   }
 
   const ahora = fb.serverTimestamp();
   const datosFinales = Object.assign({}, datos, {
-    claveUnica: claveUnica,
+    claveUnica: claveUnicaDe(datos), // Se calcula igualmente
     creadoPor: fbUser.nombre,
     creadoPorUid: fbUser.uid,
     creadoEn: ahora,
@@ -1254,7 +1256,7 @@ async function actualizarLocalizacion(id, cambios){
 
   const nuevasEntradas = [];
   const update = {};
-  const ahora = fb.serverTimestamp();
+  const ahora = new Date(); // Fecha local para el historial
 
   Object.keys(cambios).forEach(function(k){
     if(k === 'historial' || k === 'id') return;
@@ -1272,7 +1274,7 @@ async function actualizarLocalizacion(id, cambios){
 
   update.actualizadoPor = fbUser.nombre;
   update.actualizadoPorUid = fbUser.uid;
-  update.actualizadoEn = ahora;
+  update.actualizadoEn = fb.serverTimestamp();
 
   const direccionCambiada = ['municipio','calle','numero','piso'].some(function(k){ return k in update; });
   if(direccionCambiada){
@@ -1598,7 +1600,6 @@ function delHoja(id){
   saveMetadatos(); render();
 }
 
-/* --- AQUÍ LA CORRECCIÓN: Opción A --- */
 async function addRow(hojaId, openIt){
   if(addRowEnCurso) return;
   addRowEnCurso = true;
@@ -1618,7 +1619,6 @@ async function addRow(hojaId, openIt){
   try{
     const res = await crearLocalizacion(datos);
 
-    // Opción A: si ya existía, se añade a la hoja actual (para constancia)
     if(res.existente){
       const yaEnHoja = h.filas.some(f => f.idLocalizacion === res.id);
       if(!yaEnHoja){
@@ -1654,7 +1654,6 @@ async function addRow(hojaId, openIt){
       return;
     }
 
-    // Si era nueva: añadirla a la hoja y abrir el editor
     h.filas.push({ idLocalizacion: res.id });
     saveMetadatos();
 
