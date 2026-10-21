@@ -442,10 +442,54 @@ mark.busq{
 /* Utilidad: ocultar hojas cerradas al imprimir solo la semana actual */
 body.print-only-current .hoja.cerrada{display:none !important;}
 
+/* ====== LOGIN ====== */
+.login-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+.login-overlay.hidden{display:none}
+.login-card{
+  background:#fff;border-radius:18px;padding:28px 24px 22px;
+  width:100%;max-width:380px;
+  box-shadow:0 24px 60px -12px rgba(0,0,0,.5);
+}
+.login-logo{font-size:42px;line-height:1;text-align:center;margin-bottom:6px}
+.login-card h1{
+  margin:0 0 4px;font-size:22px;color:var(--ink);text-align:center;
+}
+.login-sub{
+  margin:0 0 22px;font-size:13px;color:var(--muted);text-align:center;
+}
+.login-card label{
+  display:flex;flex-direction:column;gap:6px;margin-bottom:14px;
+}
+.login-card label span{
+  font-size:10.5px;font-weight:800;letter-spacing:.05em;
+  color:var(--muted);text-transform:uppercase;
+}
+.login-card input{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:12px;font:inherit;font-size:15px;background:#fff;color:var(--ink);
+}
+.login-card input:focus{
+  outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent;
+}
+.login-btn{width:100%;margin-top:4px;padding:13px;font-size:15px}
+.login-error{
+  min-height:18px;margin:-4px 0 8px;font-size:12.5px;color:var(--danger);
+  font-weight:600;text-align:center;
+}
+.login-help{
+  margin:16px 0 0;font-size:11.5px;color:var(--muted);
+  text-align:center;line-height:1.4;
+}
+
 @media print{
   @page{ size: A3 landscape; margin: 8mm; }
   html,body{background:#fff !important;padding:0 !important;margin:0 !important}
-  .topbar,.fab,.fab-top,.menu,.modal,.hoja-head,.hoja-actions,.empty,.toast,.banner-cerrada,.searchbar,.no-results{display:none !important}
+  .topbar,.fab,.fab-top,.menu,.modal,.hoja-head,.hoja-actions,.empty,.toast,.banner-cerrada,.searchbar,.no-results,.login-overlay{display:none !important}
   main{padding:0 !important;margin:0 !important;display:block !important}
   .hoja{
     box-shadow:none !important;border:0 !important;border-radius:0 !important;
@@ -506,9 +550,35 @@ body.print-only-current .hoja.cerrada{display:none !important;}
     <button data-act="export-json">⬇️ Descargar copia (.json)</button>
     <button data-act="import-json">⬆️ Importar copia (.json)</button>
     <div class="sep"></div>
+    <button data-act="logout">🚪 Cerrar sesión</button>
     <button data-act="wipe" class="danger">🗑️ Borrar todos los datos</button>
   </nav>
 </header>
+
+<!-- Pantalla de login (tapada cuando hay sesión) -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">📍</div>
+    <h1>Localizaciones</h1>
+    <p class="login-sub">Prospección de zonas · Fincas Blanco</p>
+
+    <form id="loginForm" autocomplete="off">
+      <label>
+        <span>Usuario</span>
+        <input type="text" id="loginUser" placeholder="comercial 01" autocomplete="username"
+               required inputmode="text" spellcheck="false">
+      </label>
+      <label>
+        <span>Contraseña</span>
+        <input type="password" id="loginPass" placeholder="••••••" autocomplete="current-password" required>
+      </label>
+      <div class="login-error" id="loginError" role="alert"></div>
+      <button type="submit" class="btn primary login-btn" id="loginBtn">Entrar</button>
+    </form>
+
+    <p class="login-help">Si no recuerdas tus datos, contacta con el administrador.</p>
+  </div>
+</div>
 
 <div class="searchbar" id="searchbar">
   <div class="searchbar-inner">
@@ -712,6 +782,42 @@ body.print-only-current .hoja.cerrada{display:none !important;}
 <datalist id="dl-calles-masquefa"></datalist>
 <datalist id="dl-calles-piera"></datalist>
 
+<!-- Firebase SDK (v10, modular) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBsdkGuqTpmf2PNcQ2jL0cPoE0YvDE1oRk",
+    authDomain: "localizaciones-fb.firebaseapp.com",
+    projectId: "localizaciones-fb",
+    storageBucket: "localizaciones-fb.firebasestorage.app",
+    messagingSenderId: "1041930804355",
+    appId: "1:1041930804355:web:d919e333a2fdddaf488fb6"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Exponer al script principal (no modular) como window.__fb
+  window.__fb = {
+    auth, db,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+    doc, getDoc, setDoc, serverTimestamp
+  };
+
+  // Avisar al resto de la app de que Firebase ya está listo
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
 <script src="exceljs.min.js"></script>
 
 <script>
@@ -737,6 +843,160 @@ var MUNICIPIOS = [
   'Piera'
 ];
 var MUNICIPIO_POR_DEFECTO = 'Hospitalet de Llobregat';
+
+/* ============================================================
+   FIREBASE · LOGIN Y SESIÓN
+   ============================================================ */
+const EMAIL_DOMAIN = 'localizaciones.local';
+let fbUser = null;      // { uid, email, nombre, rol }
+let fbReady = false;
+
+function usernameToEmail(user){
+  // "comercial 01" → "comercial01@localizaciones.local"
+  // "master"       → "master@localizaciones.local"
+  const clean = String(user || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');           // quitar espacios
+  return clean + '@' + EMAIL_DOMAIN;
+}
+
+function mostrarLogin(mostrar){
+  const el = document.getElementById('loginOverlay');
+  if(!el) return;
+  if(mostrar) el.classList.remove('hidden');
+  else el.classList.add('hidden');
+}
+
+function setLoginError(msg){
+  const el = document.getElementById('loginError');
+  if(el) el.textContent = msg || '';
+}
+
+async function doLogin(user, pass){
+  const fb = window.__fb;
+  if(!fb){ setLoginError('Firebase no está listo. Recarga la página.'); return; }
+  const email = usernameToEmail(user);
+  setLoginError('');
+  const btn = document.getElementById('loginBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Entrando…'; }
+  try{
+    await fb.signInWithEmailAndPassword(fb.auth, email, pass);
+    // onAuthStateChanged se encarga del resto
+  }catch(err){
+    console.warn('Login error', err);
+    let msg = 'Usuario o contraseña incorrectos.';
+    if(err && err.code === 'auth/too-many-requests') msg = 'Demasiados intentos. Espera un momento.';
+    if(err && err.code === 'auth/network-request-failed') msg = 'Sin conexión. Revisa tu red.';
+    setLoginError(msg);
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Entrar'; }
+  }
+}
+
+async function cargarPerfilYArrancar(user){
+  const fb = window.__fb;
+  if(!fb || !user) return;
+  const userRef = fb.doc(fb.db, 'usuarios', user.uid);
+  let snap;
+  try{
+    snap = await fb.getDoc(userRef);
+  }catch(err){
+    console.warn('No se pudo leer el perfil', err);
+    setLoginError('No se pudo leer tu perfil. Revisa tu conexión.');
+    return;
+  }
+
+  let perfil;
+  if(!snap.exists()){
+    // Primer login: autocreamos el doc como comercial
+    // El nombre se deduce del email: comercial01@... → "comercial 01"
+    const localPart = user.email.split('@')[0];
+    const m = localPart.match(/^comercial(\d{1,2})$/);
+    const nombre = m ? 'comercial ' + String(parseInt(m[1],10)).padStart(2,'0') : localPart;
+    perfil = {
+      nombre: nombre,
+      rol: localPart === 'master' ? 'master' : 'comercial',
+      activo: true,
+      creadoEn: fb.serverTimestamp()
+    };
+    try{
+      await fb.setDoc(userRef, perfil, { merge: true });
+    }catch(err){
+      console.warn('No se pudo crear el perfil', err);
+      setLoginError('No se pudo crear tu perfil. Contacta con el administrador.');
+      return;
+    }
+  } else {
+    perfil = snap.data();
+  }
+
+  if(perfil.activo === false){
+    setLoginError('Tu cuenta está desactivada. Contacta con el administrador.');
+    await fb.signOut(fb.auth);
+    return;
+  }
+
+  fbUser = {
+    uid: user.uid,
+    email: user.email,
+    nombre: perfil.nombre,
+    rol: perfil.rol
+  };
+
+  mostrarLogin(false);
+  document.body.classList.add('logueado');
+  // Arrancar la app solo si no estaba ya arrancada
+  if(!window.__appStarted){
+    window.__appStarted = true;
+    try{
+      init();
+    }catch(err){
+      console.error('Error arrancando la app', err);
+      setLoginError('Error arrancando la app. Revisa la consola.');
+    }
+  }
+}
+
+async function hacerLogout(){
+  if(!confirm('¿Cerrar sesión?')) return;
+  const fb = window.__fb;
+  if(fb) await fb.signOut(fb.auth);
+  // Limpiar UI y volver a login
+  window.__appStarted = false;
+  fbUser = null;
+  const app = document.getElementById('app');
+  if(app) app.innerHTML = '';
+  document.body.classList.remove('logueado');
+  mostrarLogin(true);
+}
+
+// Inicializa el binding del form y el listener de auth
+function bindAuth(){
+  const form = document.getElementById('loginForm');
+  if(form){
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      const u = document.getElementById('loginUser').value;
+      const p = document.getElementById('loginPass').value;
+      doLogin(u, p);
+    });
+  }
+
+  const fb = window.__fb;
+  if(!fb){
+    window.addEventListener('firebase-ready', bindAuth, { once: true });
+    return;
+  }
+
+  fb.onAuthStateChanged(fb.auth, function(user){
+    if(user){
+      cargarPerfilYArrancar(user);
+    } else {
+      mostrarLogin(true);
+    }
+  });
+}
 
 /* ============================================================
    CÁLCULO DE LA SEMANA ISO DEL AÑO
@@ -1978,6 +2238,7 @@ function handleAction(act, el){
     case 'export-json':        exportJSON(); break;
     case 'import-json':        closeMenu(); $('#fileInput').click(); break;
     case 'wipe':               wipe(); break;
+    case 'logout':             hacerLogout(); break;
     case 'del-hoja':           delHoja(hojaId); break;
     case 'add-row':            addRow(hojaId, true); break;
     case 'close-editor':       closeEditor(); break;
@@ -2170,7 +2431,10 @@ function init(){
   onScroll();
   registerSW();
 }
-init();
+
+/* Arranque: primero Firebase, luego login, luego init() */
+bindAuth();
+
 })();
 </script>
 </body>
