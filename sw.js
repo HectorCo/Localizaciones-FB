@@ -1,5 +1,5 @@
 /* Service Worker · Localizaciones PWA */
-const CACHE = 'localizaciones-v24';
+const CACHE = 'localizaciones-v25';
 const ASSETS = [
   './',
   './index.html',
@@ -46,7 +46,6 @@ self.addEventListener('fetch', function(event){
   if(req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Cachear SDKs de Firebase y assets propios
   const isFirebase = url.hostname === 'www.gstatic.com' && url.pathname.indexOf('/firebasejs/') === 0;
   const isOwn = url.origin === location.origin;
 
