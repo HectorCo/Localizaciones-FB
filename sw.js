@@ -1,5 +1,5 @@
 /* Service Worker · Localizaciones PWA */
-const CACHE = 'localizaciones-v29';
+const CACHE = 'localizaciones-v30';
 const ASSETS = [
   './',
   './index.html',
@@ -44,10 +44,8 @@ self.addEventListener('fetch', function(event){
   const req = event.request;
   if(req.method !== 'GET') return;
   const url = new URL(req.url);
-
   const isFirebase = url.hostname === 'www.gstatic.com' && url.pathname.indexOf('/firebasejs/') === 0;
   const isOwn = url.origin === location.origin;
-
   if(!isFirebase && !isOwn) return;
 
   if(req.mode === 'navigate'){
