@@ -98,14 +98,23 @@ button{font:inherit}
   background:var(--bg);
   padding:10px 14px 8px;
 }
-.searchbar-inner{position:relative;display:flex;align-items:center}
+.searchbar-inner{position:relative;display:flex;align-items:center; gap:8px;}
 .searchbar input{
+  flex: 1;
   width:100%;border:1px solid var(--line);border-radius:12px;
   padding:11px 40px 11px 40px;
   font:inherit;font-size:15px;background:#fff;color:var(--ink);
   box-shadow:0 1px 2px rgba(15,23,42,.04);
 }
-.searchbar input:focus{
+.searchbar select {
+  width: 140px;
+  border:1px solid var(--line);border-radius:12px;
+  padding:11px 8px; font:inherit; font-size:13px; background:#fff; color:var(--ink);
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+  display: none;
+}
+.searchbar select.visible { display: block; }
+.searchbar input:focus, .searchbar select:focus{
   outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent;
 }
 .searchbar .icon-search{
@@ -113,12 +122,13 @@ button{font:inherit}
   color:var(--muted);font-size:15px;pointer-events:none;
 }
 .searchbar .clear-search{
-  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  position:absolute;right:156px;top:50%;transform:translateY(-50%);
   border:0;background:transparent;cursor:pointer;
   width:32px;height:32px;border-radius:50%;
   display:none;align-items:center;justify-content:center;
   color:var(--muted);font-size:16px;
 }
+.searchbar.no-filter .clear-search { right: 6px; }
 .searchbar .clear-search:hover{background:#f1f5f9;color:var(--danger)}
 .searchbar.has-value .clear-search{display:flex}
 .search-info{
@@ -798,6 +808,7 @@ body.print-only-current .hoja.cerrada{display:none !important;}
   <div class="searchbar-inner">
     <span class="icon-search">🔍</span>
     <input type="text" id="searchInput" placeholder="Buscar calle, propietario, teléfono…" autocomplete="off" spellcheck="false">
+    <select id="filterComercial" title="Filtrar por comercial"></select>
     <button type="button" class="clear-search" data-act="clear-search" aria-label="Borrar búsqueda">✕</button>
   </div>
   <div class="search-info" id="searchInfo"></div>
@@ -1061,6 +1072,7 @@ var MUNICIPIO_POR_DEFECTO = 'Hospitalet de Llobregat';
 
 const EMAIL_DOMAIN = 'localizaciones.local';
 let fbUser = null;
+let usuariosDelGrupo = []; // Para el filtro de gestores
 
 var ID_A_DATALIST = {
   'hospitalet': 'dl-calles-lh',
@@ -1156,7 +1168,6 @@ async function cargarPerfilYArrancar(user){
     oficina: perfil.oficina || null
   };
 
-  // Badge según rol
   const marca = document.querySelector('.brand strong');
   if(marca){
     let badge = marca.querySelector('.badge-rol');
@@ -1184,14 +1195,12 @@ async function cargarPerfilYArrancar(user){
     }
   }
 
-  // Ocultar / mostrar botón de compartir según el rol
   const btnShare = document.getElementById('btnShare');
   const menuShare = document.getElementById('menuShare');
   const puedeExportar = (fbUser.rol === 'master' || fbUser.rol === 'gestion' || fbUser.rol === 'coordinadora');
   if(btnShare) btnShare.style.display = puedeExportar ? '' : 'none';
   if(menuShare) menuShare.style.display = puedeExportar ? '' : 'none';
 
-  // Ocultar "Nueva hoja" y "Descargar json" a los no-master y no-comercial
   const puedeCrearHoja = (fbUser.rol === 'master' || fbUser.rol === 'comercial');
   const menuNewHoja = document.getElementById('menuNewHoja');
   const fabNuevaHoja = document.querySelector('.fab');
@@ -1217,6 +1226,7 @@ async function hacerLogout(){
   if(fb) await fb.signOut(fb.auth);
   window.__appStarted = false;
   fbUser = null;
+  usuariosDelGrupo = [];
   if(unsubLocalizaciones){ unsubLocalizaciones(); unsubLocalizaciones = null; }
   if(unsubCalles){ unsubCalles(); unsubCalles = null; }
   localizaciones.clear();
@@ -1427,6 +1437,7 @@ let saveTimer = null;
 let closedContext = null;
 let dupContext = null;
 let filtroActual = '';
+let filtroComercial = ''; // Nueva variable para el filtro global
 let exportScopeContext = null;
 let addRowEnCurso = false;
 let dupEnEditor = null;
@@ -1472,6 +1483,9 @@ function puedeExportar(){
 function esMaster(){
   return fbUser && fbUser.rol === 'master';
 }
+function esGestor(){
+  return fbUser && (fbUser.rol === 'gestion' || fbUser.rol === 'coordinadora');
+}
 
 function loadMetadatos(){
   try{
@@ -1509,6 +1523,43 @@ function saveMetadatos(){
       }));
     }catch(err){ toast('⚠️ No se pudo guardar en este dispositivo'); }
   }, 250);
+}
+
+async function cargarCompanerosGestor(){
+  if(!esGestor() || !fbUser.oficina) return;
+  const fb = window.__fb;
+  try {
+    const q = fb.query(
+      fb.collection(fb.db, 'usuarios'),
+      fb.where('oficina', '==', fbUser.oficina)
+    );
+    const snap = await fb.getDoc(fb.doc(fb.db, 'usuarios', fbUser.uid)); 
+    // NOTA: La regla actual solo permite a master leer todos los usuarios.
+    // Para que los gestores puedan ver los nombres de su equipo, tendríamos que 
+    // añadir una regla en Firestore que permita leer usuarios si comparten oficina.
+    // Por ahora, como no podemos cambiar las reglas en este paso, 
+    // extraemos los nombres de los comerciales que ya han creado registros.
+  } catch(err) {}
+  
+  // Rellenamos el selector basándonos en los datos de las localizaciones que han llegado
+  const nombresUnicos = new Set();
+  localizaciones.forEach(loc => {
+    if(loc.creadoPor) nombresUnicos.add(loc.creadoPor);
+  });
+  
+  usuariosDelGrupo = Array.from(nombresUnicos).sort();
+  
+  const sel = document.getElementById('filterComercial');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">Ver todos los comerciales</option>';
+  usuariosDelGrupo.forEach(nombre => {
+    const opt = document.createElement('option');
+    opt.value = nombre;
+    opt.textContent = nombre;
+    sel.appendChild(opt);
+  });
+  sel.classList.add('visible');
+  $('#searchbar').classList.remove('no-filter');
 }
 
 function initSyncLocalizaciones(){
@@ -1555,6 +1606,10 @@ function initSyncLocalizaciones(){
     });
     if(huboCambios){
       saveMetadatos();
+    }
+
+    if (esGestor()) {
+        cargarCompanerosGestor();
     }
 
     render();
@@ -1721,7 +1776,7 @@ function render(){
   const frag = document.createDocumentFragment();
   state.hojas.forEach(h => frag.appendChild(buildHoja(h)));
   app.appendChild(frag);
-  if(filtroActual) aplicarFiltro();
+  if(filtroActual || filtroComercial) aplicarFiltro();
 }
 
 function rerenderHoja(id){
@@ -1734,7 +1789,7 @@ function rerenderHoja(id){
   old.replaceWith(nuevo);
   const newWrap = nuevo.querySelector('.table-wrap');
   if(newWrap) newWrap.scrollLeft = scrollLeft;
-  if(filtroActual) aplicarFiltro();
+  if(filtroActual || filtroComercial) aplicarFiltro();
 }
 
 function buildHoja(h){
@@ -1753,7 +1808,6 @@ function buildHoja(h){
   const oficinaValor = oficinaFija ? fbUser.oficina : h.oficina;
 
   let extraColsHTML = '';
-  // Solo master y comercial pueden borrar/colapsar/crear hojas
   const puedeBorrarHoja = !soloLectura;
   if(!soloLectura){
     if(cerrada){
@@ -1767,7 +1821,6 @@ function buildHoja(h){
       extraColsHTML = '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja">✕</button>';
     }
   } else {
-    // Gestión/Coordinadora: botón para colapsar solo si está cerrada
     if(cerrada){
       const ico = plegada ? '▸' : '▾';
       extraColsHTML =
@@ -1780,10 +1833,22 @@ function buildHoja(h){
     }
   }
 
+  // Para gestores, el campo usuario es un desplegable con su nombre y los de su equipo
+  let usuarioControl = '';
+  if (esGestor()) {
+    let opciones = '<option value="' + esc(fbUser.nombre) + '">' + esc(fbUser.nombre) + '</option>';
+    usuariosDelGrupo.forEach(nombre => {
+      if (nombre !== fbUser.nombre) {
+        opciones += '<option value="' + esc(nombre) + '">' + esc(nombre) + '</option>';
+      }
+    });
+    usuarioControl = '<select data-meta="comercial" style="background:#f1f5f9; font-weight:700;">' + opciones + '</select>';
+  } else {
+    usuarioControl = '<input type="text" data-meta="comercial" value="' + esc(fbUser ? fbUser.nombre : h.comercial) + '" readonly tabindex="-1" style="background:#f1f5f9;color:var(--muted);font-weight:700;cursor:default;">';
+  }
+
   head.innerHTML =
-    '<label>Usuario' +
-      '<input type="text" data-meta="comercial" value="' + esc(fbUser ? fbUser.nombre : h.comercial) + '" readonly tabindex="-1" style="background:#f1f5f9;color:var(--muted);font-weight:700;cursor:default;">' +
-    '</label>' +
+    '<label>Usuario' + usuarioControl + '</label>' +
     '<label class="semana-ro">Semana (auto)' +
       '<input type="text" data-meta="semana" value="' + esc(h.semana) + '" readonly tabindex="-1">' +
     '</label>' +
@@ -2483,7 +2548,7 @@ function onFieldChange(e){
     if(!sec) return;
     const h = state.hojas.find(x => x.id === sec.dataset.hoja);
     if(!h) return;
-    if(el.dataset.meta === 'semana' || el.dataset.meta === 'comercial') return;
+    if(el.dataset.meta === 'semana') return;
     if(esHojaCerrada(h)){
       if(el.dataset.meta === 'oficina'){
         el.value = (fbUser && fbUser.oficina && fbUser.rol !== 'master') ? fbUser.oficina : (h.oficina || OFICINA_POR_DEFECTO);
@@ -2491,6 +2556,7 @@ function onFieldChange(e){
       return;
     }
     if(esSoloLectura()) return;
+    
     h[el.dataset.meta] = el.value;
     const span = sec.querySelector('[data-meta-cell="' + el.dataset.meta + '"] span');
     if(span){
@@ -2554,6 +2620,13 @@ document.addEventListener('input', function(e){
     aplicarBusquedaGlobal();
   }
 });
+document.addEventListener('change', function(e){
+  if(e.target && e.target.id === 'filterComercial'){
+    filtroComercial = e.target.value;
+    aplicarFiltro();
+    aplicarBusquedaGlobal();
+  }
+});
 
 $('#fileInput').addEventListener('change', function(e){
   const f = e.target.files && e.target.files[0];
@@ -2603,6 +2676,9 @@ function init(){
       state.settings.hojasPlegadas[h.id] = 1;
     }
   });
+  if (!esGestor()) {
+    document.getElementById('searchbar').classList.add('no-filter');
+  }
   saveMetadatos();
   initSyncLocalizaciones();
   initSyncCalles();
@@ -2654,7 +2730,8 @@ function aplicarFiltro(){
   const info = $('#searchInfo');
   const barra = $('#searchbar');
   const noRes = $('#noResults');
-  if(!q){
+  
+  if(!q && !filtroComercial){
     barra.classList.remove('has-value');
     info.textContent = '';
     $$('#app tbody tr').forEach(function(tr){ tr.classList.remove('fila-oculta'); });
@@ -2662,7 +2739,9 @@ function aplicarFiltro(){
     noRes.style.display = 'none';
     return;
   }
-  barra.classList.add('has-value');
+  
+  if (q || filtroComercial) barra.classList.add('has-value');
+  
   let totalCoincidencias = 0;
   state.hojas.forEach(function(h){
     const sec = document.querySelector('.hoja[data-hoja="' + h.id + '"]');
@@ -2672,7 +2751,11 @@ function aplicarFiltro(){
       const tr = sec.querySelector('tr[data-row="' + r.idLocalizacion + '"]');
       if(!tr) return;
       const loc = localizaciones.get(r.idLocalizacion);
-      if(loc && coincideFila(loc, q)){
+      
+      const coincideTexto = !q || (loc && coincideFila(loc, q));
+      const coincideComercial = !filtroComercial || (loc && loc.creadoPor === filtroComercial);
+      
+      if(loc && coincideTexto && coincideComercial){
         tr.classList.remove('fila-oculta');
         coincidenciasHoja++;
       } else {
@@ -2680,10 +2763,12 @@ function aplicarFiltro(){
       }
     });
     sec.querySelectorAll('tr[data-blank]').forEach(function(tr){ tr.classList.add('fila-oculta'); });
-    const hojaMetaCoincide =
-      normaliza(h.comercial).indexOf(q) !== -1 ||
+    
+    const hojaMetaCoincide = !q && !filtroComercial ||
+      (normaliza(h.comercial).indexOf(q) !== -1 ||
       normaliza(h.oficina).indexOf(q) !== -1 ||
-      normaliza(h.semana).indexOf(q) !== -1;
+      normaliza(h.semana).indexOf(q) !== -1);
+      
     if(coincidenciasHoja > 0 || hojaMetaCoincide){
       sec.style.display = '';
       sec.classList.remove('colapsada');
@@ -2692,12 +2777,17 @@ function aplicarFiltro(){
     }
     totalCoincidencias += coincidenciasHoja;
   });
-  info.textContent = totalCoincidencias + ' registro' + (totalCoincidencias === 1 ? '' : 's') + ' coincide' + (totalCoincidencias === 1 ? '' : 'n');
+  
+  if (q || filtroComercial) {
+    info.textContent = totalCoincidencias + ' registro' + (totalCoincidencias === 1 ? '' : 's') + ' coincide' + (totalCoincidencias === 1 ? '' : 'n');
+  }
   noRes.style.display = (totalCoincidencias === 0 && !($('#globalResults') && $('#globalResults').classList.contains('visible'))) ? 'block' : 'none';
 }
 function limpiarBusqueda(){
   $('#searchInput').value = '';
+  $('#filterComercial').value = '';
   filtroActual = '';
+  filtroComercial = '';
   aplicarFiltro();
   aplicarBusquedaGlobal();
 }
@@ -2706,11 +2796,14 @@ function aplicarBusquedaGlobal(){
   const cont = $('#globalResults');
   if(!cont) return;
   const q = normaliza(filtroActual);
-  if(!q){ cont.classList.remove('visible'); cont.innerHTML = ''; return; }
+  
+  if(!q && !filtroComercial){ cont.classList.remove('visible'); cont.innerHTML = ''; return; }
 
   const encontrados = [];
   localizaciones.forEach(function(loc, id){
-    if(coincideFila(loc, q)) encontrados.push(loc);
+    const coincideTexto = !q || coincideFila(loc, q);
+    const coincideComercial = !filtroComercial || loc.creadoPor === filtroComercial;
+    if(coincideTexto && coincideComercial) encontrados.push(loc);
   });
 
   if(!encontrados.length){ cont.classList.remove('visible'); cont.innerHTML = ''; return; }
@@ -2722,7 +2815,7 @@ function aplicarBusquedaGlobal(){
     return normaliza(a.calle || '').localeCompare(normaliza(b.calle || ''));
   });
 
-  const MAX = 12;
+  const MAX = 50;
   const lista = encontrados.slice(0, MAX);
 
   const itemsHtml = lista.map(function(loc){
@@ -2733,26 +2826,49 @@ function aplicarBusquedaGlobal(){
     if(loc.estado) partes.push('🏷️ ' + esc(loc.estado));
     const meta = partes.length ? partes.join(' · ') : 'Sin datos adicionales';
     const yaEnHojaActual = hojaActualContiene(loc.id);
-    const acciones = esSoloLectura()
-      ? '<button class="btn" data-act="gr-abrir" data-row-id="' + esc(loc.id) + '" style="background:#e2e8f0;color:var(--ink)">Ver</button>'
-      : '<button class="btn" data-act="gr-abrir" data-row-id="' + esc(loc.id) + '" style="background:#e2e8f0;color:var(--ink)">Abrir</button>' +
+    
+    // Botón para cargar a la hoja actual
+    let btnAccion = '';
+    if (esSoloLectura()) {
+      btnAccion = yaEnHojaActual 
+        ? '<span style="font-size:11px;color:var(--muted);text-align:center;padding:4px 0">✓ En hoja</span>'
+        : '<button class="btn primary" data-act="gr-anadir-masivo" data-row-id="' + esc(loc.id) + '">📥 Cargar a mi hoja</button>';
+    } else {
+      btnAccion = '<button class="btn" data-act="gr-abrir" data-row-id="' + esc(loc.id) + '" style="background:#e2e8f0;color:var(--ink)">Abrir</button>' +
         (yaEnHojaActual
           ? '<span style="font-size:11px;color:var(--muted);text-align:center;padding:4px 0">✓ En hoja</span>'
           : '<button class="btn primary" data-act="gr-anadir" data-row-id="' + esc(loc.id) + '">➕ Añadir</button>');
+    }
+    
     return '<div class="res-item" data-id="' + esc(loc.id) + '">' +
       '<div class="res-body">' +
         '<div class="res-dir">📍 ' + esc(loc.calle || '(sin calle)') + ' ' + esc(loc.numero || '') + (loc.piso ? ', ' + esc(loc.piso) : '') + '</div>' +
-        '<div class="res-meta">' + esc(loc.municipio || '') + ' · Última semana: <strong>S' + esc(semana) + '</strong></div>' +
+        '<div class="res-meta">' + esc(loc.municipio || '') + ' · <strong>' + esc(loc.creadoPor || '') + '</strong> · Semana: <strong>S' + esc(semana) + '</strong></div>' +
         '<div class="res-meta" style="margin-top:2px">' + meta + '</div>' +
       '</div>' +
-      '<div class="res-actions">' + acciones + '</div>' +
+      '<div class="res-actions">' + btnAccion + '</div>' +
     '</div>';
   }).join('');
 
-  cont.innerHTML =
-    '<header><span>Resultados en la base de datos</span><span class="count">' + encontrados.length + (encontrados.length > MAX ? '+' : '') + '</span></header>' +
-    itemsHtml;
+  let headerHtml = '';
+  if (filtroComercial) {
+      // Botón mágico para gestores
+      const idVacios = encontrados.filter(l => !hojaActualContiene(l.id)).length;
+      if (idVacios > 0) {
+          headerHtml = '<header>' +
+            '<span>Resultados: ' + encontrados.length + '</span>' +
+            '<button class="btn primary" data-act="gr-anadir-todos" style="font-size:11px; padding:4px 8px;">📥 Cargar TODOS a mi hoja</button>' +
+          '</header>';
+      } else {
+          headerHtml = '<header><span>Resultados en la base de datos</span><span class="count">' + encontrados.length + '</span></header>';
+      }
+  } else {
+      headerHtml = '<header><span>Resultados en la base de datos</span><span class="count">' + encontrados.length + (encontrados.length > MAX ? '+' : '') + '</span></header>';
+  }
+
+  cont.innerHTML = headerHtml + itemsHtml;
   cont.classList.add('visible');
+  
   const noRes = $('#noResults');
   if(noRes) noRes.style.display = 'none';
 }
@@ -2823,6 +2939,40 @@ function anadirExpedienteAHojaActual(idLoc){
   saveMetadatos();
   render();
   toast('Añadido a la hoja actual');
+}
+
+function añadirTodosGestor() {
+  if(!esSoloLectura()) return;
+  let hoja = null;
+  for(const h of state.hojas){
+    if(!esHojaCerrada(h)){ hoja = h; break; }
+  }
+  if(!hoja){
+    toast('No hay ninguna hoja abierta. Crea una hoja nueva primero.');
+    return;
+  }
+  
+  const q = normaliza(filtroActual);
+  let cargados = 0;
+  localizaciones.forEach((loc, id) => {
+    const coincideTexto = !q || coincideFila(loc, q);
+    const coincideComercial = !filtroComercial || loc.creadoPor === filtroComercial;
+    if(coincideTexto && coincideComercial) {
+      if (!hoja.filas.some(f => f.idLocalizacion === id)) {
+        hoja.filas.push({ idLocalizacion: id });
+        cargados++;
+      }
+    }
+  });
+  
+  if (cargados > 0) {
+    saveMetadatos();
+    render();
+    toast('Se han añadido ' + cargados + ' registros a tu hoja');
+    aplicarBusquedaGlobal(); // Refrescar el panel
+  } else {
+    toast('No hay registros nuevos que añadir');
+  }
 }
 
 function openSettings(){
