@@ -1,5 +1,5 @@
 /* Service Worker · Localizaciones PWA */
-const CACHE = 'localizaciones-v31';
+const CACHE = 'localizaciones-v32';
 const ASSETS = [
   './',
   './index.html',
