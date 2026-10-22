@@ -1527,19 +1527,6 @@ function saveMetadatos(){
 
 async function cargarCompanerosGestor(){
   if(!esGestor() || !fbUser.oficina) return;
-  const fb = window.__fb;
-  try {
-    const q = fb.query(
-      fb.collection(fb.db, 'usuarios'),
-      fb.where('oficina', '==', fbUser.oficina)
-    );
-    const snap = await fb.getDoc(fb.doc(fb.db, 'usuarios', fbUser.uid)); 
-    // NOTA: La regla actual solo permite a master leer todos los usuarios.
-    // Para que los gestores puedan ver los nombres de su equipo, tendríamos que 
-    // añadir una regla en Firestore que permita leer usuarios si comparten oficina.
-    // Por ahora, como no podemos cambiar las reglas en este paso, 
-    // extraemos los nombres de los comerciales que ya han creado registros.
-  } catch(err) {}
   
   // Rellenamos el selector basándonos en los datos de las localizaciones que han llegado
   const nombresUnicos = new Set();
@@ -1551,11 +1538,16 @@ async function cargarCompanerosGestor(){
   
   const sel = document.getElementById('filterComercial');
   if(!sel) return;
+  
+  // Guardar valor actual para no perderlo al recargar
+  const valorActual = sel.value;
+  
   sel.innerHTML = '<option value="">Ver todos los comerciales</option>';
   usuariosDelGrupo.forEach(nombre => {
     const opt = document.createElement('option');
     opt.value = nombre;
     opt.textContent = nombre;
+    if (nombre === valorActual) opt.selected = true;
     sel.appendChild(opt);
   });
   sel.classList.add('visible');
@@ -2495,6 +2487,7 @@ function handleAction(act, el){
       anadirExpedienteAHojaActual(id);
       break;
     }
+    case 'gr-anadir-todos':    añadirTodosGestor(); break;
   }
 }
 
@@ -2967,9 +2960,10 @@ function añadirTodosGestor() {
   
   if (cargados > 0) {
     saveMetadatos();
+    // LIMPIAMOS EL FILTRO PARA QUE SE VEAN LAS FILAS CARGADAS
+    limpiarBusqueda();
     render();
     toast('Se han añadido ' + cargados + ' registros a tu hoja');
-    aplicarBusquedaGlobal(); // Refrescar el panel
   } else {
     toast('No hay registros nuevos que añadir');
   }
