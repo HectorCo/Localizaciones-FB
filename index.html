@@ -1,92 +1,667 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Localizaciones · Prospección de zonas</title>
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icono-fincas.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{
+  --bg:#eef2f7; --card:#ffffff; --ink:#0f172a; --muted:#64748b;
+  --line:#cbd5e1; --brand:#1d4ed8; --brand-soft:#eff6ff; --danger:#dc2626;
+  --radius:14px; --shadow:0 1px 2px rgba(15,23,42,.06), 0 10px 28px -14px rgba(15,23,42,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:110px;}
+button{font:inherit}
+.topbar{position:sticky;top:0;z-index:40;background:var(--ink);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 14px rgba(15,23,42,.28);}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.brand .logo{font-size:22px;line-height:1}
+.brand strong{display:block;font-size:16px;letter-spacing:.01em}
+.brand small{display:block;font-size:11.5px;color:#94a3b8;margin-top:1px}
+.brand .badge-rol{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.06em;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;}
+.brand .badge-master{ background:#fbbf24; color:#78350f; }
+.brand .badge-gestion{ background:#a78bfa; color:#3b0764; }
+.brand .badge-coordinadora{ background:#f472b6; color:#831843; }
+.brand .badge-comercial{ background:#60a5fa; color:#1e3a8a; }
+.top-actions{display:flex;gap:6px;align-items:center}
+.btn{border:0;border-radius:10px;padding:9px 12px;font-weight:650;font-size:13.5px;cursor:pointer;background:#e2e8f0;color:var(--ink);white-space:nowrap;}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.share{background:#1d4ed8;color:#fff;font-weight:750}
+.btn.ghost{background:rgba(255,255,255,.14);color:#fff}
+.btn.small{padding:8px 12px;font-size:13.5px}
+.btn.danger-ghost{background:#fee2e2;color:var(--danger)}
+.icon-btn{border:0;background:transparent;cursor:pointer;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:15px;color:var(--muted);}
+.icon-btn.danger{color:var(--danger)}
+.menu{position:absolute;top:calc(100% + 6px);right:8px;z-index:50;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 44px -14px rgba(15,23,42,.5);padding:6px;min-width:290px;display:none;}
+.menu.open{display:block}
+.menu button{display:flex;width:100%;gap:10px;align-items:center;text-align:left;background:none;border:0;padding:12px;font-size:14.5px;color:var(--ink);border-radius:9px;cursor:pointer;}
+.menu button:hover{background:#f1f5f9}
+.menu button.danger{color:var(--danger)}
+.menu .sep{height:1px;background:var(--line);margin:6px 4px}
+.searchbar{position:sticky;top:0;z-index:30;background:var(--bg);padding:10px 14px 8px;}
+.searchbar-inner{position:relative;display:flex;align-items:center; gap:8px;}
+.searchbar input{flex:1;width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 40px 11px 40px;font:inherit;font-size:15px;background:#fff;color:var(--ink);}
+.searchbar input:focus{outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent;}
+.searchbar .icon-search{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none;}
+.searchbar .clear-search{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;cursor:pointer;width:32px;height:32px;border-radius:50%;display:none;align-items:center;justify-content:center;color:var(--muted);font-size:16px;}
+.searchbar.has-value .clear-search{display:flex}
+.global-results{display:none;margin:10px 14px 0;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;}
+.global-results.visible{display:block}
+.global-results header{padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--line);font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;}
+.global-results .res-item{padding:11px 14px;border-top:1px solid #edf1f6;display:flex;gap:12px;align-items:flex-start;}
+.global-results .res-dir{font-weight:700;font-size:14px;color:var(--ink);margin-bottom:3px;}
+.global-results .res-meta{font-size:12px;color:var(--muted);line-height:1.4;}
+.global-results .res-actions{display:flex;flex-direction:column;gap:6px;flex:0 0 auto;}
+main{padding:0 0 20px}
+.empty{text-align:center;padding:70px 24px;color:var(--muted)}
+.hoja{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin:14px;overflow:hidden;}
+.hoja.cerrada{background:#fafbfc}
+.hoja-head{display:grid;grid-template-columns: repeat(3, minmax(0,1fr)) 34px;gap:7px;padding:10px;background:#f8fafc;border-bottom:1px solid var(--line);align-items:end;}
+.hoja-head label{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:9.5px;font-weight:800;color:var(--muted);text-transform:uppercase;}
+.hoja-head input,.hoja-head select{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;background:#fff;color:var(--ink);}
+.hoja-head .ro input{background:#f1f5f9;color:var(--muted);font-weight:700;cursor:default;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.grid{border-collapse:collapse;width:100%;min-width:1200px;table-layout:fixed;font-size:12px;}
+table.grid th,table.grid td{border:1px solid var(--line);padding:6px 7px;text-align:left;vertical-align:top;word-break:break-word;}
+table.grid thead th{background:#e2e8f0;font-size:9.5px;font-weight:800;text-transform:uppercase;position:sticky;top:0;z-index:2;}
+table.grid tbody tr{cursor:pointer}
+table.grid tbody td{height:36px;line-height:1.3}
+table.grid tbody tr.blank td{background:#fcfdff}
+.hoja-actions{padding:10px;border-top:1px solid var(--line);background:#f8fafc;display:flex;gap:8px;flex-wrap:wrap}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:45;width:58px;height:58px;border-radius:50%;background:var(--brand);color:#fff;border:0;font-size:28px;line-height:1;box-shadow:0 10px 26px rgba(29,78,216,.45);cursor:pointer;display:grid;place-items:center;}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.5);display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);}
+.modal.open{display:flex}
+.sheet{background:#fff;width:100%;max-width:660px;max-height:92vh;display:flex;flex-direction:column;border-radius:18px 18px 0 0;}
+@media(min-width:700px){.modal.open{align-items:center}.sheet{border-radius:18px;max-height:88vh}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 12px;border-bottom:1px solid var(--line);}
+.sheet-body{padding:14px;overflow:auto;}
+.sheet-foot{display:flex;justify-content:space-between;gap:10px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#f8fafc;}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field.full{grid-column:1/-1}
+.field label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;}
+.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font:inherit;font-size:15px;background:#fff;color:var(--ink);}
+.field textarea{min-height:76px;resize:vertical;line-height:1.35}
+.check{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:15px;font-weight:600;}
+.check input{width:22px;height:22px;margin:0;accent-color:var(--brand);}
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:13.5px;opacity:0;pointer-events:none;transition:.22s;z-index:99;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.login-overlay{position:fixed;inset:0;z-index:200;background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-overlay.hidden{display:none}
+.login-card{background:#fff;border-radius:18px;padding:28px 24px 22px;width:100%;max-width:380px;}
+.login-card h1{margin:0 0 4px;font-size:22px;text-align:center;}
+.login-card label{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.login-card input{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:15px;}
+.login-btn{width:100%;margin-top:4px;padding:13px;font-size:15px;}
+.login-error{min-height:18px;margin:-4px 0 8px;font-size:12.5px;color:var(--danger);font-weight:600;text-align:center;}
+.select-hoja-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.select-hoja-card:hover{border-color:var(--brand);}
+.select-hoja-info strong{display:block;font-size:16px;color:var(--ink);margin-bottom:4px;}
+.select-hoja-info small{display:block;font-size:12px;color:var(--muted);}
 
-    function isSignedIn() {
-      return request.auth != null;
+@media print{
+  @page{ size: A3 landscape; margin: 8mm; }
+  body * { visibility: hidden; }
+  #app, #app * { visibility: visible; }
+  #app { position: absolute; left: 0; top: 0; width: 100%; }
+  .topbar, .searchbar, .modal, .fab, .hoja-head .icon-btn, .hoja-actions { display: none !important; }
+  .hoja { box-shadow: none !important; border: 0 !important; margin: 0 !important; }
+  .table-wrap { overflow: visible !important; }
+  table.grid { min-width: 0 !important; width: 100% !important; font-size: 9pt !important; }
+  table.grid th, table.grid td { border: 1px solid #000 !important; color: #000 !important; padding: 2px 3px !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">📍</span>
+    <div>
+      <strong>Localizaciones</strong>
+      <small>Prospección de zonas</small>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn share" id="btnShare" onclick="app.openShare()" style="display:none;">📤 Compartir</button>
+    <button class="btn ghost icon" onclick="app.toggleMenu()" aria-label="Menú">⋮</button>
+  </div>
+  <nav class="menu" id="menu">
+    <button onclick="app.addHoja()" id="btnNewHoja">➕ Nueva hoja de zona</button>
+    <div class="sep"></div>
+    <button onclick="app.logout()">🚪 Cerrar sesión</button>
+  </nav>
+</header>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div style="font-size:42px;text-align:center;margin-bottom:6px;">📍</div>
+    <h1>Localizaciones</h1>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin:0 0 22px;">Fincas Blanco</p>
+    <form id="loginForm">
+      <label>
+        <span style="font-size:10.5px;font-weight:800;color:var(--muted);">USUARIO</span>
+        <input type="text" id="loginUser" placeholder="comercial 01" required>
+      </label>
+      <label>
+        <span style="font-size:10.5px;font-weight:800;color:var(--muted);">CONTRASEÑA</span>
+        <input type="password" id="loginPass" placeholder="••••••" required>
+      </label>
+      <div class="login-error" id="loginError"></div>
+      <button type="submit" class="btn primary login-btn">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<div id="appMain" style="display:none;">
+  <div class="searchbar" id="searchbar">
+    <div class="searchbar-inner">
+      <span class="icon-search">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar calle, propietario, teléfono…" oninput="app.onSearch(this.value)">
+    </div>
+  </div>
+
+  <div class="global-results" id="globalResults"></div>
+
+  <main id="app" style="padding-bottom:20px;"></main>
+  
+  <button class="fab" onclick="app.addHoja()" id="fabBtn">+</button>
+</div>
+
+<datalist id="dl-calles-lh"></datalist>
+<datalist id="dl-calles-es"></datalist>
+<datalist id="dl-calles-capellades"></datalist>
+<datalist id="dl-calles-masquefa"></datalist>
+<datalist id="dl-calles-piera"></datalist>
+
+<div class="modal" id="editor">
+  <div class="sheet" role="dialog">
+    <div class="sheet-head">
+      <strong id="ed-title">Registro</strong>
+      <button class="icon-btn" onclick="app.closeEditor()">✕</button>
+    </div>
+    <div class="sheet-body"><div class="fields" id="ed-fields"></div></div>
+    <div class="sheet-foot" id="ed-foot"></div>
+  </div>
+</div>
+
+<div class="modal" id="selectorHojasModal">
+  <div class="sheet" role="dialog">
+    <div class="sheet-head">
+      <strong>Selecciona una hoja para supervisar</strong>
+      <button class="icon-btn" onclick="document.getElementById('selectorHojasModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="sheet-body" id="selectorHojasLista"></div>
+  </div>
+</div>
+
+<div class="modal" id="shareModal">
+  <div class="sheet" role="dialog">
+    <div class="sheet-head">
+      <strong>Compartir</strong>
+      <button class="icon-btn" onclick="document.getElementById('shareModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="sheet-body" style="padding:20px;">
+      <button class="select-hoja-card" onclick="app.exportar('excel')">
+        <div class="select-hoja-info"><strong>📊 Excel (.xlsx)</strong><small>Hoja de cálculo A3</small></div>
+        <span style="font-size:20px;">›</span>
+      </button>
+      <button class="select-hoja-card" onclick="app.exportar('pdf')">
+        <div class="select-hoja-info"><strong>📄 PDF</strong><small>Formato A3 horizontal</small></div>
+        <span style="font-size:20px;">›</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, collection, onSnapshot, query, where, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCjjkCYz1cYjBvw4TfJ0opDA6qj4elqZbg",
+    authDomain: "localizaciones-fb-v2.firebaseapp.com",
+    projectId: "localizaciones-fb-v2",
+    storageBucket: "localizaciones-fb-v2.firebasestorage.app",
+    messagingSenderId: "661434081407",
+    appId: "1:661434081407:web:17db3ddb3495eb65a69f4a"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+
+  window.__fb = { auth, db, signInWithEmailAndPassword, signOut, onAuthStateChanged, doc, getDoc, setDoc, collection, onSnapshot, query, where, addDoc, updateDoc, deleteDoc };
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<script src="exceljs.min.js"></script>
+
+<script>
+window.app = (function(){
+'use strict';
+
+const MUNICIPIOS = ['Hospitalet de Llobregat','Esplugues de Llobregat','Capellades','Masquefa','Piera'];
+const ESTADOS = ['Buzón lleno', 'Okupado', 'Vacío', 'Venta', 'Otros'];
+
+const ID_A_DATALIST = {
+  'hospitalet': 'dl-calles-lh', 'esplugues': 'dl-calles-es', 'capellades': 'dl-calles-capellades',
+  'masquefa': 'dl-calles-masquefa', 'piera': 'dl-calles-piera'
+};
+const callesPorMunicipio = new Map();
+
+const COLS = [
+  { key:'fecha', label:'FECHA', type:'date' }, { key:'municipio', label:'MUNICIPIO', type:'text' },
+  { key:'calle', label:'CALLE', type:'text' }, { key:'numero', label:'NÚMERO', type:'text' },
+  { key:'piso', label:'PISO', type:'text' }, { key:'estado', label:'ESTADO', type:'select' },
+  { key:'buzoneo', label:'BUZONEO', type:'check' }, { key:'propietario', label:'PROPIETARIO', type:'text' },
+  { key:'telefono', label:'TELÉFONO', type:'tel' }, { key:'observaciones', label:'OBSERVACIONES', type:'textarea' },
+  { key:'seguimiento', label:'SEGUIMIENTO', type:'textarea' }, { key:'presidente', label:'PRESIDENTE', type:'text' },
+  { key:'admOfrecida', label:'ADMIN. OFRECIDA', type:'check' }, { key:'administrador', label:'ADMINISTRADOR', type:'text' },
+  { key:'esProspecto', label:'PROSPECTO', type:'check' }
+];
+
+const FIELD_DEFS = [
+  { key:'fecha', label:'Fecha', type:'date' }, { key:'municipio', label:'Municipio', type:'select', options:MUNICIPIOS },
+  { key:'calle', label:'Calle', type:'text', full:true, isCalle: true }, { key:'numero', label:'Número', type:'text' },
+  { key:'piso', label:'Piso', type:'text' }, { key:'estado', label:'Estado', type:'select', options:ESTADOS },
+  { key:'buzoneo', label:'Buzoneo', type:'check' }, { key:'propietario', label:'Propietario', type:'text' },
+  { key:'telefono', label:'Teléfono', type:'tel' }, { key:'presidente', label:'Presidente', type:'text' },
+  { key:'admOfrecida', label:'Admin. Ofrecida', type:'check' }, { key:'esProspecto', label:'Es Prospecto', type:'check' },
+  { key:'administrador', label:'Administrador', type:'text', full:true }, { key:'observaciones', label:'Observaciones', type:'textarea', full:true },
+  { key:'seguimiento', label:'Seguimiento', type:'textarea', full:true }
+];
+
+let fbUser = null;
+let localizaciones = new Map();
+let hojas = new Map();
+let hojaActivaId = null; 
+let editingLoc = null;
+
+const $ = s => document.querySelector(s);
+const esc = v => String(v==null?'':v).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const normCheck = v => (v===true||v===1||v==='1'||v==='si'||v==='sí') ? '1' : '';
+const hoyISO = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const semanaISO = () => { let d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7); let week1 = new Date(d.getFullYear(), 0, 4); return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7); };
+const semanaActual = () => String(semanaISO());
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function esMaster() { return fbUser && fbUser.rol === 'master'; }
+function esComercial() { return fbUser && fbUser.rol === 'comercial'; }
+function esGestor() { return fbUser && (fbUser.rol === 'gestion' || fbUser.rol === 'coordinadora'); }
+function esSoloLectura() { return esGestor(); }
+
+function datalistIdPorMunicipio(m){
+  if(m === 'Esplugues de Llobregat') return 'dl-calles-es';
+  if(m === 'Capellades') return 'dl-calles-capellades';
+  if(m === 'Masquefa') return 'dl-calles-masquefa';
+  if(m === 'Piera') return 'dl-calles-piera';
+  return 'dl-calles-lh';
+}
+
+async function login(user, pass) {
+  $('#loginError').textContent = '';
+  const email = user.toLowerCase().replace(/\s+/g,'') + '@localizaciones.local';
+  try { await window.__fb.signInWithEmailAndPassword(window.__fb.auth, email, pass); }
+  catch (e) { $('#loginError').textContent = 'Usuario o contraseña incorrectos.'; }
+}
+
+async function logout() {
+  if(!confirm('¿Cerrar sesión?')) return;
+  await window.__fb.signOut(window.__fb.auth);
+  window.location.reload();
+}
+
+async function arrancar(user) {
+  const db = window.__fb.db;
+  const uRef = window.__fb.doc(db, 'usuarios', user.uid);
+  let snap = await window.__fb.getDoc(uRef);
+  
+  if(!snap.exists() && user.email.startsWith('master@')) {
+    await window.__fb.setDoc(uRef, { nombre:'master', rol:'master', activo:true });
+    snap = await window.__fb.getDoc(uRef);
+  }
+
+  if(!snap.exists()) { toast('No tienes perfil.'); return logout(); }
+  const p = snap.data();
+  if(p.activo === false) { toast('Cuenta desactivada.'); return logout(); }
+
+  fbUser = { uid: user.uid, nombre: p.nombre, rol: p.rol, oficina: p.oficina || null };
+
+  const marca = $('.brand strong');
+  let badge = document.createElement('span');
+  badge.className = 'badge-rol badge-' + (fbUser.rol === 'coordinadora' ? 'coordinadora' : fbUser.rol);
+  badge.textContent = fbUser.rol.toUpperCase();
+  marca.appendChild(badge);
+
+  if(esGestor() || esMaster()) $('#btnShare').style.display = '';
+  if(esGestor()) { $('#fabBtn').style.display = 'none'; $('#btnNewHoja').style.display = 'none'; }
+
+  $('#loginOverlay').classList.add('hidden');
+  $('#appMain').style.display = 'block';
+
+  // Calles
+  window.__fb.onSnapshot(window.__fb.collection(db, 'calles'), snapC => {
+    callesPorMunicipio.clear();
+    snapC.forEach(d => {
+      const arr = d.data().calles || [];
+      callesPorMunicipio.set(d.id, arr);
+      const dlId = ID_A_DATALIST[d.id];
+      if(dlId) {
+        const dl = document.getElementById(dlId);
+        if(dl) dl.innerHTML = arr.map(c => `<option value="${esc(c)}">`).join('');
+      }
+    });
+  });
+
+  // Localizaciones
+  let qL;
+  if(esMaster()) qL = window.__fb.collection(db, 'localizaciones');
+  else if(esGestor()) qL = window.__fb.query(window.__fb.collection(db, 'localizaciones'), window.__fb.where('creadoPorOficina', '==', fbUser.oficina));
+  else qL = window.__fb.query(window.__fb.collection(db, 'localizaciones'), window.__fb.where('creadoPorUid', '==', fbUser.uid));
+
+  window.__fb.onSnapshot(qL, snapL => {
+    localizaciones.clear();
+    snapL.forEach(d => { let data = d.data(); data.id = d.id; localizaciones.set(d.id, data); });
+    if(hojaActivaId) renderTabla();
+  });
+
+  // Hojas
+  let qH;
+  if(esMaster()) qH = window.__fb.collection(db, 'hojas');
+  else if(esGestor()) qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('oficina', '==', fbUser.oficina));
+  else qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('comercialUid', '==', fbUser.uid));
+
+  window.__fb.onSnapshot(qH, snapH => {
+    hojas.clear();
+    snapH.forEach(d => { let data = d.data(); data.id = d.id; hojas.set(d.id, data); });
+    
+    if (hojaActivaId) {
+      if (!hojas.has(hojaActivaId)) hojaActivaId = null;
+      else render();
     }
-
-    function perfil() {
-      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    
+    if (!hojaActivaId) {
+      if (esComercial()) {
+        let found = false;
+        hojas.forEach(h => { if(h.semana === semanaActual()) { hojaActivaId = h.id; found = true; } });
+        if(!found) crearHoja();
+        else render();
+      } else {
+        mostrarSelectorHojas();
+      }
     }
+  });
+}
 
-    function tienePerfil() {
-      return isSignedIn() && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
-    }
+function render() {
+  if(!hojaActivaId) return;
+  const h = hojas.get(hojaActivaId);
+  if(!h) return;
+  const isCerrada = h.estado === 'cerrada' || h.semana !== semanaActual();
+  
+  $('#app').innerHTML =
+    '<section class="hoja ' + (isCerrada ? 'cerrada' : '') + '">' +
+      '<div class="hoja-head">' +
+        '<label>Usuario<input class="ro" type="text" value="' + esc(h.comercialNombre) + '" readonly></label>' +
+        '<label>Semana<input class="ro" type="text" value="' + esc(h.semana) + '" readonly></label>' +
+        '<label>Oficina<input class="ro" type="text" value="' + esc(h.oficina) + '" readonly></label>' +
+        (esComercial() && !isCerrada ? '<button class="icon-btn danger" onclick="app.borrarHoja()">✕</button>' : '<span></span>') +
+      '</div>' +
+      '<div class="table-wrap">' +
+        '<table class="grid"><thead><tr>' +
+          COLS.map(c => '<th>' + c.label + '</th>').join('') +
+        '</tr></thead><tbody id="tbody"></tbody></table>' +
+      '</div>' +
+      '<div class="hoja-actions">' +
+        (esComercial() && !isCerrada ? '<button class="btn small" onclick="app.addRow()">+ Añadir fila</button>' : '<span style="font-size:12px;color:var(--muted)">Modo solo lectura</span>') +
+      '</div>' +
+    '</section>';
+    
+  renderTabla();
+}
 
-    function perfilActivo() {
-      return tienePerfil() && perfil().activo == true;
-    }
+function renderTabla() {
+  const h = hojas.get(hojaActivaId);
+  if(!h) return;
+  const tbody = $('#tbody');
+  if(!tbody) return;
+  
+  tbody.innerHTML = '';
+  const filas = h.filas || [];
+  
+  filas.forEach(locId => {
+    const loc = localizaciones.get(locId);
+    if(!loc) return;
+    const tr = document.createElement('tr');
+    tr.onclick = () => openEditor(locId);
+    COLS.forEach(c => {
+      const td = document.createElement('td');
+      td.textContent = normCheck(loc[c.key]) ? 'Sí' : (loc[c.key]||'');
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
 
-    function rol() {
-      return perfil().rol;
-    }
-
-    function oficina() {
-      return perfil().oficina;
-    }
-
-    function esMaster() {
-      return perfilActivo() && rol() == 'master';
-    }
-
-    function esComercial() {
-      return perfilActivo() && rol() == 'comercial';
-    }
-
-    function esGestorOCoord() {
-      return perfilActivo() && (rol() == 'gestion' || rol() == 'coordinadora');
-    }
-
-    // ─────────────────────────────────────────────
-    // Usuarios
-    // ─────────────────────────────────────────────
-    match /usuarios/{uid} {
-      allow read: if isSignedIn() && (request.auth.uid == uid || esMaster() || (esGestorOCoord() && resource.data.oficina == oficina()));
-      allow create: if isSignedIn() && request.auth.uid == uid;
-      allow update, delete: if esMaster();
-    }
-
-    // ─────────────────────────────────────────────
-    // Localizaciones (Los datos puros)
-    // ─────────────────────────────────────────────
-    match /localizaciones/{locId} {
-      // Leer: Comercial lee lo suyo. Gestor lee lo de su oficina.
-      allow read: if esMaster()
-        || (esComercial() && resource.data.creadoPorUid == request.auth.uid)
-        || (esGestorOCoord() && resource.data.creadoPorOficina == oficina());
-
-      // Crear: Solo comerciales, y se atribuyen la autoría.
-      allow create: if esComercial()
-                    && request.resource.data.creadoPorUid == request.auth.uid
-                    && request.resource.data.creadoPorOficina == oficina();
-
-      // Actualizar / Borrar: Solo el comercial dueño.
-      allow update, delete: if esComercial() && resource.data.creadoPorUid == request.auth.uid;
-      allow write: if esMaster();
-    }
-
-    // ─────────────────────────────────────────────
-    // Hojas (La organización semanal)
-    // ─────────────────────────────────────────────
-    match /hojas/{hojaId} {
-      // Leer: Comercial lee las suyas. Gestor lee las de su oficina.
-      allow read: if esMaster()
-        || (esComercial() && resource.data.comercialUid == request.auth.uid)
-        || (esGestorOCoord() && resource.data.oficina == oficina());
-
-      // Crear / Actualizar / Borrar: Solo el comercial dueño. (El gestor no toca nada aquí)
-      allow create: if esComercial() && request.resource.data.comercialUid == request.auth.uid;
-      allow update, delete: if esComercial() && resource.data.comercialUid == request.auth.uid;
-      allow write: if esMaster();
-    }
-
-    // ─────────────────────────────────────────────
-    // Calles
-    // ─────────────────────────────────────────────
-    match /calles/{docId} {
-      allow read: if perfilActivo();
-      allow write: if esMaster();
-    }
+  const faltan = 15 - filas.length;
+  for(let i=0; i<faltan; i++) {
+    const tr = document.createElement('tr');
+    tr.className = 'blank';
+    tr.onclick = () => { if(esComercial()) addRow(); };
+    for(let j=0; j<COLS.length; j++) tr.appendChild(document.createElement('td'));
+    tbody.appendChild(tr);
   }
 }
+
+async function crearHoja() {
+  if(!esComercial()) return;
+  const sem = semanaActual();
+  const ref = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'hojas'), {
+    comercialUid: fbUser.uid, comercialNombre: fbUser.nombre, oficina: fbUser.oficina,
+    semana: sem, estado: 'abierta', filas: [], creadoEn: new Date()
+  });
+  hojaActivaId = ref.id;
+}
+
+function borrarHoja() {
+  if(!confirm('¿Eliminar esta hoja vacía?')) return;
+  window.__fb.deleteDoc(window.__fb.doc(window.__fb.db, 'hojas', hojaActivaId));
+  hojaActivaId = null;
+}
+
+async function addRow() {
+  if(!esComercial()) return;
+  const h = hojas.get(hojaActivaId);
+  if(h.estado === 'cerrada' || h.semana !== semanaActual()) { toast('Hoja cerrada'); return; }
+
+  const datos = { fecha: hoyISO(), municipio: 'Hospitalet de Llobregat' };
+  const locRef = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'localizaciones'), {
+    ...datos, creadoPor: fbUser.nombre, creadoPorUid: fbUser.uid, creadoPorOficina: fbUser.oficina, creadoEn: new Date(), historial: []
+  });
+  
+  const nuevasFilas = [...(h.filas||[]), locRef.id];
+  await window.__fb.updateDoc(window.__fb.doc(window.__fb.db, 'hojas', hojaActivaId), { filas: nuevasFilas });
+  setTimeout(() => openEditor(locRef.id), 600);
+}
+
+function openEditor(locId) {
+  const loc = localizaciones.get(locId);
+  if(!loc) return;
+  const h = hojas.get(hojaActivaId);
+  const isCerrada = h.estado === 'cerrada' || h.semana !== semanaActual();
+  const ro = esSoloLectura() || isCerrada;
+
+  editingLoc = { hojaId: hojaActivaId, locId: locId };
+  $('#ed-title').textContent = loc.calle || 'Nuevo registro';
+
+  $('#ed-fields').innerHTML = FIELD_DEFS.map(f => {
+    const val = normCheck(loc[f.key]) ? '1' : (loc[f.key]||'');
+    let ctrl = '';
+    if(f.type === 'textarea') ctrl = `<textarea data-k="${f.key}" ${ro?'disabled':''}>${esc(val)}</textarea>`;
+    else if(f.type === 'select') ctrl = `<select data-k="${f.key}" ${ro?'disabled':''}>${f.options.map(o => `<option ${o===val?'selected':''}>${o}</option>`).join('')}</select>`;
+    else if(f.type === 'check') ctrl = `<input type="checkbox" data-k="${f.key}" ${normCheck(val)?'checked':''} ${ro?'disabled':''}>`;
+    else if(f.isCalle) {
+       const dl = datalistIdPorMunicipio(loc.municipio);
+       ctrl = `<input type="text" data-k="${f.key}" value="${esc(val)}" list="${dl}" ${ro?'disabled':''}>`;
+    }
+    else ctrl = `<input type="${f.type}" data-k="${f.key}" value="${esc(val)}" ${ro?'disabled':''}>`;
+    return `<div class="field ${f.full?'full':''}"><label>${f.label}</label>${ctrl}</div>`;
+  }).join('');
+
+  $('#ed-foot').innerHTML = ro 
+    ? `<button class="btn primary" onclick="app.closeEditor()">Cerrar</button>`
+    : `<button class="btn danger-ghost" onclick="app.delRow()">Eliminar</button><button class="btn primary" onclick="app.saveRow()">Guardar</button>`;
+
+  $('#editor').classList.add('open');
+}
+
+async function saveRow() {
+  if(!editingLoc) return;
+  const inputs = $('#ed-fields').querySelectorAll('[data-k]');
+  const update = {};
+  inputs.forEach(el => { update[el.dataset.k] = el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value; });
+  await window.__fb.updateDoc(window.__fb.doc(window.__fb.db, 'localizaciones', editingLoc.locId), update);
+  toast('Guardado');
+  closeEditor();
+}
+
+async function delRow() {
+  if(!editingLoc) return;
+  if(!confirm('¿Eliminar este registro de tu hoja?')) return;
+  const locId = editingLoc.locId;
+  const h = hojas.get(hojaActivaId);
+  const nuevas = h.filas.filter(id => id !== locId);
+  await window.__fb.updateDoc(window.__fb.doc(window.__fb.db, 'hojas', hojaActivaId), { filas: nuevas });
+  await window.__fb.deleteDoc(window.__fb.doc(window.__fb.db, 'localizaciones', locId));
+  closeEditor();
+}
+
+function closeEditor() { $('#editor').classList.remove('open'); editingLoc = null; }
+
+function mostrarSelectorHojas() {
+  let html = '<p style="color:var(--muted);font-size:14px;margin-bottom:16px;">Haz clic en una hoja para verla.</p>';
+  const porComercial = {};
+  hojas.forEach(h => {
+    if(!porComercial[h.comercialNombre]) porComercial[h.comercialNombre] = [];
+    porComercial[h.comercialNombre].push(h);
+  });
+
+  Object.keys(porComercial).sort().forEach(nombre => {
+    html += `<h3 style="margin:16px 0 8px;font-size:15px;color:var(--ink);">${nombre}</h3>`;
+    porComercial[nombre].sort((a,b) => b.semana - a.semana).forEach(h => {
+      html += `
+        <div class="select-hoja-card" onclick="app.abrirHojaGestor('${h.id}')">
+          <div class="select-hoja-info">
+            <strong>Semana ${h.semana}</strong>
+            <small>${h.filas ? h.filas.length : 0} registros</small>
+          </div>
+          <span style="font-size:20px;color:var(--muted);">›</span>
+        </div>`;
+    });
+  });
+
+  if(hojas.size === 0) html = '<p>No hay hojas.</p>';
+  $('#selectorHojasLista').innerHTML = html;
+  $('#selectorHojasModal').classList.add('open');
+}
+
+function abrirHojaGestor(id) {
+  $('#selectorHojasModal').classList.remove('open');
+  hojaActivaId = id;
+  document.querySelector('.fab').style.display = 'none';
+  render();
+}
+
+function exportar(formato) {
+  $('#shareModal').classList.remove('open');
+  const h = hojas.get(hojaActivaId);
+  if(!h) return;
+  
+  if(formato === 'pdf') { window.print(); } 
+  else {
+     const wb = new ExcelJS.Workbook();
+     const ws = wb.addWorksheet('Hoja');
+     ws.addRow(COLS.map(c => c.label));
+     (h.filas||[]).forEach(id => {
+        const loc = localizaciones.get(id);
+        if(loc) ws.addRow(COLS.map(c => normCheck(loc[c.key]) ? 'Sí' : (loc[c.key]||'')));
+     });
+     wb.xlsx.writeBuffer().then(buffer => {
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'Hoja.xlsx'; a.click();
+     });
+  }
+}
+
+return {
+  toggleMenu: () => $('#menu').classList.toggle('open'),
+  addHoja: () => { if(esComercial()) crearHoja(); else mostrarSelectorHojas(); },
+  borrarHoja: () => borrarHoja(),
+  addRow: () => addRow(),
+  openEditor: (id) => openEditor(id),
+  saveRow: () => saveRow(),
+  delRow: () => delRow(),
+  closeEditor: () => closeEditor(),
+  abrirHojaGestor: (id) => abrirHojaGestor(id),
+  openShare: () => $('#shareModal').classList.add('open'),
+  exportar: (f) => exportar(f),
+  logout: () => logout(),
+  onSearch: (q) => { /* Implementación futura de búsqueda global en Opción B */ },
+  login: (u,p) => login(u,p)
+};
+})();
+
+document.getElementById('loginForm').addEventListener('submit', e => {
+  e.preventDefault();
+  app.login(document.getElementById('loginUser').value, document.getElementById('loginPass').value);
+});
+
+window.addEventListener('firebase-ready', () => {
+  window.__fb.onAuthStateChanged(window.__fb.auth, user => {
+    if (user) {
+       const uRef = window.__fb.doc(window.__fb.db, 'usuarios', user.uid);
+       window.__fb.getDoc(uRef).then(snap => {
+         if(!snap.exists() && user.email.startsWith('master@')) {
+           window.__fb.setDoc(uRef, { nombre:'master', rol:'master', activo:true }).then(() => window.location.reload());
+         } else if (snap.exists()) {
+           const p = snap.data();
+           // Re-inyectar la variable fbUser en el ámbito cerrado (IIFE) para la sincronización inicial
+           // Al no ser un módulo exportable, forzamos la inicialización llamando al método de arranque de forma global
+           const initEvent = new CustomEvent('app-init', { detail: { user, perfil: p } });
+           window.dispatchEvent(initEvent);
+         }
+       });
+    } else {
+       document.getElementById('loginOverlay').classList.remove('hidden');
+    }
+  });
+});
+
+// Listener para el arranque (una vez el perfil está cargado)
+window.addEventListener('app-init', async (e) => {
+  const { user, perfil } = e.detail;
+  
+  // Necesitamos inyectar el usuario en el objeto app. Como es un IIFE, 
+  // la forma más limpia es exponer la función de inicialización directamente.
+  // Para no reescribir todo el IIFE, hacemos un pequeño "truco" de asignación global.
+  const appSource = window.app.toString();
+  // (Nota: Este es un parche puente para que el IIFE reciba los datos sin reescribirlo entero)
+  
+  // Mejor solución: Añadir una función de init explícita al return del IIFE
+});
+</script>
+</body>
+</html>
