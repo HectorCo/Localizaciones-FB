@@ -1065,6 +1065,12 @@ var ID_A_DATALIST = {
 const callesPorMunicipio = new Map();
 let unsubCalles = null;
 
+// Clave del localStorage que incluye el UID para que cada comercial tenga sus propias hojas
+function getStorageKey(){
+  if(fbUser && fbUser.uid) return 'localizaciones.v2.' + fbUser.uid;
+  return 'localizaciones.v2';
+}
+
 function usernameToEmail(user){
   const clean = String(user || '').trim().toLowerCase().replace(/\s+/g, '');
   return clean + '@' + EMAIL_DOMAIN;
@@ -1421,7 +1427,7 @@ function buildOptions(options, valor, placeholder){
 
 function loadMetadatos(){
   try{
-    const raw = localStorage.getItem('localizaciones.v2');
+    const raw = localStorage.getItem(getStorageKey());
     if(!raw) return false;
     const d = JSON.parse(raw);
     if(!d || !Array.isArray(d.hojas)) return false;
@@ -1444,7 +1450,7 @@ function saveMetadatos(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(function(){
     try{
-      localStorage.setItem('localizaciones.v2', JSON.stringify({
+      localStorage.setItem(getStorageKey(), JSON.stringify({
         hojas: state.hojas.map(function(h){
           return {
             id: h.id, comercial: h.comercial, semana: h.semana, oficina: h.oficina,
@@ -1457,9 +1463,6 @@ function saveMetadatos(){
   }, 250);
 }
 
-// ──────────────────────────────────────────────────────────
-//  Sincronización de localizaciones · solo las mías (o todas si master)
-// ──────────────────────────────────────────────────────────
 function initSyncLocalizaciones(){
   const fb = window.__fb;
   if(!fb) return;
@@ -1469,10 +1472,8 @@ function initSyncLocalizaciones(){
 
   let q;
   if(fbUser.rol === 'master'){
-    // El master ve todo
     q = fb.collection(fb.db, 'localizaciones');
   } else {
-    // Cada comercial solo ve las suyas
     q = fb.query(
       fb.collection(fb.db, 'localizaciones'),
       fb.where('creadoPorUid', '==', fbUser.uid)
@@ -1487,6 +1488,21 @@ function initSyncLocalizaciones(){
       localizaciones.set(d.id, data);
     });
     setSyncStatus('ok', 'Sincronizado');
+    
+    // LIMPIEZA AUTOMÁTICA:
+    // Si hay filas en las hojas locales que apuntan a IDs que no están en localizaciones
+    // (porque eran de otro comercial, porque se borraron, o porque Firestore las bloquea),
+    // las eliminamos para que no se queden atascadas en "(cargando...)".
+    let huboCambios = false;
+    state.hojas.forEach(function(h){
+      const antes = h.filas.length;
+      h.filas = h.filas.filter(f => localizaciones.has(f.idLocalizacion));
+      if(h.filas.length !== antes) huboCambios = true;
+    });
+    if(huboCambios){
+      saveMetadatos();
+    }
+
     render();
     if(editing){
       refrescarAvisoDuplicado();
@@ -1509,9 +1525,6 @@ function setSyncStatus(kind, text){
   if(txt) txt.textContent = text;
 }
 
-// ──────────────────────────────────────────────────────────
-//  Buscar duplicado por claveUnica (solo entre los míos)
-// ──────────────────────────────────────────────────────────
 async function buscarDuplicadoPorClave(datos, excluirId){
   const fb = window.__fb;
   if(!fb) return null;
@@ -2011,7 +2024,6 @@ function openEditor(hojaId, idLocalizacion, opts){
   const loc = localizaciones.get(idLocalizacion);
   if(!loc){ toast('Localización no cargada. Espera a que se sincronice.'); return; }
 
-  // Comprobación: si no es mía y no soy master, no permitir
   if(fbUser && fbUser.rol !== 'master' && loc.creadoPorUid && loc.creadoPorUid !== fbUser.uid){
     toast('No tienes permiso para editar este registro');
     return;
@@ -2086,9 +2098,6 @@ function closeEditor(){
   dupEnEditor = null;
 }
 
-// ──────────────────────────────────────────────────────────
-//  Aviso de duplicado
-// ──────────────────────────────────────────────────────────
 function refrescarAvisoDuplicado(forzar){
   const slot = $('#ed-dup-slot');
   if(!slot) return;
