@@ -40,18 +40,20 @@ button{font:inherit}
 .brand .logo{font-size:22px;line-height:1}
 .brand strong{display:block;font-size:16px;letter-spacing:.01em}
 .brand small{display:block;font-size:11.5px;color:#94a3b8;margin-top:1px}
-.brand .badge-master{
+.brand .badge-rol{
   display:inline-block;
   font-size:9.5px;
   font-weight:800;
   letter-spacing:.06em;
-  background:#fbbf24;
-  color:#78350f;
   padding:2px 6px;
   border-radius:4px;
   margin-left:6px;
   vertical-align:middle;
 }
+.brand .badge-master{ background:#fbbf24; color:#78350f; }
+.brand .badge-gestion{ background:#a78bfa; color:#3b0764; }
+.brand .badge-coordinadora{ background:#f472b6; color:#831843; }
+.brand .badge-comercial{ background:#60a5fa; color:#1e3a8a; }
 .top-actions{display:flex;gap:6px;align-items:center}
 .btn{
   border:0;border-radius:10px;padding:9px 12px;font-weight:650;font-size:13.5px;
@@ -258,6 +260,11 @@ main{padding:0 0 20px}
   cursor:default;
 }
 .hoja-head .semana-ro input:focus{outline:none}
+.hoja-head .oficina-fija{
+  background:#f1f5f9;color:var(--muted);font-weight:700;
+  cursor:default;
+}
+.hoja-head .oficina-fija:focus{outline:none}
 
 .toggle-collapse{
   border:0;background:#e2e8f0;color:var(--ink);
@@ -746,16 +753,16 @@ body.print-only-current .hoja.cerrada{display:none !important;}
     </div>
   </div>
   <div class="top-actions">
-    <button class="btn share" data-act="share-open" title="Compartir">📤 Compartir</button>
+    <button class="btn share" data-act="share-open" id="btnShare" title="Compartir">📤 Compartir</button>
     <button class="btn ghost icon" data-act="menu" id="btnMenu" aria-label="Menú">⋮</button>
   </div>
   <nav class="menu" id="menu">
-    <button data-act="new-hoja">➕ Nueva hoja de zona</button>
+    <button data-act="new-hoja" id="menuNewHoja">➕ Nueva hoja de zona</button>
     <button data-act="settings">⚙️ Ajustes</button>
     <div class="sep"></div>
-    <button data-act="share-open">📤 Compartir (PDF / Excel / CSV)</button>
+    <button data-act="share-open" id="menuShare">📤 Compartir (PDF / Excel / CSV)</button>
     <div class="sep"></div>
-    <button data-act="export-json">⬇️ Descargar copia (.json)</button>
+    <button data-act="export-json" id="menuExportJSON">⬇️ Descargar copia (.json)</button>
     <button data-act="import-json">⬆️ Importar copia (.json)</button>
     <div class="sep"></div>
     <button data-act="logout">🚪 Cerrar sesión</button>
@@ -1065,7 +1072,6 @@ var ID_A_DATALIST = {
 const callesPorMunicipio = new Map();
 let unsubCalles = null;
 
-// Clave del localStorage que incluye el UID para que cada comercial tenga sus propias hojas
 function getStorageKey(){
   if(fbUser && fbUser.uid) return 'localizaciones.v2.' + fbUser.uid;
   return 'localizaciones.v2';
@@ -1125,6 +1131,7 @@ async function cargarPerfilYArrancar(user){
       nombre: nombre,
       rol: localPart === 'master' ? 'master' : 'comercial',
       activo: true,
+      oficina: OFICINA_POR_DEFECTO,
       creadoEn: fb.serverTimestamp()
     };
     try{ await fb.setDoc(userRef, perfil, { merge: true }); }
@@ -1145,23 +1152,54 @@ async function cargarPerfilYArrancar(user){
     uid: user.uid,
     email: user.email,
     nombre: perfil.nombre,
-    rol: perfil.rol
+    rol: perfil.rol,
+    oficina: perfil.oficina || null
   };
-  // Badge MASTER en la topbar
+
+  // Badge según rol
   const marca = document.querySelector('.brand strong');
   if(marca){
-    let badge = marca.querySelector('.badge-master');
+    let badge = marca.querySelector('.badge-rol');
+    if(badge) badge.remove();
     if(fbUser.rol === 'master'){
-      if(!badge){
-        badge = document.createElement('span');
-        badge.className = 'badge-master';
-        badge.textContent = 'MASTER';
-        marca.appendChild(badge);
-      }
-    } else if(badge){
-      badge.remove();
+      badge = document.createElement('span');
+      badge.className = 'badge-rol badge-master';
+      badge.textContent = 'MASTER';
+      marca.appendChild(badge);
+    } else if(fbUser.rol === 'gestion'){
+      badge = document.createElement('span');
+      badge.className = 'badge-rol badge-gestion';
+      badge.textContent = 'GESTIÓN';
+      marca.appendChild(badge);
+    } else if(fbUser.rol === 'coordinadora'){
+      badge = document.createElement('span');
+      badge.className = 'badge-rol badge-coordinadora';
+      badge.textContent = 'COORDINADORA';
+      marca.appendChild(badge);
+    } else if(fbUser.rol === 'comercial'){
+      badge = document.createElement('span');
+      badge.className = 'badge-rol badge-comercial';
+      badge.textContent = 'COMERCIAL';
+      marca.appendChild(badge);
     }
   }
+
+  // Ocultar / mostrar botón de compartir según el rol
+  const btnShare = document.getElementById('btnShare');
+  const menuShare = document.getElementById('menuShare');
+  const puedeExportar = (fbUser.rol === 'master' || fbUser.rol === 'gestion' || fbUser.rol === 'coordinadora');
+  if(btnShare) btnShare.style.display = puedeExportar ? '' : 'none';
+  if(menuShare) menuShare.style.display = puedeExportar ? '' : 'none';
+
+  // Ocultar "Nueva hoja" y "Descargar json" a los no-master y no-comercial
+  const puedeCrearHoja = (fbUser.rol === 'master' || fbUser.rol === 'comercial');
+  const menuNewHoja = document.getElementById('menuNewHoja');
+  const fabNuevaHoja = document.querySelector('.fab');
+  const menuExportJSON = document.getElementById('menuExportJSON');
+  if(menuNewHoja) menuNewHoja.style.display = puedeCrearHoja ? '' : 'none';
+  if(fabNuevaHoja) fabNuevaHoja.style.display = puedeCrearHoja ? '' : 'none';
+  if(menuExportJSON) menuExportJSON.style.display = puedeExportar ? '' : 'none';
+
   mostrarLogin(false);
   document.body.classList.add('logueado');
   if(!window.__appStarted){
@@ -1187,7 +1225,7 @@ async function hacerLogout(){
   if(app) app.innerHTML = '';
   const gr = document.getElementById('globalResults');
   if(gr){ gr.innerHTML = ''; gr.classList.remove('visible'); }
-  const marca = document.querySelector('.brand strong .badge-master');
+  const marca = document.querySelector('.brand strong .badge-rol');
   if(marca) marca.remove();
   document.body.classList.remove('logueado');
   mostrarLogin(true);
@@ -1285,7 +1323,7 @@ function datalistIdPorMunicipio(m){
 }
 
 // ──────────────────────────────────────────────────────────
-//  Normalización de direcciones
+//  Normalización
 // ──────────────────────────────────────────────────────────
 function normalizaClave(s){
   return String(s == null ? '' : s)
@@ -1425,6 +1463,16 @@ function buildOptions(options, valor, placeholder){
   }).join('');
 }
 
+function esSoloLectura(){
+  return fbUser && (fbUser.rol === 'gestion' || fbUser.rol === 'coordinadora');
+}
+function puedeExportar(){
+  return fbUser && (fbUser.rol === 'master' || fbUser.rol === 'gestion' || fbUser.rol === 'coordinadora');
+}
+function esMaster(){
+  return fbUser && fbUser.rol === 'master';
+}
+
 function loadMetadatos(){
   try{
     const raw = localStorage.getItem(getStorageKey());
@@ -1436,7 +1484,7 @@ function loadMetadatos(){
         id: h.id || uid(),
         comercial: h.comercial || '',
         semana: h.semana || semanaActualTexto(),
-        oficina: h.oficina || OFICINA_POR_DEFECTO,
+        oficina: h.oficina || (fbUser && fbUser.oficina) || OFICINA_POR_DEFECTO,
         filas: Array.isArray(h.filas) ? h.filas.map(function(r){
           return { idLocalizacion: r.idLocalizacion || r.id || uid() };
         }) : []
@@ -1473,6 +1521,16 @@ function initSyncLocalizaciones(){
   let q;
   if(fbUser.rol === 'master'){
     q = fb.collection(fb.db, 'localizaciones');
+  } else if(fbUser.rol === 'gestion' || fbUser.rol === 'coordinadora'){
+    if(!fbUser.oficina){
+      console.warn('Gestor sin oficina asignada, no se pueden cargar datos');
+      setSyncStatus('error', 'Sin oficina asignada');
+      return;
+    }
+    q = fb.query(
+      fb.collection(fb.db, 'localizaciones'),
+      fb.where('creadoPorOficina', '==', fbUser.oficina)
+    );
   } else {
     q = fb.query(
       fb.collection(fb.db, 'localizaciones'),
@@ -1488,11 +1546,7 @@ function initSyncLocalizaciones(){
       localizaciones.set(d.id, data);
     });
     setSyncStatus('ok', 'Sincronizado');
-    
-    // LIMPIEZA AUTOMÁTICA:
-    // Si hay filas en las hojas locales que apuntan a IDs que no están en localizaciones
-    // (porque eran de otro comercial, porque se borraron, o porque Firestore las bloquea),
-    // las eliminamos para que no se queden atascadas en "(cargando...)".
+
     let huboCambios = false;
     state.hojas.forEach(function(h){
       const antes = h.filas.length;
@@ -1532,7 +1586,7 @@ async function buscarDuplicadoPorClave(datos, excluirId){
   if(!datos.calle || !String(datos.calle).trim()) return null;
 
   let q;
-  if(fbUser && fbUser.rol === 'master'){
+  if(esMaster()){
     q = fb.query(
       fb.collection(fb.db, 'localizaciones'),
       fb.where('claveUnica', '==', clave)
@@ -1582,6 +1636,7 @@ async function crearLocalizacion(datos){
     claveUnica: claveUnicaDe(datosLimpios),
     creadoPor: fbUser.nombre,
     creadoPorUid: fbUser.uid,
+    creadoPorOficina: fbUser.oficina || OFICINA_POR_DEFECTO,
     creadoEn: ahora,
     creadoSemana: semana,
     actualizadoPor: fbUser.nombre,
@@ -1655,8 +1710,11 @@ function render(){
   if(!state.hojas.length){
     const div = document.createElement('div');
     div.className = 'empty';
+    const puedeCrear = esMaster() || (fbUser && fbUser.rol === 'comercial');
     div.innerHTML = '<p>Todavía no hay ninguna hoja de zona.</p>' +
-                    '<button class="btn primary" data-act="new-hoja">Crear hoja de zona</button>';
+                    (puedeCrear
+                      ? '<button class="btn primary" data-act="new-hoja">Crear hoja de zona</button>'
+                      : '<p>No hay hojas para mostrar todavía.</p>');
     app.appendChild(div);
     return;
   }
@@ -1681,6 +1739,7 @@ function rerenderHoja(id){
 
 function buildHoja(h){
   const cerrada = esHojaCerrada(h);
+  const soloLectura = esSoloLectura();
   const semActual = semanaActualTexto();
   const plegada = !!(state.settings.hojasPlegadas && state.settings.hojasPlegadas[h.id]);
   const sec = document.createElement('section');
@@ -1689,17 +1748,38 @@ function buildHoja(h){
   if(cerrada) sec.dataset.cerrada = '1';
   const head = document.createElement('div');
   head.className = 'hoja-head';
+
+  const oficinaFija = fbUser && fbUser.oficina && fbUser.rol !== 'master';
+  const oficinaValor = oficinaFija ? fbUser.oficina : h.oficina;
+
   let extraColsHTML = '';
-  if(cerrada){
-    const ico = plegada ? '▸' : '▾';
-    extraColsHTML =
-      '<button class="toggle-collapse ' + (plegada ? '' : 'open') + '" ' +
-        'data-act="toggle-collapse" data-hoja-id="' + esc(h.id) + '" ' +
-        'title="' + (plegada ? 'Desplegar' : 'Plegar') + '">' + ico + '</button>' +
-      '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja">✕</button>';
+  // Solo master y comercial pueden borrar/colapsar/crear hojas
+  const puedeBorrarHoja = !soloLectura;
+  if(!soloLectura){
+    if(cerrada){
+      const ico = plegada ? '▸' : '▾';
+      extraColsHTML =
+        '<button class="toggle-collapse ' + (plegada ? '' : 'open') + '" ' +
+          'data-act="toggle-collapse" data-hoja-id="' + esc(h.id) + '" ' +
+          'title="' + (plegada ? 'Desplegar' : 'Plegar') + '">' + ico + '</button>' +
+        '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja">✕</button>';
+    } else {
+      extraColsHTML = '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja">✕</button>';
+    }
   } else {
-    extraColsHTML = '<button class="icon-btn danger" data-act="del-hoja" title="Eliminar hoja">✕</button>';
+    // Gestión/Coordinadora: botón para colapsar solo si está cerrada
+    if(cerrada){
+      const ico = plegada ? '▸' : '▾';
+      extraColsHTML =
+        '<button class="toggle-collapse ' + (plegada ? '' : 'open') + '" ' +
+          'data-act="toggle-collapse" data-hoja-id="' + esc(h.id) + '" ' +
+          'title="' + (plegada ? 'Desplegar' : 'Plegar') + '">' + ico + '</button>' +
+        '<span></span>';
+    } else {
+      extraColsHTML = '<span></span>';
+    }
   }
+
   head.innerHTML =
     '<label>Usuario' +
       '<input type="text" data-meta="comercial" value="' + esc(fbUser ? fbUser.nombre : h.comercial) + '" readonly tabindex="-1" style="background:#f1f5f9;color:var(--muted);font-weight:700;cursor:default;">' +
@@ -1707,15 +1787,19 @@ function buildHoja(h){
     '<label class="semana-ro">Semana (auto)' +
       '<input type="text" data-meta="semana" value="' + esc(h.semana) + '" readonly tabindex="-1">' +
     '</label>' +
-    '<label>Oficina<select data-meta="oficina">' +
-      buildOptions(OFICINAS, h.oficina, null) +
-    '</select></label>' +
+    '<label>Oficina' +
+      (oficinaFija
+        ? '<input type="text" data-meta="oficina" value="' + esc(oficinaValor) + '" readonly tabindex="-1" class="oficina-fija">'
+        : '<select data-meta="oficina">' + buildOptions(OFICINAS, oficinaValor, null) + '</select>') +
+    '</label>' +
     extraColsHTML +
     (cerrada
       ? '<div class="banner-cerrada" data-hoja-id="' + esc(h.id) + '">' +
           '<span class="lock">🔒</span>' +
-          '<span class="txt"><strong>Cerrada</strong> · Semana ' + esc(h.semana) + '. Consulta el expediente o crea una hoja nueva.</span>' +
-          '<button type="button" class="banner-btn light" data-act="crear-hoja-desde-banner" data-hoja-id="' + esc(h.id) + '">➕ Nueva hoja</button>' +
+          '<span class="txt"><strong>Cerrada</strong> · Semana ' + esc(h.semana) + '.' +
+            (soloLectura ? '' : ' Consulta el expediente o crea una hoja nueva.') +
+          '</span>' +
+          (soloLectura ? '' : '<button type="button" class="banner-btn light" data-act="crear-hoja-desde-banner" data-hoja-id="' + esc(h.id) + '">➕ Nueva hoja</button>') +
         '</div>'
       : '');
   sec.appendChild(head);
@@ -1726,11 +1810,14 @@ function buildHoja(h){
   const foot = document.createElement('div');
   foot.className = 'hoja-actions';
   if(cerrada){
-    foot.innerHTML =
-      '<button class="btn small" data-act="show-closed" data-hoja-id="' + esc(h.id) + '">🔒 Esta hoja está cerrada</button>' +
-      '<button class="btn small" data-act="crear-hoja-desde-banner" data-hoja-id="' + esc(h.id) + '">➕ Crear hoja para la semana ' + esc(semActual) + '</button>';
+    foot.innerHTML = soloLectura
+      ? '<span style="font-size:12px;color:var(--muted)">🔒 Hoja cerrada · Solo lectura</span>'
+      : '<button class="btn small" data-act="show-closed" data-hoja-id="' + esc(h.id) + '">🔒 Esta hoja está cerrada</button>' +
+        '<button class="btn small" data-act="crear-hoja-desde-banner" data-hoja-id="' + esc(h.id) + '">➕ Crear hoja para la semana ' + esc(semActual) + '</button>';
   } else {
-    foot.innerHTML = '<button class="btn small" data-act="add-row">+ Añadir fila</button>';
+    foot.innerHTML = soloLectura
+      ? '<span style="font-size:12px;color:var(--muted)">👁️ Modo solo lectura</span>'
+      : '<button class="btn small" data-act="add-row">+ Añadir fila</button>';
   }
   sec.appendChild(foot);
   return sec;
@@ -1821,6 +1908,7 @@ function closeClosedModal(){
   closedContext = null;
 }
 function crearHojaDesdeCerrada(){
+  if(esSoloLectura()) return;
   const h = closedContext ? state.hojas.find(x => x.id === closedContext.hojaId) : null;
   const nueva = newHojaHeredandoDe(h);
   state.hojas.push(nueva);
@@ -1832,6 +1920,7 @@ function crearHojaDesdeCerrada(){
   toast('Hoja creada para la semana ' + nueva.semana);
 }
 function crearHojaDesdeBanner(hojaId){
+  if(esSoloLectura()) return;
   const h = state.hojas.find(x => x.id === hojaId);
   const nueva = newHojaHeredandoDe(h);
   state.hojas.push(nueva);
@@ -1860,6 +1949,7 @@ function toggleCollapse(hojaId){
 
 function openDupModal(){
   if(!editing) return;
+  if(esSoloLectura()) return;
   dupContext = { hojaId: editing.hojaId, rowId: editing.rowId };
   const sel = $('#dupDestino');
   sel.innerHTML = '';
@@ -1892,6 +1982,7 @@ function closeDupModal(){
 }
 async function confirmarDuplicar(){
   if(!dupContext) return;
+  if(esSoloLectura()) return;
   const origenHoja = state.hojas.find(x => x.id === dupContext.hojaId);
   if(!origenHoja) return;
   const origen = localizaciones.get(dupContext.rowId);
@@ -1903,6 +1994,7 @@ async function confirmarDuplicar(){
   COLS.forEach(function(c){ datos[c.key] = origen[c.key] || ''; });
   delete datos.id; delete datos.claveUnica;
   delete datos.creadoPor; delete datos.creadoPorUid; delete datos.creadoEn; delete datos.creadoSemana;
+  delete datos.creadoPorOficina;
   delete datos.actualizadoPor; delete datos.actualizadoPorUid; delete datos.actualizadoEn;
   delete datos.ultimaSemana;
   delete datos.historial;
@@ -1918,6 +2010,7 @@ async function confirmarDuplicar(){
 }
 
 function addHoja(){
+  if(esSoloLectura()) return;
   state.hojas.push(newHoja());
   saveMetadatos(); render();
   const last = state.hojas[state.hojas.length - 1];
@@ -1928,10 +2021,10 @@ function addHoja(){
 function newHoja(){
   const semActual = semanaActualTexto();
   let comercial = fbUser ? fbUser.nombre : '';
-  let oficina = OFICINA_POR_DEFECTO;
-  if(state.hojas.length){
+  let oficina = (fbUser && fbUser.oficina) ? fbUser.oficina : OFICINA_POR_DEFECTO;
+  if(state.hojas.length && esMaster()){
     const ult = state.hojas[state.hojas.length - 1];
-    if(ult.oficina)   oficina   = ult.oficina;
+    if(ult.oficina) oficina = ult.oficina;
   }
   return { id: uid(), comercial: comercial, semana: semActual, oficina: oficina, filas: [] };
 }
@@ -1940,12 +2033,13 @@ function newHojaHeredandoDe(h){
     id: uid(),
     comercial: fbUser ? fbUser.nombre : '',
     semana: semanaActualTexto(),
-    oficina: h ? (h.oficina || OFICINA_POR_DEFECTO) : OFICINA_POR_DEFECTO,
+    oficina: (fbUser && fbUser.oficina) ? fbUser.oficina : (h ? (h.oficina || OFICINA_POR_DEFECTO) : OFICINA_POR_DEFECTO),
     filas: []
   };
 }
 
 function delHoja(id){
+  if(esSoloLectura()) return;
   const h = state.hojas.find(x => x.id === id);
   if(!h) return;
   const n = h.filas.length;
@@ -1958,6 +2052,7 @@ function delHoja(id){
 }
 
 async function addRow(hojaId, openIt){
+  if(esSoloLectura()) return;
   if(addRowEnCurso) return;
   addRowEnCurso = true;
 
@@ -2024,13 +2119,14 @@ function openEditor(hojaId, idLocalizacion, opts){
   const loc = localizaciones.get(idLocalizacion);
   if(!loc){ toast('Localización no cargada. Espera a que se sincronice.'); return; }
 
-  if(fbUser && fbUser.rol !== 'master' && loc.creadoPorUid && loc.creadoPorUid !== fbUser.uid){
+  if(fbUser && fbUser.rol !== 'master' && loc.creadoPorUid && loc.creadoPorUid !== fbUser.uid && !esSoloLectura()){
     toast('No tienes permiso para editar este registro');
     return;
   }
 
   const cerrada = esHojaCerrada(h);
-  editing = { hojaId: hojaId, rowId: idLocalizacion, soloLectura: cerrada };
+  const soloLectura = esSoloLectura();
+  editing = { hojaId: hojaId, rowId: idLocalizacion, soloLectura: cerrada || soloLectura };
   dupEnEditor = null;
 
   const titulo = [loc.calle, loc.numero, loc.piso].filter(Boolean).join(' ');
@@ -2040,7 +2136,7 @@ function openEditor(hojaId, idLocalizacion, opts){
   const fieldsHtml = FIELD_DEFS.map(function(f){
     const cls = 'field' + (f.full ? ' full' : '') + (f.narrow ? ' narrow' : '');
     let ctrl;
-    const disabled = cerrada ? ' disabled' : '';
+    const disabled = (cerrada || soloLectura) ? ' disabled' : '';
     if(f.type === 'textarea'){
       ctrl = '<textarea data-k="' + f.key + '" rows="3" placeholder="' + (f.ph || '') + '"' + disabled + '>' + esc(loc[f.key]) + '</textarea>';
     } else if(f.type === 'select'){
@@ -2053,7 +2149,7 @@ function openEditor(hojaId, idLocalizacion, opts){
       ctrl = '<div class="input-with-clear">' +
                '<input type="text" data-k="' + f.key + '" value="' + esc(loc[f.key]) +
                  '" placeholder="' + (f.ph || '') + '" list="' + dlId + '" autocomplete="off" spellcheck="false"' + disabled + '>' +
-               (cerrada ? '' : '<button type="button" class="clear-btn" data-act="clear-calle" title="Limpiar">✕</button>') +
+               ((cerrada || soloLectura) ? '' : '<button type="button" class="clear-btn" data-act="clear-calle" title="Limpiar">✕</button>') +
              '</div>';
     } else {
       const extra = (f.type === 'tel' ? ' inputmode="tel"' : '') + (f.type === 'date' ? ' inputmode="numeric"' : '');
@@ -2070,8 +2166,11 @@ function openEditor(hojaId, idLocalizacion, opts){
   box.innerHTML = fieldsHtml + extrasHtml;
 
   const foot = $('#editor .sheet-foot');
-  if(cerrada){
-    foot.innerHTML = '<span style="font-size:12px;color:var(--muted)">🔒 Solo lectura</span>' +
+  if(soloLectura){
+    foot.innerHTML = '<span style="font-size:12px;color:var(--muted)">👁️ Solo lectura</span>' +
+                     '<button class="btn primary" data-act="close-editor">Cerrar</button>';
+  } else if(cerrada){
+    foot.innerHTML = '<span style="font-size:12px;color:var(--muted)">🔒 Hoja cerrada · Solo lectura</span>' +
                      '<button class="btn primary" data-act="close-editor">Cerrar</button>';
   } else {
     foot.innerHTML = '<button class="btn danger-ghost" data-act="del-row">Eliminar</button>' +
@@ -2085,7 +2184,7 @@ function openEditor(hojaId, idLocalizacion, opts){
   $('#editor').classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  if(!cerrada){
+  if(!cerrada && !soloLectura){
     const primero = box.querySelector('[data-k="calle"]');
     if(primero && !primero.value) setTimeout(() => primero.focus(), 120);
   }
@@ -2102,7 +2201,6 @@ function refrescarAvisoDuplicado(forzar){
   const slot = $('#ed-dup-slot');
   if(!slot) return;
   slot.innerHTML = '';
-
   if(!editing) return;
   if(editing.soloLectura) return;
 
@@ -2156,6 +2254,7 @@ function refrescarAvisoDuplicado(forzar){
 
 function cargarDatosExistentes(){
   if(!dupEnEditor || !editing) return;
+  if(editing.soloLectura) return;
   const loc = dupEnEditor;
   FIELD_DEFS.forEach(function(f){
     if(f.key === 'municipio' || f.key === 'calle' || f.key === 'numero' || f.key === 'piso') return;
@@ -2244,6 +2343,7 @@ function refrescarTimeline(){
 async function deleteRow(){
   if(!editing) return;
   if(editing.soloLectura){ closeEditor(); return; }
+  if(esSoloLectura()) return;
   const hojaId = editing.hojaId;
   const h = state.hojas.find(x => x.id === hojaId);
   if(!h) return;
@@ -2344,13 +2444,12 @@ document.addEventListener('click', function(e){
     const hojaId = hojaEl.dataset.hoja;
     const h = state.hojas.find(x => x.id === hojaId);
     if(!h) return;
-    if(tr.dataset.blank){ addRow(hojaId, true); return; }
+    if(tr.dataset.blank){
+      if(!esSoloLectura()) addRow(hojaId, true);
+      return;
+    }
     if(tr.dataset.row){
-      if(esHojaCerrada(h)){
-        openEditor(hojaId, tr.dataset.row, { soloLectura: true });
-        return;
-      }
-      openEditor(hojaId, tr.dataset.row);
+      openEditor(hojaId, tr.dataset.row, { soloLectura: esHojaCerrada(h) || esSoloLectura() });
     }
     return;
   }
@@ -2386,10 +2485,12 @@ function onFieldChange(e){
     if(!h) return;
     if(el.dataset.meta === 'semana' || el.dataset.meta === 'comercial') return;
     if(esHojaCerrada(h)){
-      if(el.dataset.meta === 'oficina') el.value = h.oficina || OFICINA_POR_DEFECTO;
-      showClosedModal(h.id);
+      if(el.dataset.meta === 'oficina'){
+        el.value = (fbUser && fbUser.oficina && fbUser.rol !== 'master') ? fbUser.oficina : (h.oficina || OFICINA_POR_DEFECTO);
+      }
       return;
     }
+    if(esSoloLectura()) return;
     h[el.dataset.meta] = el.value;
     const span = sec.querySelector('[data-meta-cell="' + el.dataset.meta + '"] span');
     if(span){
@@ -2402,6 +2503,7 @@ function onFieldChange(e){
 
   if(editing && el.dataset && el.dataset.k){
     if(editing.soloLectura) return;
+    if(esSoloLectura()) return;
     const key = el.dataset.k;
     const valor = el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value;
     editsPendientes[key] = valor;
@@ -2428,7 +2530,8 @@ function onFieldChange(e){
 
 async function flushEdiciones(){
   if(!editing) return;
-  if(editing.soloLectura){ return; }
+  if(editing.soloLectura) return;
+  if(esSoloLectura()) return;
   const id = editing.rowId;
   const cambios = Object.assign({}, editsPendientes);
   Object.keys(editsPendientes).forEach(k => delete editsPendientes[k]);
@@ -2630,18 +2733,19 @@ function aplicarBusquedaGlobal(){
     if(loc.estado) partes.push('🏷️ ' + esc(loc.estado));
     const meta = partes.length ? partes.join(' · ') : 'Sin datos adicionales';
     const yaEnHojaActual = hojaActualContiene(loc.id);
+    const acciones = esSoloLectura()
+      ? '<button class="btn" data-act="gr-abrir" data-row-id="' + esc(loc.id) + '" style="background:#e2e8f0;color:var(--ink)">Ver</button>'
+      : '<button class="btn" data-act="gr-abrir" data-row-id="' + esc(loc.id) + '" style="background:#e2e8f0;color:var(--ink)">Abrir</button>' +
+        (yaEnHojaActual
+          ? '<span style="font-size:11px;color:var(--muted);text-align:center;padding:4px 0">✓ En hoja</span>'
+          : '<button class="btn primary" data-act="gr-anadir" data-row-id="' + esc(loc.id) + '">➕ Añadir</button>');
     return '<div class="res-item" data-id="' + esc(loc.id) + '">' +
       '<div class="res-body">' +
         '<div class="res-dir">📍 ' + esc(loc.calle || '(sin calle)') + ' ' + esc(loc.numero || '') + (loc.piso ? ', ' + esc(loc.piso) : '') + '</div>' +
         '<div class="res-meta">' + esc(loc.municipio || '') + ' · Última semana: <strong>S' + esc(semana) + '</strong></div>' +
         '<div class="res-meta" style="margin-top:2px">' + meta + '</div>' +
       '</div>' +
-      '<div class="res-actions">' +
-        '<button class="btn" data-act="gr-abrir" data-row-id="' + esc(loc.id) + '" style="background:#e2e8f0;color:var(--ink)">Abrir</button>' +
-        (yaEnHojaActual
-          ? '<span style="font-size:11px;color:var(--muted);text-align:center;padding:4px 0">✓ En hoja</span>'
-          : '<button class="btn primary" data-act="gr-anadir" data-row-id="' + esc(loc.id) + '">➕ Añadir</button>') +
-      '</div>' +
+      '<div class="res-actions">' + acciones + '</div>' +
     '</div>';
   }).join('');
 
@@ -2701,6 +2805,7 @@ function abrirExpedienteGlobal(idLoc){
 }
 
 function anadirExpedienteAHojaActual(idLoc){
+  if(esSoloLectura()) return;
   let hoja = null;
   for(const h of state.hojas){
     if(!esHojaCerrada(h)){ hoja = h; break; }
@@ -2736,6 +2841,7 @@ function saveSettings(){
   toast('Ajustes guardados');
 }
 function openSharePick(){
+  if(!puedeExportar()){ toast('No tienes permiso para exportar'); return; }
   $('#sharePickModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   closeMenu();
@@ -2745,6 +2851,7 @@ function closeSharePick(){
   document.body.style.overflow = '';
 }
 function openExportScope(format){
+  if(!puedeExportar()){ toast('No tienes permiso para exportar'); return; }
   exportScopeContext = { format: format };
   $('#exportScopeModal').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2894,6 +3001,7 @@ function buildExcelBuffer(scope){
   return wb.xlsx.writeBuffer();
 }
 async function shareExcelNow(scope){
+  if(!puedeExportar()){ toast('No tienes permiso para exportar'); return; }
   scope = scope || 'current';
   closeSharePick();
   let buffer;
@@ -2940,6 +3048,7 @@ function buildCSVString(scope){
   return '\uFEFF' + lineas.join('\r\n');
 }
 async function shareCSVNow(scope){
+  if(!puedeExportar()){ toast('No tienes permiso para exportar'); return; }
   scope = scope || 'current';
   closeSharePick();
   const txt = buildCSVString(scope);
@@ -2972,6 +3081,7 @@ function descargar(nombre, contenido, mime){
   descargarBlob(nombre, blob);
 }
 function exportJSON(){
+  if(!puedeExportar()){ toast('No tienes permiso para exportar'); return; }
   const nombre = 'localizaciones-' + hoyISO() + '.json';
   descargar(nombre, JSON.stringify(state, null, 2), 'application/json');
   closeMenu(); toast('Copia descargada');
