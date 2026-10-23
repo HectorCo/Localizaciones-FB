@@ -950,6 +950,17 @@ window.addEventListener('firebase-ready', () => {
     }
   });
 });
+
+// --- CONTROL DE CAMBIO DE MUNICIPIO PARA ACTUALIZAR EL DATALIST DE CALLES ---
+document.addEventListener('change', function(e) {
+  if(e.target && e.target.dataset && e.target.dataset.k === 'municipio') {
+    const inputCalle = document.querySelector('#ed-fields [data-k="calle"]');
+    if(inputCalle) {
+      const dl = datalistIdPorMunicipio(e.target.value);
+      inputCalle.setAttribute('list', dl);
+    }
+  }
+});
 </script>
 </body>
 </html>
