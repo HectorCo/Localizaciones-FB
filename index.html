@@ -667,7 +667,9 @@ function openEditor(locId) {
     const val = normCheck(loc[f.key]) ? '1' : (loc[f.key]||'');
     let ctrl = '';
     if(f.type === 'textarea') ctrl = `<textarea data-k="${f.key}" ${ro?'disabled':''}>${esc(val)}</textarea>`;
-    else if(f.type === 'select') ctrl = `<select data-k="${f.key}" ${ro?'disabled':''}>${f.options.map(o => `<option value="${esc(o)}" ${o===val?'selected':''}>${o}</option>`).join('')}</select>`;
+    else if(f.type === 'select') {
+       ctrl = `<select data-k="${f.key}" ${ro?'disabled':''} ${f.key==='municipio'?'data-action="change-municipio"':''}>${f.options.map(o => `<option value="${esc(o)}" ${o===val?'selected':''}>${o}</option>`).join('')}</select>`;
+    }
     else if(f.type === 'check') ctrl = `<label class="check"><input type="checkbox" data-k="${f.key}" ${normCheck(val)?'checked':''} ${ro?'disabled':''}><span>${f.text}</span></label>`;
     else if(f.isCalle) {
        const dl = datalistIdPorMunicipio(loc.municipio);
@@ -956,8 +958,11 @@ document.addEventListener('change', function(e) {
   if(e.target && e.target.dataset && e.target.dataset.k === 'municipio') {
     const inputCalle = document.querySelector('#ed-fields [data-k="calle"]');
     if(inputCalle) {
-      // ACCEDEMOS A LA FUNCIÓN A TRAVÉS DE LA VARIABLE GLOBAL DE LA APP
-      const dl = window.app.datalistIdPorMunicipio(e.target.value);
+      // Buscamos la lista usando la nueva función interna expuesta
+      const dl = e.target.value === 'Esplugues de Llobregat' ? 'dl-calles-es' :
+                 e.target.value === 'Capellades' ? 'dl-calles-capellades' :
+                 e.target.value === 'Masquefa' ? 'dl-calles-masquefa' :
+                 e.target.value === 'Piera' ? 'dl-calles-piera' : 'dl-calles-lh';
       inputCalle.setAttribute('list', dl);
     }
   }
