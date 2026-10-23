@@ -203,6 +203,7 @@ mark.busq{background:#fde68a;color:inherit;padding:0 1px;border-radius:2px;}
   </div>
   <nav class="menu" id="menu">
     <button onclick="app.addHoja()" id="btnNewHoja">➕ Nueva hoja de zona</button>
+    <button onclick="app.volverAListaHojas()" id="btnVerHojas" style="display:none;">📁 Ver todas las hojas</button>
     <div class="sep"></div>
     <button onclick="app.logout()">🚪 Cerrar sesión</button>
   </nav>
@@ -438,7 +439,6 @@ async function arrancar(user) {
   const uRef = window.__fb.doc(db, 'usuarios', user.uid);
   let snap = await window.__fb.getDoc(uRef);
 
-  // --- AUTO-CREACIÓN DE PERFIL ---
   if(!snap.exists()) {
     const localPart = user.email.split('@')[0];
     const m = localPart.match(/^comercial(\d{1,2})$/);
@@ -468,7 +468,6 @@ async function arrancar(user) {
   const p = snap.data();
   if(p.activo === false) { toast('Cuenta desactivada.'); return logout(); }
 
-  // Lee la oficina real configurada en Firebase
   fbUser = { uid: user.uid, nombre: p.nombre, rol: p.rol, oficina: p.oficina || OFICINA_POR_DEFECTO };
 
   const marca = $('.brand strong');
@@ -484,9 +483,11 @@ async function arrancar(user) {
   if(esGestor()) { 
     $('#fabBtn').style.display = 'none'; 
     $('#btnNewHoja').style.display = 'none'; 
+    $('#btnVerHojas').style.display = 'flex'; 
   } else {
     $('#fabBtn').style.display = 'grid'; 
     $('#btnNewHoja').style.display = 'flex'; 
+    $('#btnVerHojas').style.display = 'none'; 
   }
 
   $('#loginOverlay').classList.add('hidden');
@@ -570,9 +571,18 @@ function render() {
     ? '<button class="icon-btn danger" onclick="app.borrarHoja()" title="Eliminar hoja">✕</button>' 
     : '<span></span>';
 
+  let headerTitle = '';
+  let btnVolver = '';
+  if (esGestor() || esMaster()) {
+    btnVolver = `<button class="btn small" style="grid-column: 1/-1; margin-bottom: 5px; background:#e2e8f0; width: fit-content;" onclick="app.volverAListaHojas()">← Volver a todas las hojas</button>`;
+    headerTitle = `<div style="grid-column: 1/-1; font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 5px;">👁️ Supervisando hoja de: ${esc(h.comercialNombre)}</div>`;
+  }
+
   $('#app').innerHTML = `
     <section class="hoja ${isCerrada ? 'cerrada' : ''}" data-hoja="${h.id}">
       <div class="hoja-head">
+        ${btnVolver}
+        ${headerTitle}
         <label>Usuario<input class="semana-ro" type="text" value="${esc(h.comercialNombre)}" readonly></label>
         <label class="semana-ro">Semana (auto)<input type="text" value="${esc(h.semana)}" readonly></label>
         <label class="semana-ro">Oficina<input type="text" value="${esc(h.oficina)}" readonly></label>
@@ -666,7 +676,6 @@ async function addRow() {
   const h = hojas.get(hojaActivaId);
   if(h.estado === 'cerrada' || h.semana !== semanaActual()) { toast('Hoja cerrada'); return; }
 
-  // Abrimos el editor en modo borrador sin crear nada en Firestore
   editingLoc = { hojaId: hojaActivaId, locId: 'nuevo' };
   const locFalsa = { fecha: hoyISO(), municipio: 'Hospitalet de Llobregat' };
   llenarEditor(locFalsa, false);
@@ -811,7 +820,7 @@ async function confirmarDuplicar() {
 }
 
 function mostrarSelectorHojas() {
-  let html = '<p style="color:var(--muted);font-size:14px;margin-bottom:16px;">Haz clic en una hoja para verla.</p>';
+  let html = '<p style="color:var(--muted);font-size:14px;margin-bottom:16px;">Selecciona una hoja para supervisarla:</p>';
   const porComercial = {};
   hojas.forEach(h => {
     if(!porComercial[h.comercialNombre]) porComercial[h.comercialNombre] = [];
@@ -819,21 +828,24 @@ function mostrarSelectorHojas() {
   });
 
   Object.keys(porComercial).sort().forEach(nombre => {
-    html += `<h3 style="margin:16px 0 8px;font-size:15px;color:var(--ink);">${nombre}</h3>`;
+    html += `<h3 style="margin:16px 0 8px;font-size:15px;color:var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 4px;">👤 ${nombre}</h3>`;
     porComercial[nombre].sort((a,b) => b.semana - a.semana).forEach(h => {
       const icono = h.estado === 'cerrada' || h.semana !== semanaActual() ? '🔒 ' : '📅 ';
       html += `
         <div class="select-hoja-card" onclick="app.abrirHojaGestor('${h.id}')">
           <div class="select-hoja-info">
             <strong>${icono}Semana ${h.semana}</strong>
-            <small>${h.filas ? h.filas.length : 0} registros</small>
+            <small>${h.filas ? h.filas.length : 0} registros registrados</small>
           </div>
           <span style="font-size:20px;color:var(--muted);">›</span>
         </div>`;
     });
   });
 
-  if(hojas.size === 0) html = '<p>No hay hojas registradas todavía.</p>';
+  if(hojas.size === 0) html = '<p style="padding: 20px; text-align: center; color: var(--muted);">No hay hojas registradas todavía en tu oficina.</p>';
+  
+  $('#app').innerHTML = ''; 
+  
   $('#selectorHojasLista').innerHTML = html;
   $('#selectorHojasModal').classList.add('open');
 }
@@ -970,6 +982,7 @@ return {
   closeDupModal: () => closeDupModal(),
   confirmarDuplicar: () => confirmarDuplicar(),
   abrirHojaGestor: (id) => abrirHojaGestor(id),
+  volverAListaHojas: () => { hojaActivaId = null; mostrarSelectorHojas(); },
   openShare: () => $('#shareModal').classList.add('open'),
   exportar: (f) => exportar(f),
   logout: () => logout(),
