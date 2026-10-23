@@ -441,12 +441,10 @@ async function arrancar(user) {
   // --- AUTO-CREACIÓN DE PERFIL ---
   if(!snap.exists()) {
     const localPart = user.email.split('@')[0];
-    // Detectar si es comercial 01, comercial 02, etc.
     const m = localPart.match(/^comercial(\d{1,2})$/);
     let nombre = m ? 'comercial ' + String(parseInt(m[1],10)).padStart(2,'0') : localPart;
     let rol = localPart === 'master' ? 'master' : 'comercial';
     
-    // Si el email contiene "gestion" o "coordinadora", asignar ese rol
     if (localPart.startsWith('gestion')) rol = 'gestion';
     if (localPart.startsWith('coordinadora')) rol = 'coordinadora';
 
@@ -459,19 +457,19 @@ async function arrancar(user) {
 
     try {
       await window.__fb.setDoc(uRef, nuevoPerfil);
-      snap = await window.__fb.getDoc(uRef); // Recargar
+      snap = await window.__fb.getDoc(uRef);
     } catch(err) {
       console.warn('Error creando perfil:', err);
       toast('No se pudo crear tu perfil automáticamente.');
       return logout();
     }
   }
-  // --------------------------------
 
   const p = snap.data();
   if(p.activo === false) { toast('Cuenta desactivada.'); return logout(); }
 
-  fbUser = { uid: user.uid, nombre: p.nombre, rol: p.rol, oficina: p.oficina || null };
+  // Lee la oficina real configurada en Firebase
+  fbUser = { uid: user.uid, nombre: p.nombre, rol: p.rol, oficina: p.oficina || OFICINA_POR_DEFECTO };
 
   const marca = $('.brand strong');
   const badgeViejo = marca.querySelector('.badge-rol');
@@ -668,14 +666,10 @@ async function addRow() {
   const h = hojas.get(hojaActivaId);
   if(h.estado === 'cerrada' || h.semana !== semanaActual()) { toast('Hoja cerrada'); return; }
 
-  const datos = { fecha: hoyISO(), municipio: 'Hospitalet de Llobregat' };
-  const locRef = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'localizaciones'), {
-    ...datos, creadoPor: fbUser.nombre, creadoPorUid: fbUser.uid, creadoPorOficina: fbUser.oficina, creadoEn: new Date(), historial: []
-  });
-  
-  const nuevasFilas = [...(h.filas||[]), locRef.id];
-  await window.__fb.updateDoc(window.__fb.doc(window.__fb.db, 'hojas', hojaActivaId), { filas: nuevasFilas });
-  setTimeout(() => openEditor(locRef.id), 600);
+  // Abrimos el editor en modo borrador sin crear nada en Firestore
+  editingLoc = { hojaId: hojaActivaId, locId: 'nuevo' };
+  const locFalsa = { fecha: hoyISO(), municipio: 'Hospitalet de Llobregat' };
+  llenarEditor(locFalsa, false);
 }
 
 function openEditor(locId) {
@@ -686,6 +680,10 @@ function openEditor(locId) {
   const ro = esSoloLectura() || isCerrada;
 
   editingLoc = { hojaId: hojaActivaId, locId: locId };
+  llenarEditor(loc, ro);
+}
+
+function llenarEditor(loc, ro) {
   $('#ed-title').textContent = loc.calle || 'Nuevo registro';
 
   $('#ed-fields').innerHTML = FIELD_DEFS.map(f => {
@@ -707,8 +705,9 @@ function openEditor(locId) {
   if (ro) {
     $('#ed-foot').innerHTML = `<button class="btn primary" onclick="app.closeEditor()">Cerrar</button>`;
   } else {
+    const btnEliminar = loc.id ? `<button class="btn danger-ghost" onclick="app.delRow()">Eliminar</button>` : '';
     $('#ed-foot').innerHTML = `
-      <button class="btn danger-ghost" onclick="app.delRow()">Eliminar</button>
+      ${btnEliminar}
       <button class="btn" onclick="app.openDupModal()" style="background:#dbeafe;color:#1e40af">📋 Duplicar</button>
       <button class="btn primary" onclick="app.saveRow()">Guardar</button>
     `;
@@ -724,7 +723,24 @@ async function saveRow() {
   inputs.forEach(el => { 
     update[el.dataset.k] = el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value; 
   });
-  await window.__fb.updateDoc(window.__fb.doc(window.__fb.db, 'localizaciones', editingLoc.locId), update);
+
+  if (editingLoc.locId === 'nuevo') {
+    const locRef = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'localizaciones'), {
+      ...update, 
+      creadoPor: fbUser.nombre, 
+      creadoPorUid: fbUser.uid, 
+      creadoPorOficina: fbUser.oficina, 
+      creadoEn: new Date(), 
+      historial: []
+    });
+    
+    const h = hojas.get(hojaActivaId);
+    const nuevasFilas = [...(h.filas||[]), locRef.id];
+    await window.__fb.updateDoc(window.__fb.doc(window.__fb.db, 'hojas', hojaActivaId), { filas: nuevasFilas });
+  } else {
+    await window.__fb.updateDoc(window.__fb.doc(window.__fb.db, 'localizaciones', editingLoc.locId), update);
+  }
+  
   toast('Guardado');
   closeEditor();
 }
@@ -972,8 +988,8 @@ window.addEventListener('firebase-ready', () => {
   window.__fb.onAuthStateChanged(window.__fb.auth, user => {
     if (user) window.app.arrancar(user);
     else {
-      $('#loginOverlay').classList.remove('hidden');
-      $('#appMain').style.display = 'none';
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('appMain').style.display = 'none';
     }
   });
 });
@@ -983,12 +999,14 @@ document.addEventListener('change', function(e) {
   if(e.target && e.target.dataset && e.target.dataset.k === 'municipio') {
     const inputCalle = document.querySelector('#ed-fields [data-k="calle"]');
     if(inputCalle) {
-      // Buscamos la lista usando la nueva función interna expuesta
       const dl = e.target.value === 'Esplugues de Llobregat' ? 'dl-calles-es' :
                  e.target.value === 'Capellades' ? 'dl-calles-capellades' :
                  e.target.value === 'Masquefa' ? 'dl-calles-masquefa' :
                  e.target.value === 'Piera' ? 'dl-calles-piera' : 'dl-calles-lh';
+      
       inputCalle.setAttribute('list', dl);
+      // Limpiamos la calle para que no se guarde la del municipio anterior
+      inputCalle.value = '';
     }
   }
 });
