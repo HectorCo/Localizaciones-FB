@@ -667,7 +667,7 @@ function openEditor(locId) {
     const val = normCheck(loc[f.key]) ? '1' : (loc[f.key]||'');
     let ctrl = '';
     if(f.type === 'textarea') ctrl = `<textarea data-k="${f.key}" ${ro?'disabled':''}>${esc(val)}</textarea>`;
-    else if(f.type === 'select') ctrl = `<select data-k="${f.key}" ${ro?'disabled':''}>${f.options.map(o => `<option ${o===val?'selected':''}>${o}</option>`).join('')}</select>`;
+    else if(f.type === 'select') ctrl = `<select data-k="${f.key}" ${ro?'disabled':''}>${f.options.map(o => `<option value="${esc(o)}" ${o===val?'selected':''}>${o}</option>`).join('')}</select>`;
     else if(f.type === 'check') ctrl = `<label class="check"><input type="checkbox" data-k="${f.key}" ${normCheck(val)?'checked':''} ${ro?'disabled':''}><span>${f.text}</span></label>`;
     else if(f.isCalle) {
        const dl = datalistIdPorMunicipio(loc.municipio);
