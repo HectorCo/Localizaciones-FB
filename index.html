@@ -343,6 +343,7 @@ window.app = (function(){
 
 const MUNICIPIOS = ['Hospitalet de Llobregat','Esplugues de Llobregat','Capellades','Masquefa','Piera'];
 const ESTADOS = ['Buzón lleno', 'Okupado', 'Vacío', 'Venta', 'Otros'];
+const OFICINA_POR_DEFECTO = 'Enric Prat de la Riba';
 
 const ID_A_DATALIST = {
   'hospitalet': 'dl-calles-lh', 'esplugues': 'dl-calles-es', 'capellades': 'dl-calles-capellades',
@@ -436,13 +437,37 @@ async function arrancar(user) {
   const db = window.__fb.db;
   const uRef = window.__fb.doc(db, 'usuarios', user.uid);
   let snap = await window.__fb.getDoc(uRef);
-  
-  if(!snap.exists() && user.email.startsWith('master@')) {
-    await window.__fb.setDoc(uRef, { nombre:'master', rol:'master', activo:true });
-    snap = await window.__fb.getDoc(uRef);
-  }
 
-  if(!snap.exists()) { toast('No tienes perfil.'); return logout(); }
+  // --- AUTO-CREACIÓN DE PERFIL ---
+  if(!snap.exists()) {
+    const localPart = user.email.split('@')[0];
+    // Detectar si es comercial 01, comercial 02, etc.
+    const m = localPart.match(/^comercial(\d{1,2})$/);
+    let nombre = m ? 'comercial ' + String(parseInt(m[1],10)).padStart(2,'0') : localPart;
+    let rol = localPart === 'master' ? 'master' : 'comercial';
+    
+    // Si el email contiene "gestion" o "coordinadora", asignar ese rol
+    if (localPart.startsWith('gestion')) rol = 'gestion';
+    if (localPart.startsWith('coordinadora')) rol = 'coordinadora';
+
+    const nuevoPerfil = {
+      nombre: nombre,
+      rol: rol,
+      activo: true,
+      oficina: OFICINA_POR_DEFECTO
+    };
+
+    try {
+      await window.__fb.setDoc(uRef, nuevoPerfil);
+      snap = await window.__fb.getDoc(uRef); // Recargar
+    } catch(err) {
+      console.warn('Error creando perfil:', err);
+      toast('No se pudo crear tu perfil automáticamente.');
+      return logout();
+    }
+  }
+  // --------------------------------
+
   const p = snap.data();
   if(p.activo === false) { toast('Cuenta desactivada.'); return logout(); }
 
