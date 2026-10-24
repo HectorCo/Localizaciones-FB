@@ -346,16 +346,12 @@ const MUNICIPIOS = ['Hospitalet de Llobregat','Esplugues de Llobregat','Capellad
 const ESTADOS = ['Buzón lleno', 'Okupado', 'Vacío', 'Venta', 'Otros'];
 const OFICINA_POR_DEFECTO = 'Enric Prat de la Riba';
 
-// AQUÍ ESTÁ LA MAGIA: Definimos a qué oficina pertenece cada comercial por su número
+// Diccionario dinámico: "comercial 11" -> "Oficina 3"
+let usuariosOficinas = new Map(); 
+
 function obtenerOficinaPorComercial(nombreComercial) {
   if (!nombreComercial) return null;
-  const match = nombreComercial.match(/comercial (\d+)/i);
-  if (match) {
-    const num = parseInt(match[1], 10);
-    if (num >= 1 && num <= 5) return 'Aguas';
-    if (num >= 6 && num <= 10) return 'Enric Prat de la Riba';
-  }
-  return null;
+  return usuariosOficinas.get(nombreComercial) || null;
 }
 
 const ID_A_DATALIST = {
@@ -523,6 +519,26 @@ async function arrancar(user) {
   $('#loginOverlay').classList.add('hidden');
   $('#appMain').style.display = 'block';
 
+  // DESCARGAR USUARIOS PARA CONOCER SUS OFICINAS
+  window.__fb.onSnapshot(window.__fb.collection(db, 'usuarios'), snapU => {
+    usuariosOficinas.clear();
+    snapU.forEach(d => {
+      const u = d.data();
+      if (u.nombre && u.oficina) {
+        usuariosOficinas.set(u.nombre, u.oficina);
+      }
+    });
+    
+    // Si ya había un menú en pantalla, lo refrescamos para que el contador se actualice
+    if (esGestor() && !hojaActivaId) mostrarMenuGestor();
+    
+    // Si hay una hoja activa y es gestor, podemos re-filtrar
+    if (esGestor() && hojaActivaId) {
+      // Forzamos una recarga de la tabla por si acaso
+      renderTabla();
+    }
+  });
+
   window.__fb.onSnapshot(window.__fb.collection(db, 'calles'), snapC => {
     callesPorMunicipio.clear();
     snapC.forEach(d => {
@@ -549,11 +565,8 @@ async function arrancar(user) {
 
   let qH;
   if(esMaster()) qH = window.__fb.collection(db, 'hojas');
-  else if(esGestor()) {
-    qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('oficina', '==', fbUser.oficina));
-  } else {
-    qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('comercialUid', '==', fbUser.uid));
-  }
+  else if(esGestor()) qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('oficina', '==', fbUser.oficina));
+  else qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('comercialUid', '==', fbUser.uid));
 
   window.__fb.onSnapshot(qH, snapH => {
     hojas.clear();
@@ -561,10 +574,9 @@ async function arrancar(user) {
       let data = d.data(); 
       data.id = d.id; 
       
-      // AQUÍ APLICAMOS EL FILTRO ESTRICTO POR NOMBRE DE COMERCIAL (SI ES GESTOR)
+      // FILTRO DE SEGURIDAD CON EL DICCIONARIO DINÁMICO
       if (esGestor()) {
         const oficinaDelComercial = obtenerOficinaPorComercial(data.comercialNombre);
-        // Si no es un comercial válido (ej. es un gestor) o su oficina no coincide con el gestor, lo ignoramos
         if (oficinaDelComercial && oficinaDelComercial !== fbUser.oficina) return;
       }
       
@@ -592,7 +604,6 @@ async function arrancar(user) {
 }
 
 function mostrarMenuGestor() {
-  // EL CONTADOR TAMBIÉN FILTRA POR LA NUEVA LÓGICA
   const hojasComerciales = Array.from(hojas.values()).filter(h => {
     if (h.comercialUid === fbUser.uid) return false;
     const oficinaDelComercial = obtenerOficinaPorComercial(h.comercialNombre);
@@ -935,7 +946,6 @@ function mostrarSelectorHojas() {
   hojas.forEach(h => {
     if(h.comercialUid === fbUser.uid) return; 
     
-    // FILTRO ESTRICTO EN EL SELECTOR TAMBIÉN
     if (esGestor()) {
       const oficinaDelComercial = obtenerOficinaPorComercial(h.comercialNombre);
       if (oficinaDelComercial && oficinaDelComercial !== fbUser.oficina) return;
