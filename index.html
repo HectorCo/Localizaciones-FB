@@ -699,7 +699,7 @@ function render() {
         ${headerTitle}
         <label>Usuario<input class="semana-ro" type="text" value="${esc(h.comercialNombre)}" readonly></label>
         <label class="semana-ro">Semana (auto)<input type="text" value="${esc(h.semana)}" readonly></label>
-        <label class="semana-ro">Oficina<input type="text" value="${esc(h.oficina)}" readonly></label>
+        <label class="semana-ro">Oficina<input type="text" value="${esc(obtenerOficinaPorComercial(h.comercialNombre) || h.oficina)}" readonly></label>
         ${btnBorrar}
         ${banner}
       </div>
