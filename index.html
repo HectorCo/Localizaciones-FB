@@ -914,8 +914,12 @@ async function confirmarDuplicar() {
 function mostrarSelectorHojas() {
   let html = '<p style="color:var(--muted);font-size:14px;margin-bottom:16px;">Selecciona una hoja para supervisarla:</p>';
   const porComercial = {};
+  
   hojas.forEach(h => {
-    if(h.comercialUid === fbUser.uid) return; // Ocultar la mía propia
+    // Ignorar mi propia hoja y la de otras oficinas
+    if(h.comercialUid === fbUser.uid) return; 
+    if(esGestor() && h.oficina !== fbUser.oficina) return;
+
     if(!porComercial[h.comercialNombre]) porComercial[h.comercialNombre] = [];
     porComercial[h.comercialNombre].push(h);
   });
@@ -935,6 +939,13 @@ function mostrarSelectorHojas() {
     });
   });
 
+  if(Object.keys(porComercial).length === 0) html = '<p style="padding: 20px; text-align: center; color: var(--muted);">No hay hojas de comerciales registradas en tu oficina.</p>';
+  
+  $('#app').innerHTML = ''; 
+  
+  $('#selectorHojasLista').innerHTML = html;
+  $('#selectorHojasModal').classList.add('open');
+}
   if(Object.keys(porComercial).length === 0) html = '<p style="padding: 20px; text-align: center; color: var(--muted);">No hay hojas de comerciales registradas todavía.</p>';
   
   $('#app').innerHTML = ''; 
