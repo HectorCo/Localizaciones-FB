@@ -821,7 +821,7 @@ async function delRow() {
   if(!loc) return;
   
   // Seguridad extra a nivel de cliente
-  if(loc.creadoPorUid !== fbUser.uid && !esMaster()) {
+    if(loc.creadoPorUid !== fbUser.uid && !esMaster() && !(esGestor() && loc.creadoPorOficina === fbUser.oficina)) {
     toast('No tienes permiso para eliminar este registro');
     return;
   }
