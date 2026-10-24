@@ -773,7 +773,7 @@ function llenarEditor(loc, ro) {
     $('#ed-foot').innerHTML = `<button class="btn primary" onclick="app.closeEditor()">Cerrar</button>`;
   } else {
     // Solo permitimos borrar si el registro ya existe y el usuario es el creador (o master)
-    const puedeBorrar = loc.id && (loc.creadoPorUid === fbUser.uid || esMaster());
+    const puedeBorrar = loc.id && (loc.creadoPorUid === fbUser.uid || esMaster() || (esGestor() && loc.creadoPorOficina === fbUser.oficina));
     const btnEliminar = puedeBorrar ? `<button class="btn danger-ghost" onclick="app.delRow()">Eliminar</button>` : '';
     
     $('#ed-foot').innerHTML = `
