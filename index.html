@@ -591,17 +591,15 @@ async function irAMiHoja() {
     hojaActivaId = miHoja.id;
     render();
   } else {
-    // Solo llegará aquí si NO tiene ninguna hoja en la semana actual
-    if(confirm('No tienes ninguna hoja esta semana. ¿Quieres crear una nueva?')) {
-      const sem = semanaActual();
-      const ref = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'hojas'), {
-        comercialUid: fbUser.uid, comercialNombre: fbUser.nombre, oficina: fbUser.oficina,
-        semana: sem, estado: 'abierta', filas: [], creadoEn: new Date()
-      });
-      hojaActivaId = ref.id;
-      render();
-      toast('Hoja de zona creada');
-    }
+    // Si no tiene hoja, la creamos automáticamente
+    const sem = semanaActual();
+    const ref = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'hojas'), {
+      comercialUid: fbUser.uid, comercialNombre: fbUser.nombre, oficina: fbUser.oficina,
+      semana: sem, estado: 'abierta', filas: [], creadoEn: new Date()
+    });
+    hojaActivaId = ref.id;
+    render();
+    toast('Hoja de zona creada');
   }
 }
 
