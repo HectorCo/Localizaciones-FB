@@ -1066,9 +1066,9 @@ async function exportar(formato) {
 
 return {
   toggleMenu: () => $('#menu').classList.toggle('open'),
-  addHoja: () => { 
+    addHoja: () => { 
     if(esComercial() || esGestor()) {
-      irAMiHoja(); // Si ya tiene una, va a ella, si no, la crea.
+      irAMiHoja(); 
     } else {
       mostrarSelectorHojas(); 
     }
