@@ -575,9 +575,13 @@ async function arrancar(user) {
   });
 
   let qH;
-  if(esMaster()) qH = window.__fb.collection(db, 'hojas');
-  else if(esGestor()) qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('oficina', '==', fbUser.oficina));
-  else qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('comercialUid', '==', fbUser.uid));
+  if(esMaster() || esGestor()) {
+    // Los gestores piden TODAS las hojas. El filtro de oficina se hace luego en memoria.
+    qH = window.__fb.collection(db, 'hojas');
+  } else {
+    // Los comerciales solo piden las suyas.
+    qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('comercialUid', '==', fbUser.uid));
+  }
 
   window.__fb.onSnapshot(qH, snapH => {
     hojas.clear();
