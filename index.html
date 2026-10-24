@@ -441,8 +441,6 @@ async function arrancar(user) {
 
   if(!snap.exists()) {
     const localPart = user.email.split('@')[0];
-    
-    // Lógica para determinar nombre, rol y oficina basándose en el usuario
     let nombre = localPart;
     let rol = 'comercial';
     let oficina = OFICINA_POR_DEFECTO;
@@ -454,8 +452,6 @@ async function arrancar(user) {
       rol = 'master';
       nombre = 'Master';
     } else if (localPart.startsWith('gestion') || localPart.startsWith('coordinadora')) {
-      // Ejemplo: gestionaguas -> rol: gestion, oficina: Aguas
-      // Ejemplo: coordinadoraepr -> rol: coordinadora, oficina: Enric Prat De La Riba
       let base, sufijo;
       if (localPart.startsWith('gestion')) { rol = 'gestion'; base = 'gestion'; }
       else { rol = 'coordinadora'; base = 'coordinadora'; }
@@ -463,7 +459,7 @@ async function arrancar(user) {
       sufijo = localPart.replace(base, '');
       if (sufijo === 'aguas') oficina = 'Aguas';
       else if (sufijo === 'epr') oficina = 'Enric Prat de la Riba';
-      else oficina = sufijo.charAt(0).toUpperCase() + sufijo.slice(1); // Fallback
+      else oficina = sufijo.charAt(0).toUpperCase() + sufijo.slice(1);
       
       nombre = base.charAt(0).toUpperCase() + base.slice(1) + ' ' + oficina;
     }
@@ -488,6 +484,7 @@ async function arrancar(user) {
   const p = snap.data();
   if(p.activo === false) { toast('Cuenta desactivada.'); return logout(); }
 
+  // AQUÍ GUARDAMOS SU OFICINA EN MEMORIA
   fbUser = { uid: user.uid, nombre: p.nombre, rol: p.rol, oficina: p.oficina || OFICINA_POR_DEFECTO };
 
   const marca = $('.brand strong');
@@ -498,7 +495,6 @@ async function arrancar(user) {
   badge.textContent = fbUser.rol.toUpperCase();
   marca.appendChild(badge);
 
-      // Configuración de visibilidad de botones
   if($('#btnShare')) $('#btnShare').style.display = (esGestor() || esMaster()) ? '' : 'none';
   if($('#fabBtn')) $('#fabBtn').style.display = 'grid';
   if($('#btnIrMiHoja')) $('#btnIrMiHoja').style.display = 'flex';
@@ -525,6 +521,7 @@ async function arrancar(user) {
     });
   });
 
+  // IMPORTANTE: Aquí ya tenemos fbUser.oficina cargada, así que filtramos bien
   let qL;
   if(esMaster()) qL = window.__fb.collection(db, 'localizaciones');
   else if(esGestor()) qL = window.__fb.query(window.__fb.collection(db, 'localizaciones'), window.__fb.where('creadoPorOficina', '==', fbUser.oficina));
@@ -543,7 +540,15 @@ async function arrancar(user) {
 
   window.__fb.onSnapshot(qH, snapH => {
     hojas.clear();
-    snapH.forEach(d => { let data = d.data(); data.id = d.id; hojas.set(d.id, data); });
+    snapH.forEach(d => { 
+      let data = d.data(); 
+      data.id = d.id; 
+      
+      // FILTRO DE SEGURIDAD EXTRA: Si es gestor, solo guardamos en memoria las de su oficina
+      if(esGestor() && data.oficina !== fbUser.oficina) return;
+      
+      hojas.set(d.id, data); 
+    });
     
     if (hojaActivaId) {
       if (!hojas.has(hojaActivaId)) hojaActivaId = null;
