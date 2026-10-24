@@ -710,18 +710,15 @@ function renderTabla() {
   }
 }
 
-async function crearHoja() {
-  if(!esComercial() && !esGestor()) return;
+async function crearHojaNueva() {
+  if(!esComercial() && !esGestor() && !esMaster()) return;
   const sem = semanaActual();
   const ref = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'hojas'), {
     comercialUid: fbUser.uid, comercialNombre: fbUser.nombre, oficina: fbUser.oficina,
     semana: sem, estado: 'abierta', filas: [], creadoEn: new Date()
   });
   hojaActivaId = ref.id;
-}
-
-function crearHojaNueva() {
-  crearHoja();
+  render();
   toast('Hoja nueva creada');
 }
 
