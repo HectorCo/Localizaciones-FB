@@ -885,8 +885,17 @@ async function confirmarDuplicar() {
   const datos = {};
   COLS.forEach(c => { datos[c.key] = loc[c.key] || ''; });
 
+  // IMPORTANTE: Si el gestor duplica, el registro debe pertenecer al comercial dueño de la hoja destino
+  const creadorUid = destHoja.comercialUid;
+  const creadorNombre = destHoja.comercialNombre;
+
   const locRef = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'localizaciones'), {
-    ...datos, creadoPor: fbUser.nombre, creadoPorUid: fbUser.uid, creadoPorOficina: fbUser.oficina, creadoEn: new Date(), historial: []
+    ...datos, 
+    creadoPor: creadorNombre, 
+    creadoPorUid: creadorUid, 
+    creadoPorOficina: destHoja.oficina, 
+    creadoEn: new Date(), 
+    historial: []
   });
 
   const nuevasFilas = [...(destHoja.filas||[]), locRef.id];
