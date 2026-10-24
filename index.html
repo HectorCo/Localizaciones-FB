@@ -201,7 +201,7 @@ mark.busq{background:#fde68a;color:inherit;padding:0 1px;border-radius:2px;}
     <button class="btn share" id="btnShare" onclick="app.openShare()" style="display:none;">📤 Compartir</button>
     <button class="btn ghost icon" onclick="app.toggleMenu()" aria-label="Menú">⋮</button>
   </div>
-      <nav class="menu" id="menu">
+  <nav class="menu" id="menu">
     <button onclick="app.irAMiHoja(); app.toggleMenu();" id="btnIrMiHoja">👤 Ir a mi hoja de zona</button>
     <button onclick="app.verHojasComerciales(); app.toggleMenu();" id="btnVerHojas" style="display:none;">📁 Ver todas las hojas</button>
     <div class="sep"></div>
@@ -484,7 +484,7 @@ async function arrancar(user) {
   const p = snap.data();
   if(p.activo === false) { toast('Cuenta desactivada.'); return logout(); }
 
-  // AQUÍ GUARDAMOS SU OFICINA EN MEMORIA
+  // Guardar datos del usuario (incluida oficina)
   fbUser = { uid: user.uid, nombre: p.nombre, rol: p.rol, oficina: p.oficina || OFICINA_POR_DEFECTO };
 
   const marca = $('.brand strong');
@@ -521,7 +521,6 @@ async function arrancar(user) {
     });
   });
 
-  // IMPORTANTE: Aquí ya tenemos fbUser.oficina cargada, así que filtramos bien
   let qL;
   if(esMaster()) qL = window.__fb.collection(db, 'localizaciones');
   else if(esGestor()) qL = window.__fb.query(window.__fb.collection(db, 'localizaciones'), window.__fb.where('creadoPorOficina', '==', fbUser.oficina));
@@ -544,7 +543,7 @@ async function arrancar(user) {
       let data = d.data(); 
       data.id = d.id; 
       
-      // FILTRO DE SEGURIDAD EXTRA: Si es gestor, solo guardamos en memoria las de su oficina
+      // FILTRO ESTRICTO: Si es gestor, solo guardamos en memoria las de su oficina
       if(esGestor() && data.oficina !== fbUser.oficina) return;
       
       hojas.set(d.id, data); 
@@ -571,7 +570,6 @@ async function arrancar(user) {
 }
 
 function mostrarMenuGestor() {
-  const misHojas = Array.from(hojas.values()).filter(h => h.comercialUid === fbUser.uid);
   const hojasComerciales = Array.from(hojas.values()).filter(h => h.comercialUid !== fbUser.uid);
 
   let html = `<div style="padding: 20px 14px; text-align: center;">
@@ -596,7 +594,6 @@ async function irAMiHoja() {
     hojaActivaId = miHoja.id;
     render();
   } else {
-    // Si no tiene hoja, la creamos automáticamente
     const sem = semanaActual();
     const ref = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'hojas'), {
       comercialUid: fbUser.uid, comercialNombre: fbUser.nombre, oficina: fbUser.oficina,
@@ -742,10 +739,6 @@ function openEditor(locId) {
   const h = hojas.get(hojaActivaId);
   const isCerrada = h.estado === 'cerrada' || h.semana !== semanaActual();
   
-  // NUEVA LÓGICA: 
-  // Si es comercial, solo lectura si la hoja está cerrada.
-  // Si es gestor, solo lectura si la hoja está cerrada (puede editar si está abierta y es de su oficina).
-  // Si es master, siempre puede editar.
   let ro = isCerrada;
   if (esComercial()) {
     ro = isCerrada || h.comercialUid !== fbUser.uid;
@@ -777,10 +770,8 @@ function llenarEditor(loc, ro) {
   if (ro) {
     $('#ed-foot').innerHTML = `<button class="btn primary" onclick="app.closeEditor()">Cerrar</button>`;
   } else {
-    // CORRECCIÓN AQUÍ: Usamos editingLoc.locId para saber si ya existe en Firestore
     const existeEnBaseDeDatos = editingLoc && editingLoc.locId !== 'nuevo';
     
-    // Permitimos borrar si existe, y si es el dueño, master, o un gestor de su oficina.
     const puedeBorrar = existeEnBaseDeDatos && (
       loc.creadoPorUid === fbUser.uid || 
       esMaster() || 
@@ -833,8 +824,7 @@ async function delRow() {
   const loc = localizaciones.get(editingLoc.locId);
   if(!loc) return;
   
-  // Seguridad extra a nivel de cliente
-    if(loc.creadoPorUid !== fbUser.uid && !esMaster() && !(esGestor() && loc.creadoPorOficina === fbUser.oficina)) {
+  if(loc.creadoPorUid !== fbUser.uid && !esMaster() && !(esGestor() && loc.creadoPorOficina === fbUser.oficina)) {
     toast('No tienes permiso para eliminar este registro');
     return;
   }
@@ -890,7 +880,6 @@ async function confirmarDuplicar() {
   const datos = {};
   COLS.forEach(c => { datos[c.key] = loc[c.key] || ''; });
 
-  // IMPORTANTE: Si el gestor duplica, el registro debe pertenecer al comercial dueño de la hoja destino
   const creadorUid = destHoja.comercialUid;
   const creadorNombre = destHoja.comercialNombre;
 
@@ -916,7 +905,6 @@ function mostrarSelectorHojas() {
   const porComercial = {};
   
   hojas.forEach(h => {
-    // Ignorar mi propia hoja y la de otras oficinas
     if(h.comercialUid === fbUser.uid) return; 
     if(esGestor() && h.oficina !== fbUser.oficina) return;
 
@@ -940,13 +928,6 @@ function mostrarSelectorHojas() {
   });
 
   if(Object.keys(porComercial).length === 0) html = '<p style="padding: 20px; text-align: center; color: var(--muted);">No hay hojas de comerciales registradas en tu oficina.</p>';
-  
-  $('#app').innerHTML = ''; 
-  
-  $('#selectorHojasLista').innerHTML = html;
-  $('#selectorHojasModal').classList.add('open');
-}
-  if(Object.keys(porComercial).length === 0) html = '<p style="padding: 20px; text-align: center; color: var(--muted);">No hay hojas de comerciales registradas todavía.</p>';
   
   $('#app').innerHTML = ''; 
   
@@ -1074,7 +1055,7 @@ async function exportar(formato) {
 
 return {
   toggleMenu: () => $('#menu').classList.toggle('open'),
-    addHoja: () => { 
+  addHoja: () => { 
     if(esComercial() || esGestor()) {
       irAMiHoja(); 
     } else {
@@ -1130,7 +1111,6 @@ document.addEventListener('change', function(e) {
                  e.target.value === 'Piera' ? 'dl-calles-piera' : 'dl-calles-lh';
       
       inputCalle.setAttribute('list', dl);
-      // Limpiamos la calle para que no se guarde la del municipio anterior
       inputCalle.value = '';
     }
   }
