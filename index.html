@@ -430,6 +430,15 @@ async function login(user, pass) {
 
 async function logout() {
   if(!confirm('¿Cerrar sesión?')) return;
+  // Limpiar caché de Firestore para evitar datos fantasma de sesiones anteriores
+  if (window.indexedDB) {
+    try {
+      const dbs = await window.indexedDB.databases();
+      dbs.forEach(db => {
+        if (db.name.includes('firestore')) window.indexedDB.deleteDatabase(db.name);
+      });
+    } catch (e) { console.warn("No se pudo limpiar IndexedDB", e); }
+  }
   await window.__fb.signOut(window.__fb.auth);
   window.location.reload();
 }
@@ -571,7 +580,10 @@ async function arrancar(user) {
 }
 
 function mostrarMenuGestor() {
-  const hojasComerciales = Array.from(hojas.values()).filter(h => h.comercialUid !== fbUser.uid);
+  // AHORA EL CONTADOR FILTRA ESTRICTAMENTE POR OFICINA
+  const hojasComerciales = Array.from(hojas.values()).filter(h => 
+    h.comercialUid !== fbUser.uid && h.oficina === fbUser.oficina
+  );
 
   let html = `<div style="padding: 20px 14px; text-align: center;">
     <h2 style="margin:0 0 20px; font-size:20px; color:var(--ink);">Panel de Control</h2>
