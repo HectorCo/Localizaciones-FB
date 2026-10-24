@@ -346,6 +346,18 @@ const MUNICIPIOS = ['Hospitalet de Llobregat','Esplugues de Llobregat','Capellad
 const ESTADOS = ['Buzón lleno', 'Okupado', 'Vacío', 'Venta', 'Otros'];
 const OFICINA_POR_DEFECTO = 'Enric Prat de la Riba';
 
+// AQUÍ ESTÁ LA MAGIA: Definimos a qué oficina pertenece cada comercial por su número
+function obtenerOficinaPorComercial(nombreComercial) {
+  if (!nombreComercial) return null;
+  const match = nombreComercial.match(/comercial (\d+)/i);
+  if (match) {
+    const num = parseInt(match[1], 10);
+    if (num >= 1 && num <= 5) return 'Aguas';
+    if (num >= 6 && num <= 10) return 'Enric Prat de la Riba';
+  }
+  return null;
+}
+
 const ID_A_DATALIST = {
   'hospitalet': 'dl-calles-lh', 'esplugues': 'dl-calles-es', 'capellades': 'dl-calles-capellades',
   'masquefa': 'dl-calles-masquefa', 'piera': 'dl-calles-piera'
@@ -430,7 +442,7 @@ async function login(user, pass) {
 
 async function logout() {
   if(!confirm('¿Cerrar sesión?')) return;
-  // Limpiar caché de Firestore para evitar datos fantasma de sesiones anteriores
+  // LIMPIAR CACHÉ LOCAL DE FIRESTORE
   if (window.indexedDB) {
     try {
       const dbs = await window.indexedDB.databases();
@@ -448,7 +460,6 @@ async function arrancar(user) {
   const uRef = window.__fb.doc(db, 'usuarios', user.uid);
   let snap = await window.__fb.getDoc(uRef);
 
-  // 1. DETERMINAR LA OFICINA EXACTA SIEMPRE (IGNORANDO FIREBASE SI ES UN GESTOR)
   let oficinaFinal = OFICINA_POR_DEFECTO;
   const localPart = user.email.split('@')[0];
   let nombre = localPart;
@@ -484,7 +495,6 @@ async function arrancar(user) {
   const p = snap.data();
   if(p.activo === false) { toast('Cuenta desactivada.'); return logout(); }
 
-  // SI ES GESTOR, FORZAMOS SU OFICINA BASÁNDONOS EN EL NOMBRE DE USUARIO
   let oficinaReal = p.oficina || OFICINA_POR_DEFECTO;
   if (rol === 'gestion' || rol === 'coordinadora') {
     oficinaReal = oficinaFinal; 
@@ -537,11 +547,9 @@ async function arrancar(user) {
     if(hojaActivaId) renderTabla();
   });
 
-  // 2. PEDIMOS A FIREBASE SOLO LAS HOJAS DE SU OFICINA (FILTRO ESTRICTO)
   let qH;
   if(esMaster()) qH = window.__fb.collection(db, 'hojas');
   else if(esGestor()) {
-    // Filtramos estrictamente por la oficina calculada
     qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('oficina', '==', fbUser.oficina));
   } else {
     qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('comercialUid', '==', fbUser.uid));
@@ -553,8 +561,12 @@ async function arrancar(user) {
       let data = d.data(); 
       data.id = d.id; 
       
-      // 3. DOBLE FILTRO DE SEGURIDAD: Aunque Firebase nos devuelva algo por caché, lo ignoramos si no es de la oficina
-      if(esGestor() && data.oficina !== fbUser.oficina) return;
+      // AQUÍ APLICAMOS EL FILTRO ESTRICTO POR NOMBRE DE COMERCIAL (SI ES GESTOR)
+      if (esGestor()) {
+        const oficinaDelComercial = obtenerOficinaPorComercial(data.comercialNombre);
+        // Si no es un comercial válido (ej. es un gestor) o su oficina no coincide con el gestor, lo ignoramos
+        if (oficinaDelComercial && oficinaDelComercial !== fbUser.oficina) return;
+      }
       
       hojas.set(d.id, data); 
     });
@@ -580,10 +592,13 @@ async function arrancar(user) {
 }
 
 function mostrarMenuGestor() {
-  // AHORA EL CONTADOR FILTRA ESTRICTAMENTE POR OFICINA
-  const hojasComerciales = Array.from(hojas.values()).filter(h => 
-    h.comercialUid !== fbUser.uid && h.oficina === fbUser.oficina
-  );
+  // EL CONTADOR TAMBIÉN FILTRA POR LA NUEVA LÓGICA
+  const hojasComerciales = Array.from(hojas.values()).filter(h => {
+    if (h.comercialUid === fbUser.uid) return false;
+    const oficinaDelComercial = obtenerOficinaPorComercial(h.comercialNombre);
+    if (oficinaDelComercial && oficinaDelComercial !== fbUser.oficina) return false;
+    return true;
+  });
 
   let html = `<div style="padding: 20px 14px; text-align: center;">
     <h2 style="margin:0 0 20px; font-size:20px; color:var(--ink);">Panel de Control</h2>
@@ -919,7 +934,12 @@ function mostrarSelectorHojas() {
   
   hojas.forEach(h => {
     if(h.comercialUid === fbUser.uid) return; 
-    if(esGestor() && h.oficina !== fbUser.oficina) return;
+    
+    // FILTRO ESTRICTO EN EL SELECTOR TAMBIÉN
+    if (esGestor()) {
+      const oficinaDelComercial = obtenerOficinaPorComercial(h.comercialNombre);
+      if (oficinaDelComercial && oficinaDelComercial !== fbUser.oficina) return;
+    }
 
     if(!porComercial[h.comercialNombre]) porComercial[h.comercialNombre] = [];
     porComercial[h.comercialNombre].push(h);
