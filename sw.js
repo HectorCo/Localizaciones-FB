@@ -1,4 +1,4 @@
-const CACHE = 'localizaciones-v57';
+const CACHE = 'localizaciones-v58';
 const ASSETS = [
   './', './index.html', './manifest.json', './icono-fincas.svg', './exceljs.min.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js',
