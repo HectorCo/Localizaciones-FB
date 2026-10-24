@@ -439,53 +439,49 @@ async function arrancar(user) {
   const uRef = window.__fb.doc(db, 'usuarios', user.uid);
   let snap = await window.__fb.getDoc(uRef);
 
+  // 1. DETERMINAR LA OFICINA EXACTA SIEMPRE (IGNORANDO FIREBASE SI ES UN GESTOR)
+  let oficinaFinal = OFICINA_POR_DEFECTO;
+  const localPart = user.email.split('@')[0];
+  let nombre = localPart;
+  let rol = 'comercial';
+
+  if (localPart.startsWith('comercial')) {
+    const m = localPart.match(/^comercial(\d{1,2})$/);
+    if (m) nombre = 'comercial ' + String(parseInt(m[1],10)).padStart(2,'0');
+  } else if (localPart === 'master') {
+    rol = 'master';
+    nombre = 'Master';
+  } else if (localPart.startsWith('gestion') || localPart.startsWith('coordinadora')) {
+    let base, sufijo;
+    if (localPart.startsWith('gestion')) { rol = 'gestion'; base = 'gestion'; }
+    else { rol = 'coordinadora'; base = 'coordinadora'; }
+    
+    sufijo = localPart.replace(base, '');
+    if (sufijo === 'aguas') oficinaFinal = 'Aguas';
+    else if (sufijo === 'epr') oficinaFinal = 'Enric Prat de la Riba';
+    else oficinaFinal = sufijo.charAt(0).toUpperCase() + sufijo.slice(1);
+    
+    nombre = base.charAt(0).toUpperCase() + base.slice(1) + ' ' + oficinaFinal;
+  }
+
   if(!snap.exists()) {
-    const localPart = user.email.split('@')[0];
-    let nombre = localPart;
-    let rol = 'comercial';
-    let oficina = OFICINA_POR_DEFECTO;
-
-    if (localPart.startsWith('comercial')) {
-      const m = localPart.match(/^comercial(\d{1,2})$/);
-      if (m) nombre = 'comercial ' + String(parseInt(m[1],10)).padStart(2,'0');
-    } else if (localPart === 'master') {
-      rol = 'master';
-      nombre = 'Master';
-    } else if (localPart.startsWith('gestion') || localPart.startsWith('coordinadora')) {
-      let base, sufijo;
-      if (localPart.startsWith('gestion')) { rol = 'gestion'; base = 'gestion'; }
-      else { rol = 'coordinadora'; base = 'coordinadora'; }
-      
-      sufijo = localPart.replace(base, '');
-      if (sufijo === 'aguas') oficina = 'Aguas';
-      else if (sufijo === 'epr') oficina = 'Enric Prat de la Riba';
-      else oficina = sufijo.charAt(0).toUpperCase() + sufijo.slice(1);
-      
-      nombre = base.charAt(0).toUpperCase() + base.slice(1) + ' ' + oficina;
-    }
-
-    const nuevoPerfil = {
-      nombre: nombre,
-      rol: rol,
-      activo: true,
-      oficina: oficina
-    };
-
+    const nuevoPerfil = { nombre: nombre, rol: rol, activo: true, oficina: oficinaFinal };
     try {
       await window.__fb.setDoc(uRef, nuevoPerfil);
       snap = await window.__fb.getDoc(uRef);
-    } catch(err) {
-      console.warn('Error creando perfil:', err);
-      toast('No se pudo crear tu perfil automáticamente.');
-      return logout();
-    }
+    } catch(err) { return logout(); }
   }
 
   const p = snap.data();
   if(p.activo === false) { toast('Cuenta desactivada.'); return logout(); }
 
-  // Guardar datos del usuario (incluida oficina)
-  fbUser = { uid: user.uid, nombre: p.nombre, rol: p.rol, oficina: p.oficina || OFICINA_POR_DEFECTO };
+  // SI ES GESTOR, FORZAMOS SU OFICINA BASÁNDONOS EN EL NOMBRE DE USUARIO
+  let oficinaReal = p.oficina || OFICINA_POR_DEFECTO;
+  if (rol === 'gestion' || rol === 'coordinadora') {
+    oficinaReal = oficinaFinal; 
+  }
+
+  fbUser = { uid: user.uid, nombre: p.nombre, rol: p.rol, oficina: oficinaReal };
 
   const marca = $('.brand strong');
   const badgeViejo = marca.querySelector('.badge-rol');
@@ -532,10 +528,15 @@ async function arrancar(user) {
     if(hojaActivaId) renderTabla();
   });
 
+  // 2. PEDIMOS A FIREBASE SOLO LAS HOJAS DE SU OFICINA (FILTRO ESTRICTO)
   let qH;
   if(esMaster()) qH = window.__fb.collection(db, 'hojas');
-  else if(esGestor()) qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('oficina', '==', fbUser.oficina));
-  else qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('comercialUid', '==', fbUser.uid));
+  else if(esGestor()) {
+    // Filtramos estrictamente por la oficina calculada
+    qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('oficina', '==', fbUser.oficina));
+  } else {
+    qH = window.__fb.query(window.__fb.collection(db, 'hojas'), window.__fb.where('comercialUid', '==', fbUser.uid));
+  }
 
   window.__fb.onSnapshot(qH, snapH => {
     hojas.clear();
@@ -543,7 +544,7 @@ async function arrancar(user) {
       let data = d.data(); 
       data.id = d.id; 
       
-      // FILTRO ESTRICTO: Si es gestor, solo guardamos en memoria las de su oficina
+      // 3. DOBLE FILTRO DE SEGURIDAD: Aunque Firebase nos devuelva algo por caché, lo ignoramos si no es de la oficina
       if(esGestor() && data.oficina !== fbUser.oficina) return;
       
       hojas.set(d.id, data); 
