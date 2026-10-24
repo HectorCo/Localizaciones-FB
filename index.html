@@ -499,15 +499,17 @@ async function arrancar(user) {
   badge.textContent = fbUser.rol.toUpperCase();
   marca.appendChild(badge);
 
-  // Configuración de visibilidad de botones
+    // Configuración de visibilidad de botones
   if(esGestor() || esMaster()) $('#btnShare').style.display = '';
   
   if(esGestor()) { 
     $('#fabBtn').style.display = 'grid'; 
+    $('#btnIrMiHoja').style.display = 'flex';
     $('#btnNewHoja').style.display = 'flex'; 
     $('#btnVerHojas').style.display = 'flex'; 
   } else {
     $('#fabBtn').style.display = 'grid'; 
+    $('#btnIrMiHoja').style.display = 'flex';
     $('#btnNewHoja').style.display = 'flex'; 
     $('#btnVerHojas').style.display = 'none'; 
   }
