@@ -351,7 +351,18 @@ let usuariosOficinas = new Map();
 
 function obtenerOficinaPorComercial(nombreComercial) {
   if (!nombreComercial) return null;
-  return usuariosOficinas.get(nombreComercial) || null;
+  
+  // Limpiamos el nombre: minúsculas y quitamos espacios
+  const nombreLimpio = nombreComercial.toLowerCase().replace(/\s+/g, '');
+  
+  // Buscamos en el diccionario comparando los nombres limpios
+  for (let [nombreBD, oficina] of usuariosOficinas.entries()) {
+    const nombreBDLimpio = nombreBD.toLowerCase().replace(/\s+/g, '');
+    if (nombreBDLimpio === nombreLimpio) {
+      return oficina;
+    }
+  }
+  return null;
 }
 
 const ID_A_DATALIST = {
