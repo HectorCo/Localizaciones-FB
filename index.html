@@ -744,7 +744,15 @@ function openEditor(locId) {
   if(!loc) return;
   const h = hojas.get(hojaActivaId);
   const isCerrada = h.estado === 'cerrada' || h.semana !== semanaActual();
-  const ro = esSoloLectura() || isCerrada;
+  
+  // NUEVA LÓGICA: 
+  // Si es comercial, solo lectura si la hoja está cerrada.
+  // Si es gestor, solo lectura si la hoja está cerrada (puede editar si está abierta y es de su oficina).
+  // Si es master, siempre puede editar.
+  let ro = isCerrada;
+  if (esComercial()) {
+    ro = isCerrada || h.comercialUid !== fbUser.uid;
+  }
 
   editingLoc = { hojaId: hojaActivaId, locId: locId };
   llenarEditor(loc, ro);
