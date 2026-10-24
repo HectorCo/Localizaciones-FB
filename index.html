@@ -441,18 +441,38 @@ async function arrancar(user) {
 
   if(!snap.exists()) {
     const localPart = user.email.split('@')[0];
-    const m = localPart.match(/^comercial(\d{1,2})$/);
-    let nombre = m ? 'comercial ' + String(parseInt(m[1],10)).padStart(2,'0') : localPart;
-    let rol = localPart === 'master' ? 'master' : 'comercial';
     
-    if (localPart.startsWith('gestion')) rol = 'gestion';
-    if (localPart.startsWith('coordinadora')) rol = 'coordinadora';
+    // Lógica para determinar nombre, rol y oficina basándose en el usuario
+    let nombre = localPart;
+    let rol = 'comercial';
+    let oficina = OFICINA_POR_DEFECTO;
+
+    if (localPart.startsWith('comercial')) {
+      const m = localPart.match(/^comercial(\d{1,2})$/);
+      if (m) nombre = 'comercial ' + String(parseInt(m[1],10)).padStart(2,'0');
+    } else if (localPart === 'master') {
+      rol = 'master';
+      nombre = 'Master';
+    } else if (localPart.startsWith('gestion') || localPart.startsWith('coordinadora')) {
+      // Ejemplo: gestionaguas -> rol: gestion, oficina: Aguas
+      // Ejemplo: coordinadoraepr -> rol: coordinadora, oficina: Enric Prat De La Riba
+      let base, sufijo;
+      if (localPart.startsWith('gestion')) { rol = 'gestion'; base = 'gestion'; }
+      else { rol = 'coordinadora'; base = 'coordinadora'; }
+      
+      sufijo = localPart.replace(base, '');
+      if (sufijo === 'aguas') oficina = 'Aguas';
+      else if (sufijo === 'epr') oficina = 'Enric Prat de la Riba';
+      else oficina = sufijo.charAt(0).toUpperCase() + sufijo.slice(1); // Fallback
+      
+      nombre = base.charAt(0).toUpperCase() + base.slice(1) + ' ' + oficina;
+    }
 
     const nuevoPerfil = {
       nombre: nombre,
       rol: rol,
       activo: true,
-      oficina: OFICINA_POR_DEFECTO
+      oficina: oficina
     };
 
     try {
@@ -478,11 +498,12 @@ async function arrancar(user) {
   badge.textContent = fbUser.rol.toUpperCase();
   marca.appendChild(badge);
 
+  // Configuración de visibilidad de botones
   if(esGestor() || esMaster()) $('#btnShare').style.display = '';
   
   if(esGestor()) { 
-    $('#fabBtn').style.display = 'none'; 
-    $('#btnNewHoja').style.display = 'none'; 
+    $('#fabBtn').style.display = 'grid'; 
+    $('#btnNewHoja').style.display = 'flex'; 
     $('#btnVerHojas').style.display = 'flex'; 
   } else {
     $('#fabBtn').style.display = 'grid'; 
@@ -534,14 +555,49 @@ async function arrancar(user) {
     if (!hojaActivaId) {
       if (esComercial()) {
         let found = false;
-        hojas.forEach(h => { if(h.semana === semanaActual() && h.estado !== 'cerrada') { hojaActivaId = h.id; found = true; } });
+        hojas.forEach(h => { if(h.semana === semanaActual() && h.estado !== 'cerrada' && h.comercialUid === fbUser.uid) { hojaActivaId = h.id; found = true; } });
         if(!found) crearHoja();
         else render();
+      } else if (esGestor()) {
+        mostrarMenuGestor();
       } else {
         mostrarSelectorHojas();
       }
     }
   });
+}
+
+function mostrarMenuGestor() {
+  const misHojas = Array.from(hojas.values()).filter(h => h.comercialUid === fbUser.uid);
+  const hojasComerciales = Array.from(hojas.values()).filter(h => h.comercialUid !== fbUser.uid);
+
+  let html = `<div style="padding: 20px 14px; text-align: center;">
+    <h2 style="margin:0 0 20px; font-size:20px; color:var(--ink);">Panel de Control</h2>
+    <p style="color:var(--muted); margin-bottom: 24px;">Selecciona qué quieres hacer hoy:</p>
+    
+    <button class="btn primary" style="width:100%; padding: 18px; font-size: 16px; margin-bottom: 12px;" onclick="app.irAMiHoja()">
+      👤 Mi hoja de zona
+    </button>
+    <button class="btn" style="width:100%; padding: 18px; font-size: 16px; background:#e2e8f0;" onclick="app.verHojasComerciales()">
+      📁 Hojas de mis comerciales (${hojasComerciales.length})
+    </button>
+  </div>`;
+  
+  $('#app').innerHTML = html;
+}
+
+function irAMiHoja() {
+  let miHoja = Array.from(hojas.values()).find(h => h.comercialUid === fbUser.uid && h.semana === semanaActual() && h.estado !== 'cerrada');
+  if (miHoja) {
+    hojaActivaId = miHoja.id;
+    render();
+  } else {
+    crearHoja();
+  }
+}
+
+function verHojasComerciales() {
+  mostrarSelectorHojas();
 }
 
 function render() {
@@ -550,32 +606,31 @@ function render() {
   if(!h) return;
   
   const isCerrada = h.estado === 'cerrada' || h.semana !== semanaActual();
+  const esMiHoja = h.comercialUid === fbUser.uid;
   
   let banner = '';
   if(isCerrada) {
-    const txt = esSoloLectura() 
-      ? 'Consulta la hoja o expórtala.' 
-      : 'Ya no se pueden modificar ni añadir filas.';
-    const btnNueva = esSoloLectura() 
-      ? '' 
-      : `<button type="button" class="banner-btn" onclick="app.crearHojaNueva()">➕ Nueva hoja</button>`;
+    const txt = 'Ya no se pueden modificar ni añadir filas.';
     banner = `
       <div class="banner-cerrada">
         <span class="lock">🔒</span>
         <span class="txt"><strong>Cerrada</strong> · Semana ${esc(h.semana)}. ${txt}</span>
-        ${btnNueva}
       </div>`;
   }
 
-  const btnBorrar = (esComercial() && !isCerrada) 
+  const btnBorrar = ((esComercial() || esGestor()) && esMiHoja && !isCerrada) 
     ? '<button class="icon-btn danger" onclick="app.borrarHoja()" title="Eliminar hoja">✕</button>' 
     : '<span></span>';
 
   let headerTitle = '';
   let btnVolver = '';
   if (esGestor() || esMaster()) {
-    btnVolver = `<button class="btn small" style="grid-column: 1/-1; margin-bottom: 5px; background:#e2e8f0; width: fit-content;" onclick="app.volverAListaHojas()">← Volver a todas las hojas</button>`;
-    headerTitle = `<div style="grid-column: 1/-1; font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 5px;">👁️ Supervisando hoja de: ${esc(h.comercialNombre)}</div>`;
+    if (!esMiHoja) {
+      btnVolver = `<button class="btn small" style="grid-column: 1/-1; margin-bottom: 5px; background:#e2e8f0; width: fit-content;" onclick="app.volverAListaHojas()">← Volver a mis comerciales</button>`;
+      headerTitle = `<div style="grid-column: 1/-1; font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 5px;">👁️ Supervisando hoja de: ${esc(h.comercialNombre)}</div>`;
+    } else {
+      btnVolver = `<button class="btn small" style="grid-column: 1/-1; margin-bottom: 5px; background:#e2e8f0; width: fit-content;" onclick="app.volverAlMenuGestor()">← Volver al panel</button>`;
+    }
   }
 
   $('#app').innerHTML = `
@@ -598,7 +653,7 @@ function render() {
         </table>
       </div>
       <div class="hoja-actions">
-        ${(esComercial() && !isCerrada) 
+        ${((esComercial() || esMiHoja) && !isCerrada) 
           ? '<button class="btn small" onclick="app.addRow()">+ Añadir fila</button>' 
           : '<span style="font-size:12px;color:var(--muted)">👁️ Modo solo lectura</span>'}
       </div>
@@ -644,14 +699,16 @@ function renderTabla() {
     const tr = document.createElement('tr');
     tr.className = 'blank';
     tr.dataset.blank = '1';
-    tr.onclick = () => { if(esComercial()) addRow(); };
+    tr.onclick = () => { 
+      if(esComercial() || h.comercialUid === fbUser.uid) addRow(); 
+    };
     for(let j=0; j<COLS.length; j++) tr.appendChild(document.createElement('td'));
     tbody.appendChild(tr);
   }
 }
 
 async function crearHoja() {
-  if(!esComercial()) return;
+  if(!esComercial() && !esGestor()) return;
   const sem = semanaActual();
   const ref = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'hojas'), {
     comercialUid: fbUser.uid, comercialNombre: fbUser.nombre, oficina: fbUser.oficina,
@@ -672,9 +729,10 @@ function borrarHoja() {
 }
 
 async function addRow() {
-  if(!esComercial()) return;
+  if(!esComercial() && !esGestor()) return;
   const h = hojas.get(hojaActivaId);
   if(h.estado === 'cerrada' || h.semana !== semanaActual()) { toast('Hoja cerrada'); return; }
+  if(h.comercialUid !== fbUser.uid && !esMaster()) { toast('No puedes añadir filas a la hoja de otro comercial'); return; }
 
   editingLoc = { hojaId: hojaActivaId, locId: 'nuevo' };
   const locFalsa = { fecha: hoyISO(), municipio: 'Hospitalet de Llobregat' };
@@ -714,7 +772,10 @@ function llenarEditor(loc, ro) {
   if (ro) {
     $('#ed-foot').innerHTML = `<button class="btn primary" onclick="app.closeEditor()">Cerrar</button>`;
   } else {
-    const btnEliminar = loc.id ? `<button class="btn danger-ghost" onclick="app.delRow()">Eliminar</button>` : '';
+    // Solo permitimos borrar si el registro ya existe y el usuario es el creador (o master)
+    const puedeBorrar = loc.id && (loc.creadoPorUid === fbUser.uid || esMaster());
+    const btnEliminar = puedeBorrar ? `<button class="btn danger-ghost" onclick="app.delRow()">Eliminar</button>` : '';
+    
     $('#ed-foot').innerHTML = `
       ${btnEliminar}
       <button class="btn" onclick="app.openDupModal()" style="background:#dbeafe;color:#1e40af">📋 Duplicar</button>
@@ -756,6 +817,15 @@ async function saveRow() {
 
 async function delRow() {
   if(!editingLoc) return;
+  const loc = localizaciones.get(editingLoc.locId);
+  if(!loc) return;
+  
+  // Seguridad extra a nivel de cliente
+  if(loc.creadoPorUid !== fbUser.uid && !esMaster()) {
+    toast('No tienes permiso para eliminar este registro');
+    return;
+  }
+
   if(!confirm('¿Eliminar este registro de tu hoja?')) return;
   const locId = editingLoc.locId;
   const h = hojas.get(hojaActivaId);
@@ -775,7 +845,7 @@ function openDupModal() {
   let hasOptions = false;
   hojas.forEach(h => {
     const cerrada = h.estado === 'cerrada' || h.semana !== semanaActual();
-    if (!cerrada) {
+    if (!cerrada && (h.comercialUid === fbUser.uid || esMaster())) {
       const opt = document.createElement('option');
       opt.value = h.id;
       opt.textContent = `Semana ${h.semana} - ${h.comercialNombre}`;
@@ -823,6 +893,7 @@ function mostrarSelectorHojas() {
   let html = '<p style="color:var(--muted);font-size:14px;margin-bottom:16px;">Selecciona una hoja para supervisarla:</p>';
   const porComercial = {};
   hojas.forEach(h => {
+    if(h.comercialUid === fbUser.uid) return; // Ocultar la mía propia
     if(!porComercial[h.comercialNombre]) porComercial[h.comercialNombre] = [];
     porComercial[h.comercialNombre].push(h);
   });
@@ -842,7 +913,7 @@ function mostrarSelectorHojas() {
     });
   });
 
-  if(hojas.size === 0) html = '<p style="padding: 20px; text-align: center; color: var(--muted);">No hay hojas registradas todavía en tu oficina.</p>';
+  if(Object.keys(porComercial).length === 0) html = '<p style="padding: 20px; text-align: center; color: var(--muted);">No hay hojas de comerciales registradas todavía.</p>';
   
   $('#app').innerHTML = ''; 
   
@@ -970,7 +1041,13 @@ async function exportar(formato) {
 
 return {
   toggleMenu: () => $('#menu').classList.toggle('open'),
-  addHoja: () => { if(esComercial()) crearHoja(); else mostrarSelectorHojas(); },
+  addHoja: () => { 
+    if(esComercial() || esGestor()) {
+      irAMiHoja(); // Si ya tiene una, va a ella, si no, la crea.
+    } else {
+      mostrarSelectorHojas(); 
+    }
+  },
   borrarHoja: () => borrarHoja(),
   crearHojaNueva: () => crearHojaNueva(),
   addRow: () => addRow(),
@@ -983,6 +1060,9 @@ return {
   confirmarDuplicar: () => confirmarDuplicar(),
   abrirHojaGestor: (id) => abrirHojaGestor(id),
   volverAListaHojas: () => { hojaActivaId = null; mostrarSelectorHojas(); },
+  volverAlMenuGestor: () => { hojaActivaId = null; mostrarMenuGestor(); },
+  irAMiHoja: () => irAMiHoja(),
+  verHojasComerciales: () => verHojasComerciales(),
   openShare: () => $('#shareModal').classList.add('open'),
   exportar: (f) => exportar(f),
   logout: () => logout(),
