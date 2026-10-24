@@ -720,18 +720,6 @@ function renderTabla() {
   }
 }
 
-async function crearHojaNueva() {
-  if(!esComercial() && !esGestor() && !esMaster()) return;
-  const sem = semanaActual();
-  const ref = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'hojas'), {
-    comercialUid: fbUser.uid, comercialNombre: fbUser.nombre, oficina: fbUser.oficina,
-    semana: sem, estado: 'abierta', filas: [], creadoEn: new Date()
-  });
-  hojaActivaId = ref.id;
-  render();
-  toast('Hoja nueva creada');
-}
-
 function borrarHoja() {
   if(!confirm('¿Eliminar esta hoja vacía?')) return;
   window.__fb.deleteDoc(window.__fb.doc(window.__fb.db, 'hojas', hojaActivaId));
