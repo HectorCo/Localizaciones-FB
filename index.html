@@ -498,19 +498,15 @@ async function arrancar(user) {
   badge.textContent = fbUser.rol.toUpperCase();
   marca.appendChild(badge);
 
-    // Configuración de visibilidad de botones
-  if(esGestor() || esMaster()) $('#btnShare').style.display = '';
+      // Configuración de visibilidad de botones
+  if($('#btnShare')) $('#btnShare').style.display = (esGestor() || esMaster()) ? '' : 'none';
+  if($('#fabBtn')) $('#fabBtn').style.display = 'grid';
+  if($('#btnIrMiHoja')) $('#btnIrMiHoja').style.display = 'flex';
   
   if(esGestor()) { 
-    $('#fabBtn').style.display = 'grid'; 
-    $('#btnIrMiHoja').style.display = 'flex';
-    $('#btnNewHoja').style.display = 'flex'; 
-    $('#btnVerHojas').style.display = 'flex'; 
+    if($('#btnVerHojas')) $('#btnVerHojas').style.display = 'flex'; 
   } else {
-    $('#fabBtn').style.display = 'grid'; 
-    $('#btnIrMiHoja').style.display = 'flex';
-    $('#btnNewHoja').style.display = 'flex'; 
-    $('#btnVerHojas').style.display = 'none'; 
+    if($('#btnVerHojas')) $('#btnVerHojas').style.display = 'none'; 
   }
 
   $('#loginOverlay').classList.add('hidden');
