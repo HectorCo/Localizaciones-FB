@@ -588,13 +588,24 @@ function mostrarMenuGestor() {
   $('#app').innerHTML = html;
 }
 
-function irAMiHoja() {
-  let miHoja = Array.from(hojas.values()).find(h => h.comercialUid === fbUser.uid && h.semana === semanaActual() && h.estado !== 'cerrada');
+async function irAMiHoja() {
+  let miHoja = Array.from(hojas.values()).find(h => h.comercialUid === fbUser.uid && h.semana === semanaActual());
+  
   if (miHoja) {
     hojaActivaId = miHoja.id;
     render();
   } else {
-    crearHoja();
+    // Solo llegará aquí si NO tiene ninguna hoja en la semana actual
+    if(confirm('No tienes ninguna hoja esta semana. ¿Quieres crear una nueva?')) {
+      const sem = semanaActual();
+      const ref = await window.__fb.addDoc(window.__fb.collection(window.__fb.db, 'hojas'), {
+        comercialUid: fbUser.uid, comercialNombre: fbUser.nombre, oficina: fbUser.oficina,
+        semana: sem, estado: 'abierta', filas: [], creadoEn: new Date()
+      });
+      hojaActivaId = ref.id;
+      render();
+      toast('Hoja de zona creada');
+    }
   }
 }
 
